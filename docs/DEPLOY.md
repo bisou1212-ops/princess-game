@@ -88,6 +88,19 @@ git push
 6. 이후로는 `git push`만 하면 자동으로 새 버전이 배포됨.
    main이 아닌 브랜치를 push하면 미리보기 주소가 따로 생김(실험용으로 좋음).
 
+### Workers로 만들어진 경우 (배포 명령이 `npx wrangler deploy`인 화면)
+요즘 Cloudflare는 Pages 대신 Workers 프로젝트로 만들어 주기도 한다. 그래도 문제없다.
+저장소의 `wrangler.jsonc`가 `dist/`를 올리도록 설정되어 있다. 빌드 설정은 이렇게 둔다:
+
+| 항목 | 값 |
+| --- | --- |
+| 빌드 명령 | `npm run build` |
+| 배포 명령 | `npx wrangler deploy` |
+| 루트 디렉터리 | **비워 두기** (또는 `/`) — `/dist`로 두면 `root directory not found` 오류 |
+| 빌드 변수 | `NODE_VERSION` = `24` |
+
+주소는 `https://princess-game.<계정>.workers.dev` 형태가 된다.
+
 ## 4. 태블릿 홈 화면에 설치 (PWA)
 
 - **안드로이드 Chrome**: pages.dev 주소 접속 → 메뉴(⋮) → **홈 화면에 추가 / 앱 설치**

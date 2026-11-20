@@ -1,0 +1,9 @@
+// Cloudflare Workers(정적 파일) 배포 설정 — `npx wrangler deploy`가 읽는다.
+// npm run build 결과물(dist/)을 그대로 올린다.
+{
+  "name": "princess-game",
+  "compatibility_date": "2026-11-20",
+  "assets": {
+    "directory": "./dist"
+  }
+}
