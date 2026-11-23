@@ -19,6 +19,7 @@ import {
   createFlowerMesh,
   createHeartTexture,
   createHitArea,
+  createFlowerPatch,
   createObstacleMesh,
 } from './props';
 
@@ -40,6 +41,8 @@ export interface CourtyardScene {
   removePickup(id: string): void;
   /** 친구 머리 위 ♥ 표시 켜기/끄기 */
   setNpcAttention(npcId: string, on: boolean): void;
+  /** 공주를 다른 곳으로 옮긴다 (열기구에서 내릴 때) */
+  teleport(at: Point): void;
   /** 공주 옷 갈아입히기. celebrate면 빙글 돌며 폴짝 */
   setOutfit(outfit: Outfit, celebrate?: boolean): void;
   /** 거울(드레스룸) 모드: 카메라가 공주 앞으로 다가가고 공주가 천천히 돈다. 이동 톡은 막힘 */
@@ -82,8 +85,9 @@ const DOOR_DISTANCE = 1.4;
 export function createCourtyardScene(aspect: number, opts: CourtyardOptions = {}): CourtyardScene {
   const layout = opts.layout ?? courtyardLayout;
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color(COLORS.sky);
-  scene.fog = new THREE.Fog(COLORS.sky, 28, 60);
+  const theme = layout.theme;
+  scene.background = new THREE.Color(theme.sky);
+  scene.fog = new THREE.Fog(theme.sky, 28, 60);
 
   const camera = new THREE.PerspectiveCamera(45, aspect, 0.1, 120);
 
@@ -92,7 +96,7 @@ export function createCourtyardScene(aspect: number, opts: CourtyardOptions = {}
   // 바닥: 바깥 들판 + 마당
   const ground = new THREE.Mesh(
     new THREE.PlaneGeometry(120, 120),
-    new THREE.MeshStandardMaterial({ color: COLORS.ground, roughness: 1 }),
+    new THREE.MeshStandardMaterial({ color: theme.ground, roughness: 1 }),
   );
   ground.rotation.x = -Math.PI / 2;
   ground.receiveShadow = true;
@@ -100,7 +104,7 @@ export function createCourtyardScene(aspect: number, opts: CourtyardOptions = {}
 
   const yard = new THREE.Mesh(
     new THREE.PlaneGeometry(layout.width, layout.depth),
-    new THREE.MeshStandardMaterial({ color: COLORS.courtyard, roughness: 1 }),
+    new THREE.MeshStandardMaterial({ color: theme.yard, roughness: 1 }),
   );
   yard.rotation.x = -Math.PI / 2;
   yard.position.y = 0.005;
@@ -109,10 +113,11 @@ export function createCourtyardScene(aspect: number, opts: CourtyardOptions = {}
 
   const tappables: THREE.Object3D[] = [ground, yard];
   for (const o of layout.obstacles) {
-    const mesh = createObstacleMesh(o);
+    const mesh = createObstacleMesh(o, theme);
     scene.add(mesh);
     tappables.push(mesh);
   }
+  for (const patch of layout.flowerPatches ?? []) scene.add(createFlowerPatch(patch));
 
   // 친구들
   const heartTexture = createHeartTexture();
@@ -287,6 +292,16 @@ export function createCourtyardScene(aspect: number, opts: CourtyardOptions = {}
       const p = pickups.get(id);
       if (p && p.vanish === null) p.vanish = 0;
       if (pending?.kind === 'pickup' && pending.pickup.id === id) pending = null;
+    },
+
+    teleport(at) {
+      pending = null;
+      walker.stop();
+      walker.x = at.x;
+      walker.z = at.z;
+      walker.heading = 0;
+      princess.position.set(at.x, 0, at.z);
+      follow.snap(focus.set(at.x, 0, at.z));
     },
 
     setOutfit(outfit, celebrate = false) {

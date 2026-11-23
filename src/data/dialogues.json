@@ -38,5 +38,16 @@
     { "speaker": "tori", "mood": "curious", "text": "어? 그건 파란 꽃이야. 파란색은 영어로…" },
     { "speaker": "tori", "mood": "happy", "text": "Blue!", "lang": "en-US" },
     { "speaker": "tori", "mood": "happy", "text": "빨간 꽃을 다시 찾아볼까?" }
+  ],
+
+  "gogo-hello": [
+    { "speaker": "gogo", "mood": "normal", "text": "음… 안녕. 나는 정원사 곰 고고야." },
+    { "speaker": "gogo", "mood": "shy", "text": "말은 별로 없지만… 꽃 키우는 건 정말 좋아해." },
+    { "speaker": "gogo", "mood": "happy", "text": "꽃 왕국에 온 걸 환영해. 천천히 구경해." }
+  ],
+  "dochi-hello": [
+    { "speaker": "dochi", "mood": "excited", "text": "어서 와요! 나는 빵집 요리사 도치예요!" },
+    { "speaker": "dochi", "mood": "curious", "text": "음~ 킁킁. 맛있는 냄새 나지요?" },
+    { "speaker": "dochi", "mood": "happy", "text": "오늘은 딸기 케이크를 굽고 있어요. 나중에 꼭 도와줘요!" }
   ]
 }

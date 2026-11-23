@@ -1,5 +1,7 @@
 {
   "_comment": "M1 그레이박스 성 마당 배치. 좌표 단위는 m, x=오른쪽, z=아래(카메라 쪽). 가운데가 (0,0).",
+  "id": "castle",
+  "theme": { "sky": "#bfe6ff", "ground": "#b8b8bc", "yard": "#cacacf", "structure": "#9d9da6", "prop": "#aaaab2" },
   "width": 24,
   "depth": 24,
   "cellSize": 0.5,

@@ -1,9 +1,47 @@
 import { NavGrid, type Point } from '../../systems/navigation/nav-grid';
 import layoutJson from '../../data/courtyard.json';
 
+/** 색을 따로 쓰고 싶을 때 color(#rrggbb), 집은 roof(지붕 색) */
+interface RectObstacle {
+  id: string;
+  x: number;
+  z: number;
+  w: number;
+  d: number;
+  h: number;
+  color?: string;
+  roof?: string;
+}
+interface RoundObstacle {
+  id: string;
+  x: number;
+  z: number;
+  r: number;
+  h: number;
+  color?: string;
+}
 export type Obstacle =
-  | { id: string; shape: 'box'; x: number; z: number; w: number; d: number; h: number }
-  | { id: string; shape: 'cylinder' | 'tree'; x: number; z: number; r: number; h: number };
+  | (RectObstacle & { shape: 'box' })
+  | (RectObstacle & { shape: 'house' })
+  | (RoundObstacle & { shape: 'cylinder' })
+  | (RoundObstacle & { shape: 'tree' });
+
+/** 장소마다 다른 색 (하늘·바깥 땅·마당 바닥·벽·소품) */
+export interface Theme {
+  sky: string;
+  ground: string;
+  yard: string;
+  structure: string;
+  prop: string;
+}
+
+/** 장식 꽃밭 (부딪히지 않음) */
+export interface FlowerPatch {
+  x: number;
+  z: number;
+  r: number;
+  n: number;
+}
 
 /** 마당에 서 있는 친구 (characters.json·dialogues.json의 id를 가리킴) */
 export interface NpcPlacement {
@@ -31,6 +69,10 @@ export interface DoorPlacement {
 }
 
 export interface CourtyardLayout {
+  /** world.json의 장소 id */
+  id: string;
+  theme: Theme;
+  flowerPatches?: FlowerPatch[];
   width: number;
   depth: number;
   cellSize: number;
@@ -50,7 +92,7 @@ export const NPC_RADIUS = 0.4;
 export function buildNavGrid(layout: CourtyardLayout, agentRadius = AGENT_RADIUS): NavGrid {
   const grid = new NavGrid({ width: layout.width, depth: layout.depth, cellSize: layout.cellSize });
   for (const o of layout.obstacles) {
-    if (o.shape === 'box') grid.blockRect(o.x, o.z, o.w, o.d, agentRadius);
+    if (o.shape === 'box' || o.shape === 'house') grid.blockRect(o.x, o.z, o.w, o.d, agentRadius);
     else grid.blockCircle(o.x, o.z, o.r, agentRadius);
   }
   for (const n of layout.npcs) grid.blockCircle(n.x, n.z, NPC_RADIUS, agentRadius);

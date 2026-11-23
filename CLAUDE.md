@@ -44,7 +44,8 @@ docs/GDD.md        # 기획서
 - [x] M3 부탁 시스템 — 토리 "빨간 꽃 세 송이"(`src/data/quests.json`), 수 세기·색 힌트(한글+영어), 선물·별사탕(`src/systems/quests.ts`, `rewards.ts`)
 - [x] M4 옷 꾸미기 — 드레스룸(5부위·색 8개, 한글+영어 읽기), 갈아입는 공주 모델 `princess-model.ts`, 옷 데이터 `src/data/wardrobe.json`·`items.json`. 자동 저장(IndexedDB) `src/systems/game-state.ts` — 부탁 진행·주운 꽃·별사탕·옷 유지
 - [x] M5 성 꾸미기 — 마당 성 문 톡 → 침실(텅 빈 방). 서랍 카드 위로 끌어 놓기, 가구 톡 → 돌리기·색 8개·치우기, 끌어서 옮기기. 배치 로직 `src/systems/decor.ts`, 방·처음 가구 `src/data/rooms.json`, 가구 `items.json`(kind: furniture). 서랍 그림은 3D 모델에서 자동 생성
-- [ ] M6 지도·이동 연출
+- [x] M6 지도·이동 연출 — 지도 버튼 → 왕국 지도(`src/data/world.json`, 바다·눈·하늘은 잠자는 왕국), 열기구 비행 연출 + 느릴 때 별 로딩(`src/scenes/map/`). 꽃 왕국 그레이박스 `src/data/flower-kingdom.json`(집·꽃밭·고고·도치, 갈 때 따로 불러옴). 장소별 색 테마, 부탁 물건은 `quests.json` location에만 나타남
+- [ ] M7 아트 교체
 
 ## 나중에 할 일
 - **사람 같은 음성 (보류, 기기 TTS가 로봇 같다는 피드백)**: 대사를 미리 음성 파일로 만들어 넣는다.

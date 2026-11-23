@@ -38,7 +38,11 @@ export function attachGestures(el: HTMLElement, h: GestureHandlers, moveThreshol
     if (dragging === null && Math.hypot(e.clientX - s.x, e.clientY - s.y) > moveThreshold) {
       if (h.onDragStart?.(s.x, s.y)) {
         dragging = e.pointerId;
-        el.setPointerCapture?.(e.pointerId);
+        try {
+          el.setPointerCapture?.(e.pointerId);
+        } catch {
+          // 이미 끝난 포인터면 붙잡지 않아도 된다
+        }
         h.onDragMove?.(e.clientX, e.clientY);
       }
     }

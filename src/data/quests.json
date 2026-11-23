@@ -1,7 +1,8 @@
 {
-  "_comment": "부탁(퀘스트). giver=부탁하는 친구(courtyard.json npcs의 character). goal.type=collect: item을 count개 모으기. spawns=부탁을 받으면 마당에 나타나는 물건(정답·오답 섞음). hints=정답이 아닌 물건을 톡했을 때 친구가 해 주는 힌트(실패 없음). dialogue: offer(처음)·progress(모으는 중)·ready(다 모은 순간)·complete(가져다줬을 때)·done(끝난 뒤).",
+  "_comment": "부탁(퀘스트). giver=부탁하는 친구(courtyard.json npcs의 character), location=꽃이 나타나는 장소(world.json id). goal.type=collect: item을 count개 모으기. spawns=부탁을 받으면 마당에 나타나는 물건(정답·오답 섞음). hints=정답이 아닌 물건을 톡했을 때 친구가 해 주는 힌트(실패 없음). dialogue: offer(처음)·progress(모으는 중)·ready(다 모은 순간)·complete(가져다줬을 때)·done(끝난 뒤).",
   "tori-red-flowers": {
     "giver": "tori",
+    "location": "castle",
     "title": "빨간 꽃 세 송이",
     "goal": { "type": "collect", "item": "flower-red", "count": 3 },
     "spawns": [

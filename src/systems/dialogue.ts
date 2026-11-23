@@ -12,7 +12,7 @@ export interface Character {
   /** CSS 색 (#rrggbb) */
   color: string;
   /** M7 아트 교체 전까지 쓰는 도형 모양 */
-  model: 'princess' | 'rabbit' | 'plain';
+  model: 'princess' | 'rabbit' | 'bear' | 'hedgehog' | 'plain';
   voice: Voice;
 }
 

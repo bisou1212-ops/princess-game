@@ -7,17 +7,31 @@ import { Speaker } from './core/tts';
 import { getCharacter } from './systems/dialogue';
 import { GameState } from './systems/game-state';
 import { allItems } from './systems/items';
+import { START_LOCATION, getLocation, loadLocationLayout } from './systems/world';
 import { DecorUi } from './ui/decor-ui';
 import { DialogueBox } from './ui/dialogue-box';
 import { renderFurnitureThumbs } from './ui/furniture-thumbs';
 import { Hud } from './ui/hud';
 import { RewardPopup } from './ui/reward-popup';
 import { WardrobePanel } from './ui/wardrobe-panel';
-import { courtyardLayout } from './scenes/castle/courtyard-layout';
-import { createCourtyardScene } from './scenes/castle/courtyard-scene';
+import type { CourtyardLayout } from './scenes/castle/courtyard-layout';
+import { createCourtyardScene, type CourtyardScene } from './scenes/castle/courtyard-scene';
 import { CourtyardController } from './scenes/castle/courtyard-controller';
 import { createBedroomScene, type BedroomScene } from './scenes/castle/bedroom-scene';
 import { BedroomController } from './scenes/castle/bedroom-controller';
+import { MapScreen } from './scenes/map/map-screen';
+import { createTravelScene } from './scenes/map/travel-scene';
+
+/** 바깥 장소 하나 (성 마당, 꽃 왕국 …) */
+interface Town {
+  id: string;
+  layout: CourtyardLayout;
+  scene: CourtyardScene;
+  controller: CourtyardController;
+}
+
+/** 열기구 연출 최소 시간 — 너무 짧으면 아이가 무슨 일인지 모른다 */
+const TRAVEL_MIN_MS = 3000;
 
 async function start() {
   const container = document.getElementById('app')!;
@@ -31,12 +45,20 @@ async function start() {
   speaker.installUnlock(window);
   const princessVoice = getCharacter('princess').voice;
 
-  const hud = new Hud(document.body, { onWardrobe: () => openWardrobe(), onExit: () => void goTo('yard') });
+  const hud = new Hud(document.body, {
+    onWardrobe: () => openWardrobe(),
+    onExit: () => void goTo('town'),
+    onMap: () => openMap(),
+  });
   const dialogue = new DialogueBox(document.body, speaker);
   const reward = new RewardPopup(document.body, speaker, princessVoice);
   const fade = document.createElement('div');
   fade.className = 'scene-fade';
-  document.body.appendChild(fade);
+  const travelWait = document.createElement('div');
+  travelWait.className = 'travel-wait';
+  travelWait.hidden = true;
+  travelWait.innerHTML = '<span>★</span><span>★</span><span>★</span>';
+  document.body.append(fade, travelWait);
 
   const toNdc = (x: number, y: number) => {
     const rect = renderer.domElement.getBoundingClientRect();
@@ -44,23 +66,33 @@ async function start() {
   };
   const aspect = () => container.clientWidth / container.clientHeight;
 
-  // ── 성 마당 ──
-  const controller = new CourtyardController({
-    layout: courtyardLayout,
-    state,
-    speaker,
-    dialogue,
-    hud,
-    reward,
-    onEnterRoom: (roomId) => void goTo('room', roomId),
-  });
-  const courtyard = createCourtyardScene(aspect(), {
-    layout: courtyardLayout,
-    outfit: state.outfit,
-    onInteract: (what) => controller.handle(what),
-  });
-  controller.attach(courtyard);
-  bindResize(renderer, courtyard.camera, container);
+  // ── 바깥 장소들 (처음 갈 때 만든다) ──
+  const towns = new Map<string, Town>();
+  async function getTown(id: string): Promise<Town> {
+    const existing = towns.get(id);
+    if (existing) return existing;
+    const layout = await loadLocationLayout(id);
+    const controller = new CourtyardController({
+      layout,
+      state,
+      speaker,
+      dialogue,
+      hud,
+      reward,
+      onEnterRoom: (roomId) => void goTo('room', roomId),
+    });
+    const scene = createCourtyardScene(aspect(), {
+      layout,
+      outfit: state.outfit,
+      onInteract: (what) => controller.handle(what),
+    });
+    controller.attach(scene);
+    bindResize(renderer, scene.camera, container);
+    const t = { id, layout, scene, controller };
+    towns.set(id, t);
+    return t;
+  }
+  let town = await getTown(START_LOCATION);
 
   // ── 성 안 방 (처음 들어갈 때 만든다) ──
   let thumbs: Map<string, string> | null = null;
@@ -102,28 +134,101 @@ async function start() {
     return { id, ...r };
   };
 
-  let mode: 'yard' | 'room' = 'yard';
+  // ── 왕국 사이 이동 ──
+  const travel = createTravelScene(aspect());
+  bindResize(renderer, travel.camera, container);
+
+  let mode: 'town' | 'room' | 'travel' = 'town';
   let switching = false;
-  async function goTo(next: 'yard' | 'room', roomId = 'bedroom') {
-    if (switching || (next === mode && (next === 'yard' || room?.id === roomId))) return;
-    if (!state.rooms[roomId] && next === 'room') return;
-    switching = true;
-    speaker.stop();
+
+  /** 화면을 살짝 가렸다가(fade) 바꾸기 */
+  async function withFade(change: () => void | Promise<void>) {
     fade.classList.add('is-on');
     await wait(260);
-    if (mode === 'room') room?.controller.leave();
-    mode = next;
-    if (next === 'room') {
-      room = getRoom(roomId);
-      room.controller.enter();
-    } else {
-      room = null;
-    }
-    hud.setMode(next === 'room' ? 'room' : 'yard');
+    await change();
     applyViewOffset();
     fade.classList.remove('is-on');
     await wait(260);
+  }
+
+  async function goTo(next: 'town' | 'room', roomId = 'bedroom') {
+    if (switching || (next === mode && (next === 'town' || room?.id === roomId))) return;
+    if (next === 'room' && !state.rooms[roomId]) return;
+    switching = true;
+    speaker.stop();
+    await withFade(() => {
+      if (mode === 'room') room?.controller.leave();
+      mode = next;
+      if (next === 'room') {
+        room = getRoom(roomId);
+        room.controller.enter();
+      } else {
+        room = null;
+      }
+      hud.setMode(next === 'room' ? 'room' : 'yard');
+    });
     switching = false;
+  }
+
+  async function travelTo(id: string) {
+    if (switching || id === town.id || mode !== 'town') return;
+    switching = true;
+    const from = town;
+    const dest = getLocation(id)!;
+    await withFade(() => {
+      map.close();
+      mode = 'travel';
+      travel.start(state.outfit);
+      hud.setButtonsVisible(false);
+    });
+
+    // 날아가는 동안 다음 장소를 불러온다. 오래 걸리면 별이 통통 (로딩 화면)
+    const minimum = wait(TRAVEL_MIN_MS);
+    const loading = getTown(id).then(
+      (t) => t,
+      (err) => {
+        console.warn('장소를 불러오지 못했어요', err);
+        return null;
+      },
+    );
+    await minimum;
+    const slow = setTimeout(() => (travelWait.hidden = false), 50);
+    const next = await loading;
+    clearTimeout(slow);
+    travelWait.hidden = true;
+
+    await withFade(() => {
+      town = next ?? from;
+      town.scene.teleport(town.layout.start);
+      town.scene.setOutfit(state.outfit);
+      town.controller.refreshHud();
+      mode = 'town';
+      hud.setMode('yard');
+      hud.setButtonsVisible(true);
+    });
+    switching = false;
+    const arrived = getLocation(town.id) ?? dest;
+    speaker.speak(next ? `${arrived.name}에 도착했어요!` : '지금은 갈 수 없어요. 다음에 다시 가 봐요!', {
+      ...princessVoice,
+      mood: 'excited',
+    });
+  }
+
+  // ── 지도 ──
+  const map = new MapScreen(document.body, {
+    speaker,
+    voice: princessVoice,
+    onTravel: (id) => void travelTo(id),
+    onClose: () => closeMap(),
+  });
+  function openMap() {
+    if (dialogue.isOpen || mode !== 'town' || switching) return;
+    map.open(town.id);
+    hud.setButtonsVisible(false);
+  }
+  function closeMap() {
+    map.close();
+    hud.setButtonsVisible(true);
   }
 
   // ── 드레스룸 ──
@@ -132,7 +237,7 @@ async function start() {
     voice: princessVoice,
     onChange: (outfit) => {
       state.outfit = outfit;
-      courtyard.setOutfit(outfit, true);
+      for (const t of towns.values()) t.scene.setOutfit(outfit, t === town);
       state.change();
     },
     onClose: () => closeWardrobe(),
@@ -142,33 +247,34 @@ async function start() {
   function applyViewOffset() {
     const w = container.clientWidth;
     const h = container.clientHeight;
-    const yardCam = courtyard.camera;
-    if (wardrobe.isOpen) {
-      const r = wardrobe.el.getBoundingClientRect();
-      const portrait = h > w;
-      yardCam.setViewOffset(w, h, portrait ? 0 : r.width / 2, portrait ? r.height / 2 : 0, w, h);
-    } else {
-      yardCam.clearViewOffset();
+    for (const t of towns.values()) {
+      if (wardrobe.isOpen && t === town) {
+        const r = wardrobe.el.getBoundingClientRect();
+        const portrait = h > w;
+        t.scene.camera.setViewOffset(w, h, portrait ? 0 : r.width / 2, portrait ? r.height / 2 : 0, w, h);
+      } else {
+        t.scene.camera.clearViewOffset();
+      }
     }
     if (room) room.scene.fitView(w, h, decorUi.drawer.getBoundingClientRect().height || 150);
   }
   window.addEventListener('resize', applyViewOffset);
 
   function openWardrobe() {
-    if (dialogue.isOpen || mode !== 'yard') return;
+    if (dialogue.isOpen || mode !== 'town' || switching) return;
     wardrobe.open(state.outfit, state.ownedOutfits, state.newOutfits);
-    courtyard.setMirror(true);
+    town.scene.setMirror(true);
     hud.setButtonsVisible(false);
     applyViewOffset();
     // 드레스룸을 열었으면 새 옷은 "봤음"
     state.seenOutfits = [...new Set([...state.seenOutfits, ...state.ownedOutfits])];
     state.change();
-    controller.refreshHud();
+    town.controller.refreshHud();
   }
 
   function closeWardrobe() {
     wardrobe.close();
-    courtyard.setMirror(false);
+    town.scene.setMirror(false);
     hud.setButtonsVisible(true);
     applyViewOffset();
   }
@@ -180,11 +286,18 @@ async function start() {
   window.addEventListener('pagehide', () => void state.saveNow());
 
   // 개발 중 브라우저 콘솔에서 상태 확인용 (배포 빌드에는 없음)
-  if (import.meta.env.DEV) Object.assign(window, { __game: { controller, courtyard, state, goTo, room: () => room } });
+  if (import.meta.env.DEV) {
+    Object.assign(window, {
+      __game: { state, goTo, travelTo, town: () => town, room: () => room, mode: () => mode, towns },
+    });
+  }
 
   // 톡·끌기: 지금 장면으로 보낸다
   attachGestures(renderer.domElement, {
-    onTap: (x, y) => (mode === 'yard' ? courtyard.tap(toNdc(x, y)) : room?.controller.onTap(x, y)),
+    onTap: (x, y) => {
+      if (mode === 'town') town.scene.tap(toNdc(x, y));
+      else if (mode === 'room') room?.controller.onTap(x, y);
+    },
     onDragStart: (x, y) => (mode === 'room' && room ? room.controller.onDragStart(x, y) : false),
     onDragMove: (x, y) => room?.controller.onDragMove(x, y),
     onDragEnd: (x, y) => room?.controller.onDragEnd(x, y),
@@ -199,9 +312,12 @@ async function start() {
     if (mode === 'room' && room) {
       room.scene.update(dt);
       renderer.render(room.scene.scene, room.scene.camera);
+    } else if (mode === 'travel') {
+      travel.update(dt);
+      renderer.render(travel.scene, travel.camera);
     } else {
-      courtyard.update(dt);
-      renderer.render(courtyard.scene, courtyard.camera);
+      town.scene.update(dt);
+      renderer.render(town.scene.scene, town.scene.camera);
     }
   });
 }

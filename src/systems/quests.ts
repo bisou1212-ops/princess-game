@@ -19,6 +19,8 @@ export interface Reward {
 
 export interface QuestDef {
   giver: string;
+  /** 물건이 나타나는 장소 (world.json id) */
+  location: string;
   title: string;
   goal: { type: 'collect'; item: string; count: number };
   spawns: QuestSpawn[];

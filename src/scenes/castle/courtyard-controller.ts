@@ -44,13 +44,17 @@ export class CourtyardController {
   attach(scene: CourtyardScene): void {
     this.scene = scene;
     // 저장에서 불러온 진행 중인 부탁: 아직 안 주운 꽃을 다시 놓는다
-    for (const questId of Object.keys(this.quests.toJSON())) {
-      for (const s of this.quests.remainingSpawns(questId)) {
-        scene.addPickup(pickupId(questId, s.index), s.item, getItem(s.item).color, s);
-      }
-    }
+    for (const questId of Object.keys(this.quests.toJSON())) this.spawnHere(questId);
     this.refreshMarkers();
     this.refreshHud();
+  }
+
+  /** 이 장소의 부탁이면 아직 안 주운 물건을 놓는다 */
+  private spawnHere(questId: string): void {
+    if (!this.scene || this.quests.def(questId).location !== this.deps.layout.id) return;
+    for (const s of this.quests.remainingSpawns(questId)) {
+      this.scene.addPickup(pickupId(questId, s.index), s.item, getItem(s.item).color, s);
+    }
   }
 
   handle(what: Interaction): void {
@@ -79,9 +83,7 @@ export class CourtyardController {
       case 'offered':
         this.deps.dialogue.open(getDialogue(result.dialogue), () => {
           // 대화가 끝나면 꽃이 톡톡 나타난다
-          for (const s of this.quests.remainingSpawns(questId)) {
-            this.scene?.addPickup(pickupId(questId, s.index), s.item, getItem(s.item).color, s);
-          }
+          this.spawnHere(questId);
           this.refreshHud();
         });
         break;

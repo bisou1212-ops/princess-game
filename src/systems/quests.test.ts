@@ -7,6 +7,7 @@ import { buildNavGrid, courtyardLayout } from '../scenes/castle/courtyard-layout
 
 const def: QuestDef = {
   giver: 'tori',
+  location: 'castle',
   title: '테스트',
   goal: { type: 'collect', item: 'flower-red', count: 2 },
   spawns: [],

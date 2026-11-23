@@ -1,0 +1,197 @@
+/* ── 왕국 지도 ── */
+.map-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 25;
+  padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+  box-sizing: border-box;
+  background: rgba(255, 246, 251, 0.6);
+  font-family: 'Jua', 'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans KR', sans-serif;
+  animation: map-in 0.3s ease-out;
+}
+.map-screen[hidden] {
+  display: none;
+}
+.map-sea {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: 40px;
+  border: 8px solid #fff;
+  background: radial-gradient(circle at 30% 30%, #bfe9ff, #8fd0f5);
+  box-shadow: 0 8px 0 rgba(120, 100, 160, 0.15);
+  overflow: hidden;
+}
+.map-waves {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.map-island {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  width: clamp(110px, 17vmin, 170px);
+  aspect-ratio: 1;
+  border: none;
+  padding: 0;
+  background: none;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+.mi-land {
+  position: absolute;
+  inset: 0;
+  border-radius: 46% 54% 50% 50% / 55% 45% 55% 45%;
+  background: radial-gradient(circle at 40% 35%, #fffbe8, var(--c));
+  box-shadow: 0 6px 0 rgba(90, 120, 150, 0.25), 0 0 0 6px rgba(255, 255, 255, 0.6);
+  display: grid;
+  place-items: center;
+  transition: transform 0.15s;
+}
+.mi-land svg {
+  width: 58%;
+  height: 58%;
+}
+.map-island:active .mi-land {
+  transform: scale(0.93);
+}
+.mi-name {
+  position: absolute;
+  left: 50%;
+  top: 100%;
+  transform: translate(-50%, 4px);
+  white-space: nowrap;
+  padding: 4px 14px;
+  border-radius: 999px;
+  background: #fff;
+  color: #5a4a6b;
+  font-size: clamp(18px, 2.6vmin, 24px);
+  font-weight: 700;
+  box-shadow: 0 3px 0 rgba(120, 100, 160, 0.15);
+}
+
+/* 지금 있는 곳: 왕관이 둥실 */
+.map-island.is-here .mi-land {
+  box-shadow: 0 6px 0 rgba(90, 120, 150, 0.25), 0 0 0 6px #ffd76a;
+}
+.mi-here {
+  position: absolute;
+  left: 50%;
+  top: -34px;
+  width: 56px;
+  height: 56px;
+  transform: translateX(-50%);
+  animation: map-bob 1.4s ease-in-out infinite;
+}
+.mi-here svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* 아직 잠자는 왕국 */
+.map-island.is-sleeping .mi-land {
+  filter: grayscale(0.7) brightness(1.08);
+  opacity: 0.75;
+}
+.mi-cloud {
+  position: absolute;
+  right: -6px;
+  top: -8px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: #fff;
+  color: #9a8fb3;
+  font-size: 20px;
+  font-weight: 700;
+  box-shadow: 0 3px 0 rgba(120, 100, 160, 0.12);
+  animation: map-bob 2.2s ease-in-out infinite;
+}
+.map-island.is-wobble .mi-land {
+  animation: map-wobble 0.5s ease-in-out;
+}
+
+.map-close {
+  position: absolute;
+  top: max(28px, calc(env(safe-area-inset-top) + 12px));
+  right: max(28px, calc(env(safe-area-inset-right) + 12px));
+  width: 76px;
+  height: 76px;
+  padding: 16px;
+  border: none;
+  border-radius: 50%;
+  background: #b99cff;
+  box-shadow: 0 5px 0 rgba(90, 60, 140, 0.25);
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.map-close svg {
+  width: 100%;
+  height: 100%;
+}
+.map-close:active {
+  transform: scale(0.92);
+}
+
+/* HUD 지도 버튼 */
+.hud-map {
+  left: calc(max(16px, env(safe-area-inset-left)) + 92px) !important;
+  border-color: #74c0ff !important;
+}
+
+@keyframes map-in {
+  from { opacity: 0; transform: scale(1.04); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes map-bob {
+  0%, 100% { transform: translate(-50%, 0); }
+  50% { transform: translate(-50%, -6px); }
+}
+.mi-cloud {
+  animation-name: map-bob-cloud;
+}
+@keyframes map-bob-cloud {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+@keyframes map-wobble {
+  0%, 100% { transform: rotate(0); }
+  25% { transform: rotate(-6deg); }
+  75% { transform: rotate(6deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .map-screen, .mi-here, .mi-cloud, .map-island.is-wobble .mi-land { animation: none; }
+}
+
+/* 날아가는 중 불러오기가 오래 걸릴 때: 별이 통통 */
+.travel-wait {
+  position: fixed;
+  z-index: 26;
+  left: 50%;
+  bottom: max(28px, env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  display: flex;
+  gap: 14px;
+  font-size: 44px;
+  color: #ffd76a;
+  text-shadow: 0 3px 0 rgba(160, 120, 40, 0.25);
+  pointer-events: none;
+}
+.travel-wait[hidden] {
+  display: none;
+}
+.travel-wait span {
+  animation: travel-hop 0.9s ease-in-out infinite;
+}
+.travel-wait span:nth-child(2) {
+  animation-delay: 0.15s;
+}
+.travel-wait span:nth-child(3) {
+  animation-delay: 0.3s;
+}
+@keyframes travel-hop {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-14px); }
+}

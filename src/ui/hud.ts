@@ -1,4 +1,5 @@
 import { doorIcon } from './decor-ui';
+import { mapIcon } from '../scenes/map/map-screen';
 import { candyIcon, flowerIcon, wardrobeIcon } from './icons';
 import './hud.css';
 
@@ -6,7 +7,7 @@ import './hud.css';
  * 화면 위 고정 표시.
  * - 오른쪽 위: 별사탕 개수
  * - 가운데 위: 지금 모으는 부탁 (빈 칸이 하나씩 채워짐 → 수 세기)
- * - 왼쪽 위: 드레스룸 버튼 (GDD 7 고정 아이콘), 새 옷이 있으면 반짝 점
+ * - 왼쪽 위: 드레스룸·지도 버튼 (GDD 7 고정 아이콘), 새 옷이 있으면 반짝 점
  */
 export class Hud {
   private readonly root: HTMLDivElement;
@@ -15,17 +16,19 @@ export class Hud {
   private readonly tracker: HTMLDivElement;
   private readonly wardrobeBtn: HTMLButtonElement;
   private readonly exitBtn: HTMLButtonElement;
+  private readonly mapBtn: HTMLButtonElement;
   private mode: 'yard' | 'room' = 'yard';
   private buttonsOn = true;
 
-  constructor(parent: HTMLElement, handlers: { onWardrobe(): void; onExit(): void }) {
+  constructor(parent: HTMLElement, handlers: { onWardrobe(): void; onExit(): void; onMap(): void }) {
     this.root = document.createElement('div');
     this.root.className = 'hud';
     this.root.innerHTML = `
       <div class="hud-tracker" hidden></div>
       <div class="hud-candy" aria-label="별사탕">${candyIcon()}<span>0</span></div>
       <button class="hud-wardrobe" type="button" aria-label="드레스룸">${wardrobeIcon()}</button>
-      <button class="hud-wardrobe hud-exit" type="button" aria-label="마당으로 나가기" hidden>${doorIcon()}</button>`;
+      <button class="hud-wardrobe hud-exit" type="button" aria-label="마당으로 나가기" hidden>${doorIcon()}</button>
+      <button class="hud-wardrobe hud-map" type="button" aria-label="지도">${mapIcon()}</button>`;
     parent.appendChild(this.root);
     this.candyPill = this.root.querySelector('.hud-candy')!;
     this.candyEl = this.candyPill.querySelector('span')!;
@@ -34,6 +37,8 @@ export class Hud {
     this.wardrobeBtn.addEventListener('click', () => handlers.onWardrobe());
     this.exitBtn = this.root.querySelector('.hud-exit')!;
     this.exitBtn.addEventListener('click', () => handlers.onExit());
+    this.mapBtn = this.root.querySelector('.hud-map')!;
+    this.mapBtn.addEventListener('click', () => handlers.onMap());
   }
 
   /** 마당: 드레스룸 버튼·부탁 표시 / 방: 나가기 버튼 */
@@ -46,6 +51,7 @@ export class Hud {
   private applyButtons(): void {
     this.wardrobeBtn.hidden = !this.buttonsOn || this.mode !== 'yard';
     this.exitBtn.hidden = !this.buttonsOn || this.mode !== 'room';
+    this.mapBtn.hidden = !this.buttonsOn || this.mode !== 'yard';
   }
 
   /** 드레스룸에 아직 안 본 새 옷이 있으면 반짝 점 */
