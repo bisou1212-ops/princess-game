@@ -1,0 +1,21 @@
+{
+  "_comment": "캐릭터별 이름·색·목소리·임시 모양. voice.pitch(0~2)·rate(0.1~2)로 목소리를 구분한다 (GDD 8.2). model: princess(왕관)·rabbit(토끼 귀)·plain — M7 아트 교체 전까지 쓰는 도형 모양.",
+  "princess": {
+    "name": "공주",
+    "color": "#ffa6d2",
+    "model": "princess",
+    "voice": { "lang": "ko-KR", "pitch": 1.15, "rate": 1.0 }
+  },
+  "flora": {
+    "name": "플로라 공주",
+    "color": "#c9b3ff",
+    "model": "princess",
+    "voice": { "lang": "ko-KR", "pitch": 1.2, "rate": 0.95 }
+  },
+  "tori": {
+    "name": "토리",
+    "color": "#fff1e0",
+    "model": "rabbit",
+    "voice": { "lang": "ko-KR", "pitch": 1.3, "rate": 1.05 }
+  }
+}

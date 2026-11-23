@@ -1,0 +1,115 @@
+/* 대화 레이어: 열려 있는 동안 화면 전체가 "다음" 버튼 (GDD 7: 말풍선 아무 곳이나 톡) */
+.dialogue-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0 max(16px, env(safe-area-inset-right)) max(20px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+  cursor: pointer;
+  --speaker-color: #c9b3ff;
+}
+.dialogue-layer[hidden] {
+  display: none;
+}
+
+.bubble {
+  position: relative;
+  width: min(900px, 100%);
+  min-height: 120px;
+  box-sizing: border-box;
+  padding: 22px 104px 26px 28px;
+  background: #fffaf3;
+  border: 5px solid var(--speaker-color);
+  border-radius: 32px;
+  box-shadow: 0 8px 0 rgba(120, 100, 160, 0.18);
+  font-family: 'Jua', 'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans KR', sans-serif;
+  color: #5a4a6b;
+  animation: bubble-pop 0.25s ease-out;
+}
+
+.bubble-name {
+  position: absolute;
+  top: -22px;
+  left: 28px;
+  padding: 6px 18px;
+  background: var(--speaker-color);
+  color: #fff;
+  border-radius: 999px;
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.bubble-text {
+  margin: 8px 0 0;
+  font-size: clamp(26px, 4.2vw, 38px);
+  line-height: 1.45;
+  word-break: keep-all;
+}
+
+.word {
+  border-radius: 10px;
+  padding: 0 2px;
+  transition: background-color 0.12s, color 0.12s, transform 0.12s;
+}
+.word.is-read {
+  color: #7d6a90;
+}
+.word.is-reading {
+  background: #ffe3f1;
+  color: #e0559a;
+  display: inline-block;
+  transform: scale(1.08);
+}
+
+/* 다시 듣기: 최소 64px (CLAUDE.md) */
+.bubble-replay {
+  position: absolute;
+  right: 18px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 72px;
+  height: 72px;
+  border: none;
+  border-radius: 50%;
+  background: var(--speaker-color);
+  color: #fff;
+  fill: #fff;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.bubble-replay svg {
+  width: 38px;
+  height: 38px;
+}
+.bubble-replay:active {
+  transform: translateY(-50%) scale(0.92);
+}
+
+.bubble-next {
+  position: absolute;
+  right: 110px;
+  bottom: 8px;
+  color: var(--speaker-color);
+  font-size: 22px;
+  animation: next-bounce 0.9s ease-in-out infinite;
+}
+.bubble-next.is-last {
+  display: none;
+}
+
+@keyframes bubble-pop {
+  from { transform: translateY(16px) scale(0.96); opacity: 0; }
+  to { transform: none; opacity: 1; }
+}
+@keyframes next-bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(5px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bubble, .bubble-next { animation: none; }
+}

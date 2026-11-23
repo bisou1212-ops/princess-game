@@ -1,0 +1,42 @@
+{
+  "_comment": "대사 묶음. speaker는 characters.json의 id. mood(normal·happy·excited·curious·shy·sad)로 말투에 변화를 준다. 문장부호(. ! ? ~ …)마다 끊어 읽으므로 추임새는 '우와!', '음~'처럼 부호로 끝낸다. lang을 쓰면 그 줄만 다른 언어로 읽는다(예: en-US).",
+  "flora-hello": [
+    { "speaker": "flora", "mood": "excited", "text": "우와! 안녕? 나는 꽃 왕국에서 온 플로라 공주야." },
+    { "speaker": "flora", "mood": "curious", "text": "음~ 새로 이사 온 공주님, 맞지?" },
+    { "speaker": "flora", "mood": "happy", "text": "와아, 정말정말 반가워!" },
+    { "speaker": "flora", "mood": "shy", "text": "헤헤… 우리, 오늘부터 친구 할까?" },
+    { "speaker": "flora", "mood": "excited", "text": "좋아! 나중에 꽃 왕국에도 꼭 놀러 와. 약속!" }
+  ],
+
+  "tori-offer": [
+    { "speaker": "tori", "mood": "excited", "text": "어머나, 새 공주님이다! 안녕? 나는 꽃집 토끼 토리야." },
+    { "speaker": "tori", "mood": "curious", "text": "음~ 혹시 부탁 하나 들어줄 수 있어?" },
+    { "speaker": "tori", "mood": "happy", "text": "마당 여기저기에 꽃이 피었거든. 빨간 꽃 세 송이를 모아다 줄래?" },
+    { "speaker": "tori", "mood": "happy", "text": "빨간색은 영어로…" },
+    { "speaker": "tori", "mood": "excited", "text": "Red!", "lang": "en-US" },
+    { "speaker": "tori", "mood": "happy", "text": "반짝반짝 빛나는 꽃을 찾아봐!" }
+  ],
+  "tori-progress": [
+    { "speaker": "tori", "mood": "happy", "text": "빨간 꽃은 반짝반짝 빛나고 있어. 천천히 찾아봐!" }
+  ],
+  "tori-ready": [
+    { "speaker": "tori", "mood": "excited", "text": "와아, 빨간 꽃을 다 모았구나! 토리한테 가져다줘!" }
+  ],
+  "tori-complete": [
+    { "speaker": "tori", "mood": "excited", "text": "우와! 빨간 꽃 하나, 둘, 셋! 정말 고마워!" },
+    { "speaker": "tori", "mood": "shy", "text": "헤헤… 고마워서 선물을 준비했어. 짜잔!" }
+  ],
+  "tori-done": [
+    { "speaker": "tori", "mood": "happy", "text": "꽃이 정말 예쁘다. 또 놀러 와!" }
+  ],
+  "tori-hint-yellow": [
+    { "speaker": "tori", "mood": "curious", "text": "어? 그건 노란 꽃이야. 노란색은 영어로…" },
+    { "speaker": "tori", "mood": "happy", "text": "Yellow!", "lang": "en-US" },
+    { "speaker": "tori", "mood": "happy", "text": "빨간 꽃을 다시 찾아볼까?" }
+  ],
+  "tori-hint-blue": [
+    { "speaker": "tori", "mood": "curious", "text": "어? 그건 파란 꽃이야. 파란색은 영어로…" },
+    { "speaker": "tori", "mood": "happy", "text": "Blue!", "lang": "en-US" },
+    { "speaker": "tori", "mood": "happy", "text": "빨간 꽃을 다시 찾아볼까?" }
+  ]
+}

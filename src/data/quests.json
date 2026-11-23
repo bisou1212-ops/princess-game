@@ -1,0 +1,29 @@
+{
+  "_comment": "부탁(퀘스트). giver=부탁하는 친구(courtyard.json npcs의 character). goal.type=collect: item을 count개 모으기. spawns=부탁을 받으면 마당에 나타나는 물건(정답·오답 섞음). hints=정답이 아닌 물건을 톡했을 때 친구가 해 주는 힌트(실패 없음). dialogue: offer(처음)·progress(모으는 중)·ready(다 모은 순간)·complete(가져다줬을 때)·done(끝난 뒤).",
+  "tori-red-flowers": {
+    "giver": "tori",
+    "title": "빨간 꽃 세 송이",
+    "goal": { "type": "collect", "item": "flower-red", "count": 3 },
+    "spawns": [
+      { "item": "flower-red", "x": -6.5, "z": -2 },
+      { "item": "flower-red", "x": 6.8, "z": -1.5 },
+      { "item": "flower-red", "x": 2.5, "z": 8 },
+      { "item": "flower-yellow", "x": -2.5, "z": -3.5 },
+      { "item": "flower-yellow", "x": 9.5, "z": 9 },
+      { "item": "flower-blue", "x": -9.5, "z": 9 },
+      { "item": "flower-blue", "x": 3, "z": -4 }
+    ],
+    "hints": {
+      "flower-yellow": "tori-hint-yellow",
+      "flower-blue": "tori-hint-blue"
+    },
+    "dialogue": {
+      "offer": "tori-offer",
+      "progress": "tori-progress",
+      "ready": "tori-ready",
+      "complete": "tori-complete",
+      "done": "tori-done"
+    },
+    "rewards": { "candy": 5, "items": ["dress-flower"] }
+  }
+}

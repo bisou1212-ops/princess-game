@@ -1,0 +1,7 @@
+{
+  "_comment": "아이템. name=한글, en=영어(톡하면 둘 다 읽어 줌, GDD 6). kind: flower(줍는 꽃), dress(옷 선물). color는 화면 표시용.",
+  "flower-red": { "kind": "flower", "name": "빨간 꽃", "en": "Red flower", "color": "#ff5d73" },
+  "flower-yellow": { "kind": "flower", "name": "노란 꽃", "en": "Yellow flower", "color": "#ffd23f" },
+  "flower-blue": { "kind": "flower", "name": "파란 꽃", "en": "Blue flower", "color": "#5ab8ff" },
+  "dress-flower": { "kind": "dress", "name": "꽃 드레스", "en": "Flower dress", "color": "#ff9ccf" }
+}

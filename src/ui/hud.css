@@ -1,0 +1,185 @@
+/* ── 고정 표시(HUD) ─────────────────────────────── */
+.hud {
+  position: fixed;
+  inset: 0;
+  pointer-events: none; /* 바닥 톡을 막지 않음 */
+  z-index: 5;
+  font-family: 'Jua', 'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans KR', sans-serif;
+  color: #5a4a6b;
+}
+
+.hud-candy {
+  position: absolute;
+  top: max(16px, env(safe-area-inset-top));
+  right: max(16px, env(safe-area-inset-right));
+  height: 64px;
+  min-width: 120px;
+  box-sizing: border-box;
+  padding: 0 22px 0 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #fffaf3;
+  border: 4px solid #ffd76a;
+  border-radius: 999px;
+  box-shadow: 0 5px 0 rgba(120, 100, 160, 0.15);
+  font-size: 32px;
+  font-weight: 700;
+}
+.hud-candy svg {
+  width: 48px;
+  height: 48px;
+}
+
+.hud-tracker {
+  position: absolute;
+  top: max(16px, env(safe-area-inset-top));
+  left: 50%;
+  transform: translateX(-50%);
+  height: 72px;
+  box-sizing: border-box;
+  padding: 0 20px 0 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #fffaf3;
+  border: 4px solid #ff9ccf;
+  border-radius: 999px;
+  box-shadow: 0 5px 0 rgba(120, 100, 160, 0.15);
+}
+.hud-tracker[hidden] {
+  display: none;
+}
+.hud-tracker .slot {
+  width: 52px;
+  height: 52px;
+  display: grid;
+  place-items: center;
+  opacity: 0.55;
+}
+.hud-tracker .slot.is-filled {
+  opacity: 1;
+}
+.hud-tracker .slot svg {
+  width: 100%;
+  height: 100%;
+}
+.tracker-count {
+  margin-left: 6px;
+  font-size: 32px;
+}
+.tracker-count small {
+  font-size: 22px;
+  opacity: 0.7;
+}
+
+.is-bouncing {
+  animation: hud-bounce 0.5s ease-out;
+}
+@keyframes hud-bounce {
+  0% { transform: scale(1); }
+  35% { transform: scale(1.35); }
+  100% { transform: scale(1); }
+}
+.hud-tracker.is-bouncing {
+  animation: none;
+}
+
+/* ── 선물 받기 ─────────────────────────────────── */
+.reward-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgba(255, 240, 250, 0.6);
+  cursor: pointer;
+  font-family: 'Jua', 'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans KR', sans-serif;
+  color: #5a4a6b;
+}
+.reward-layer[hidden] {
+  display: none;
+}
+
+.reward-card {
+  width: min(560px, 100%);
+  box-sizing: border-box;
+  padding: 28px 24px 30px;
+  background: #fffaf3;
+  border: 6px solid #ff9ccf;
+  border-radius: 40px;
+  box-shadow: 0 10px 0 rgba(120, 100, 160, 0.18);
+  text-align: center;
+  animation: reward-pop 0.45s cubic-bezier(0.2, 1.4, 0.4, 1);
+}
+.reward-title {
+  font-size: clamp(32px, 6vw, 44px);
+  font-weight: 700;
+  color: #e0559a;
+}
+.gifts {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+  margin: 18px 0 8px;
+}
+.gift-icon {
+  width: 140px;
+  height: 140px;
+  margin: 0 auto;
+  animation: gift-wiggle 1.6s ease-in-out infinite;
+}
+.gift-icon svg {
+  width: 100%;
+  height: 100%;
+}
+.gift-name {
+  font-size: 34px;
+  font-weight: 700;
+}
+.gift-en {
+  font-size: 26px;
+  color: #8a77a0;
+}
+
+.candies {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 18px;
+}
+.candy {
+  width: 56px;
+  height: 56px;
+  opacity: 0;
+  animation: candy-in 0.35s ease-out forwards;
+}
+.candy svg {
+  width: 100%;
+  height: 100%;
+}
+.candy-label {
+  margin-top: 6px;
+  font-size: 28px;
+  font-weight: 700;
+}
+
+@keyframes reward-pop {
+  from { transform: scale(0.6); opacity: 0; }
+  to { transform: none; opacity: 1; }
+}
+@keyframes gift-wiggle {
+  0%, 100% { transform: rotate(-4deg); }
+  50% { transform: rotate(4deg); }
+}
+@keyframes candy-in {
+  from { transform: translateY(-24px) scale(0.4); opacity: 0; }
+  to { transform: none; opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reward-card, .gift-icon, .is-bouncing { animation: none; }
+  .candy { animation-duration: 0.01s; }
+}
