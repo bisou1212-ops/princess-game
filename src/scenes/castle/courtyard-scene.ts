@@ -5,7 +5,13 @@ import { Walker } from '../../systems/navigation/walker';
 import type { Point } from '../../systems/navigation/nav-grid';
 import { getCharacter } from '../../systems/dialogue';
 import { defaultOutfit, type Outfit } from '../../systems/wardrobe';
-import { buildNavGrid, courtyardLayout, type CourtyardLayout, type NpcPlacement } from './courtyard-layout';
+import {
+  buildNavGrid,
+  courtyardLayout,
+  type CourtyardLayout,
+  type DoorPlacement,
+  type NpcPlacement,
+} from './courtyard-layout';
 import { createPrincessModel } from './princess-model';
 import {
   COLORS,
@@ -17,7 +23,10 @@ import {
 } from './props';
 
 /** 공주가 다가가서 하는 일: 친구에게 말 걸기 / 물건 줍기 */
-export type Interaction = { kind: 'npc'; npc: NpcPlacement } | { kind: 'pickup'; id: string; item: string };
+export type Interaction =
+  | { kind: 'npc'; npc: NpcPlacement }
+  | { kind: 'pickup'; id: string; item: string }
+  | { kind: 'door'; door: DoorPlacement };
 
 export interface CourtyardScene {
   scene: THREE.Scene;
@@ -65,7 +74,10 @@ interface Pickup {
   vanish: number | null;
 }
 
-type Target = { kind: 'npc'; npc: Npc } | { kind: 'pickup'; pickup: Pickup };
+type Target = { kind: 'npc'; npc: Npc } | { kind: 'pickup'; pickup: Pickup } | { kind: 'door'; door: DoorPlacement };
+
+/** 문 앞에 서는 거리 */
+const DOOR_DISTANCE = 1.4;
 
 export function createCourtyardScene(aspect: number, opts: CourtyardOptions = {}): CourtyardScene {
   const layout = opts.layout ?? courtyardLayout;
@@ -120,6 +132,41 @@ export function createCourtyardScene(aspect: number, opts: CourtyardOptions = {}
     return { data, object, heart };
   });
 
+  // 성 문 (톡하면 들어가기)
+  const doorGlows: THREE.Mesh<THREE.PlaneGeometry, THREE.MeshBasicMaterial>[] = [];
+  for (const d of layout.doors) {
+    const door = new THREE.Group();
+    const panel = new THREE.Mesh(
+      new THREE.BoxGeometry(d.w, d.h, 0.12),
+      new THREE.MeshStandardMaterial({ color: 0xc99a74, roughness: 0.8 }),
+    );
+    panel.position.y = d.h / 2;
+    const arch = new THREE.Mesh(
+      new THREE.CylinderGeometry(d.w / 2, d.w / 2, 0.12, 24, 1, false, 0, Math.PI),
+      new THREE.MeshStandardMaterial({ color: 0xc99a74, roughness: 0.8 }),
+    );
+    arch.rotation.set(Math.PI / 2, Math.PI / 2, 0);
+    arch.position.y = d.h;
+    const knob = new THREE.Mesh(new THREE.SphereGeometry(0.07, 10, 8), new THREE.MeshStandardMaterial({ color: COLORS.crown }));
+    knob.position.set(d.w * 0.3, d.h * 0.45, 0.08);
+    // 바닥의 반짝이는 표시 (들어갈 수 있는 곳)
+    const glow = new THREE.Mesh(
+      new THREE.PlaneGeometry(d.w + 0.4, 0.9),
+      new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.4, depthWrite: false }),
+    );
+    glow.rotation.x = -Math.PI / 2;
+    glow.position.set(0, 0.015, 0.6);
+    doorGlows.push(glow);
+    door.add(panel, arch, knob, glow, createHitArea(d.w * 0.7, d.h + 0.6));
+    door.position.set(d.x, 0, d.z + 0.07);
+    door.userData.doorId = d.id;
+    door.traverse((m) => {
+      if (m !== glow && (m as THREE.Mesh).isMesh && !m.userData.isHitArea) m.castShadow = true;
+    });
+    scene.add(door);
+    tappables.push(door);
+  }
+
   const pickups = new Map<string, Pickup>();
 
   const grid = buildNavGrid(layout);
@@ -155,6 +202,11 @@ export function createCourtyardScene(aspect: number, opts: CourtyardOptions = {}
         const npc = npcs.find((n) => n.data.id === npcId);
         return npc ? { kind: 'npc', npc } : null;
       }
+      const doorId = o.userData.doorId as string | undefined;
+      if (doorId) {
+        const door = layout.doors.find((d) => d.id === doorId);
+        return door ? { kind: 'door', door } : null;
+      }
       const pickupId = o.userData.pickupId as string | undefined;
       if (pickupId) {
         const pickup = pickups.get(pickupId);
@@ -165,7 +217,11 @@ export function createCourtyardScene(aspect: number, opts: CourtyardOptions = {}
   };
 
   const targetPos = (t: Target): Point =>
-    t.kind === 'npc' ? { x: t.npc.data.x, z: t.npc.data.z } : { x: t.pickup.object.position.x, z: t.pickup.object.position.z };
+    t.kind === 'npc'
+      ? { x: t.npc.data.x, z: t.npc.data.z }
+      : t.kind === 'door'
+        ? { x: t.door.x, z: t.door.z + 0.6 }
+        : { x: t.pickup.object.position.x, z: t.pickup.object.position.z };
 
   const arrive = (t: Target) => {
     pending = null;
@@ -175,6 +231,9 @@ export function createCourtyardScene(aspect: number, opts: CourtyardOptions = {}
     if (t.kind === 'npc') {
       t.npc.object.rotation.y = Math.atan2(walker.x - p.x, walker.z - p.z);
       opts.onInteract?.({ kind: 'npc', npc: t.npc.data });
+    } else if (t.kind === 'door') {
+      walker.faceTowards(t.door.x, t.door.z - 1);
+      opts.onInteract?.({ kind: 'door', door: t.door });
     } else {
       opts.onInteract?.({ kind: 'pickup', id: t.pickup.id, item: t.pickup.item });
     }
@@ -195,7 +254,7 @@ export function createCourtyardScene(aspect: number, opts: CourtyardOptions = {}
 
       const dest = target ? targetPos(target) : { x: hits[0].point.x, z: hits[0].point.z };
       if (target) {
-        const reach = target.kind === 'npc' ? TALK_DISTANCE : PICKUP_DISTANCE;
+        const reach = target.kind === 'npc' ? TALK_DISTANCE : target.kind === 'door' ? DOOR_DISTANCE : PICKUP_DISTANCE;
         if (Math.hypot(walker.x - dest.x, walker.z - dest.z) <= reach) {
           arrive(target);
           return;
@@ -255,6 +314,7 @@ export function createCourtyardScene(aspect: number, opts: CourtyardOptions = {}
       walker.update(dt);
       if (pending && !walker.moving) arrive(pending);
       for (const n of npcs) n.heart.position.y = 2.2 + Math.sin(elapsed * 3) * 0.08;
+      for (const g of doorGlows) g.material.opacity = 0.25 + 0.2 * Math.sin(elapsed * 3);
 
       for (const p of pickups.values()) {
         const bloom = p.object.getObjectByName('bloom')!;

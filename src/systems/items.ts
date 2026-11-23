@@ -1,16 +1,21 @@
 import itemsJson from '../data/items.json';
 import wordsJson from '../data/words.json';
 
-export type ItemKind = 'flower' | 'outfit';
+export type ItemKind = 'flower' | 'outfit' | 'furniture';
 
 export interface Item {
   kind: ItemKind;
   /** 옷이면 입는 부위 (wardrobe.json slots) */
   slot?: string;
-  /** 옷이면 임시 도형 모양 */
+  /** 옷·가구의 임시 도형 모양 */
   shape?: string;
-  /** 옷이면 처음 색 (wardrobe.json palette id) */
+  /** 옷·가구의 처음 색 (wardrobe.json palette id) */
   defaultColor?: string;
+  /** 가구가 차지하는 칸 수 (가로·세로) */
+  w?: number;
+  d?: number;
+  /** 가구 층: object=서로 안 겹침, floor=러그처럼 아래에 깔림 */
+  layer?: 'object' | 'floor';
   /** 한글 이름 */
   name: string;
   /** 영어 이름 */

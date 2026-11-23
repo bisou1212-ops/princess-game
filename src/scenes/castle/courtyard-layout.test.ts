@@ -35,3 +35,15 @@ describe('성 마당 배치 데이터', () => {
     expect(path!.length).toBeGreaterThan(1);
   });
 });
+
+describe('성 문', () => {
+  const grid = buildNavGrid(courtyardLayout);
+  it('문 앞은 걸어갈 수 있고, 문이 가리키는 방이 있다', async () => {
+    const { ROOMS } = await import('../../systems/decor');
+    expect(courtyardLayout.doors.length).toBeGreaterThan(0);
+    for (const d of courtyardLayout.doors) {
+      expect(grid.isWalkableAt(d.x, d.z + 0.6), d.id).toBe(true);
+      expect(ROOMS[d.target], d.target).toBeDefined();
+    }
+  });
+});

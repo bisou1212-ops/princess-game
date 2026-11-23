@@ -1,5 +1,5 @@
 {
-  "_comment": "아이템. name=한글, en=영어(톡하면 둘 다 읽어 줌, GDD 6). kind: flower(줍는 꽃), outfit(옷 — slot=wardrobe.json의 부위, shape=임시 도형 모양, defaultColor=palette id). color는 아이콘 표시용.",
+  "_comment": "아이템. name=한글, en=영어(톡하면 둘 다 읽어 줌, GDD 6). kind: flower(줍는 꽃), furniture(가구 — w·d=차지하는 칸 수(0.5m), layer: object=다른 가구와 안 겹침 / floor=러그처럼 위에 놓을 수 있음), outfit(옷 — slot=wardrobe.json의 부위, shape=임시 도형 모양, defaultColor=palette id). color는 아이콘 표시용.",
   "flower-red": { "kind": "flower", "name": "빨간 꽃", "en": "Red flower", "color": "#ff5d73" },
   "flower-yellow": { "kind": "flower", "name": "노란 꽃", "en": "Yellow flower", "color": "#ffd23f" },
   "flower-blue": { "kind": "flower", "name": "파란 꽃", "en": "Blue flower", "color": "#5ab8ff" },
@@ -21,5 +21,16 @@
 
   "necklace": { "kind": "outfit", "slot": "accessory", "shape": "necklace", "defaultColor": "yellow", "name": "목걸이", "en": "Necklace", "color": "#ffd84d" },
   "wings": { "kind": "outfit", "slot": "accessory", "shape": "wings", "defaultColor": "blue", "name": "날개", "en": "Wings", "color": "#74c0ff" },
-  "wand": { "kind": "outfit", "slot": "accessory", "shape": "wand", "defaultColor": "purple", "name": "마법봉", "en": "Magic wand", "color": "#b99cff" }
+  "wand": { "kind": "outfit", "slot": "accessory", "shape": "wand", "defaultColor": "purple", "name": "마법봉", "en": "Magic wand", "color": "#b99cff" },
+
+  "bed": { "kind": "furniture", "shape": "bed", "w": 3, "d": 4, "layer": "object", "defaultColor": "pink", "name": "침대", "en": "Bed", "color": "#ff9ccf" },
+  "closet": { "kind": "furniture", "shape": "closet", "w": 3, "d": 1, "layer": "object", "defaultColor": "purple", "name": "옷장", "en": "Closet", "color": "#b99cff" },
+  "table": { "kind": "furniture", "shape": "table", "w": 2, "d": 2, "layer": "object", "defaultColor": "brown", "name": "탁자", "en": "Table", "color": "#a0704c" },
+  "chair": { "kind": "furniture", "shape": "chair", "w": 1, "d": 1, "layer": "object", "defaultColor": "yellow", "name": "의자", "en": "Chair", "color": "#ffd84d" },
+  "lamp": { "kind": "furniture", "shape": "lamp", "w": 1, "d": 1, "layer": "object", "defaultColor": "yellow", "name": "스탠드", "en": "Lamp", "color": "#ffd84d" },
+  "plant": { "kind": "furniture", "shape": "plant", "w": 1, "d": 1, "layer": "object", "defaultColor": "green", "name": "화분", "en": "Plant", "color": "#86d98f" },
+  "rug": { "kind": "furniture", "shape": "rug", "w": 4, "d": 3, "layer": "floor", "defaultColor": "blue", "name": "러그", "en": "Rug", "color": "#74c0ff" },
+  "toybox": { "kind": "furniture", "shape": "toybox", "w": 2, "d": 1, "layer": "object", "defaultColor": "red", "name": "장난감 상자", "en": "Toy box", "color": "#ff6b7a" },
+  "bookshelf": { "kind": "furniture", "shape": "bookshelf", "w": 2, "d": 1, "layer": "object", "defaultColor": "brown", "name": "책장", "en": "Bookshelf", "color": "#a0704c" },
+  "teddy": { "kind": "furniture", "shape": "teddy", "w": 1, "d": 1, "layer": "object", "defaultColor": "brown", "name": "곰 인형", "en": "Teddy bear", "color": "#a0704c" }
 }

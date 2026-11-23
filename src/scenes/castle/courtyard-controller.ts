@@ -15,6 +15,8 @@ interface Deps {
   dialogue: DialogueBox;
   hud: Hud;
   reward: RewardPopup;
+  /** 성 문 앞에 도착하면 그 방으로 들어간다 */
+  onEnterRoom(roomId: string): void;
 }
 
 /** 마당에 놓인 물건 id = "부탁id#spawns번호" (다시 켰을 때 같은 꽃을 찾기 위해) */
@@ -53,6 +55,7 @@ export class CourtyardController {
 
   handle(what: Interaction): void {
     if (what.kind === 'npc') this.talkTo(what.npc.id);
+    else if (what.kind === 'door') this.deps.onEnterRoom(what.door.target);
     else this.pickUp(what.id, what.item);
   }
 

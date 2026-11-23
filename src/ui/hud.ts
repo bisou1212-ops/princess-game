@@ -1,3 +1,4 @@
+import { doorIcon } from './decor-ui';
 import { candyIcon, flowerIcon, wardrobeIcon } from './icons';
 import './hud.css';
 
@@ -13,20 +14,38 @@ export class Hud {
   private readonly candyPill: HTMLDivElement;
   private readonly tracker: HTMLDivElement;
   private readonly wardrobeBtn: HTMLButtonElement;
+  private readonly exitBtn: HTMLButtonElement;
+  private mode: 'yard' | 'room' = 'yard';
+  private buttonsOn = true;
 
-  constructor(parent: HTMLElement, onWardrobe: () => void) {
+  constructor(parent: HTMLElement, handlers: { onWardrobe(): void; onExit(): void }) {
     this.root = document.createElement('div');
     this.root.className = 'hud';
     this.root.innerHTML = `
       <div class="hud-tracker" hidden></div>
       <div class="hud-candy" aria-label="별사탕">${candyIcon()}<span>0</span></div>
-      <button class="hud-wardrobe" type="button" aria-label="드레스룸">${wardrobeIcon()}</button>`;
+      <button class="hud-wardrobe" type="button" aria-label="드레스룸">${wardrobeIcon()}</button>
+      <button class="hud-wardrobe hud-exit" type="button" aria-label="마당으로 나가기" hidden>${doorIcon()}</button>`;
     parent.appendChild(this.root);
     this.candyPill = this.root.querySelector('.hud-candy')!;
     this.candyEl = this.candyPill.querySelector('span')!;
     this.tracker = this.root.querySelector('.hud-tracker')!;
     this.wardrobeBtn = this.root.querySelector('.hud-wardrobe')!;
-    this.wardrobeBtn.addEventListener('click', onWardrobe);
+    this.wardrobeBtn.addEventListener('click', () => handlers.onWardrobe());
+    this.exitBtn = this.root.querySelector('.hud-exit')!;
+    this.exitBtn.addEventListener('click', () => handlers.onExit());
+  }
+
+  /** 마당: 드레스룸 버튼·부탁 표시 / 방: 나가기 버튼 */
+  setMode(mode: 'yard' | 'room'): void {
+    this.mode = mode;
+    this.root.classList.toggle('is-room', mode === 'room');
+    this.applyButtons();
+  }
+
+  private applyButtons(): void {
+    this.wardrobeBtn.hidden = !this.buttonsOn || this.mode !== 'yard';
+    this.exitBtn.hidden = !this.buttonsOn || this.mode !== 'room';
   }
 
   /** 드레스룸에 아직 안 본 새 옷이 있으면 반짝 점 */
@@ -38,7 +57,8 @@ export class Hud {
 
   /** 드레스룸·대화 중에는 숨김 */
   setButtonsVisible(on: boolean): void {
-    this.wardrobeBtn.hidden = !on;
+    this.buttonsOn = on;
+    this.applyButtons();
   }
 
   setCandy(n: number, celebrate = false): void {

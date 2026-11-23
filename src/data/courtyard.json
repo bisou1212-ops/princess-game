@@ -29,5 +29,8 @@
   "npcs": [
     { "id": "flora", "character": "flora", "x": -3, "z": 6, "facing": 0.8, "dialogue": "flora-hello" },
     { "id": "tori", "character": "tori", "x": 5.5, "z": 6.5, "facing": -0.8, "quest": "tori-red-flowers" }
+  ],
+  "doors": [
+    { "id": "castle-door", "x": 0, "z": -6.5, "w": 1.6, "h": 2.4, "target": "bedroom" }
   ]
 }

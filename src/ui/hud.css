@@ -183,3 +183,23 @@
   .reward-card, .gift-icon, .is-bouncing { animation: none; }
   .candy { animation-duration: 0.01s; }
 }
+
+/* 방 안에서는 부탁 진행 표시를 숨김 */
+.hud.is-room .hud-tracker {
+  display: none;
+}
+
+/* 장면 바뀔 때 부드럽게 */
+.scene-fade {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  background: #fff6fb;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+.scene-fade.is-on {
+  opacity: 1;
+  pointer-events: auto;
+}

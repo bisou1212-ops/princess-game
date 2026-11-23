@@ -1,4 +1,5 @@
 import type { KeyValueStore } from '../core/storage';
+import { ROOMS, RoomLayout, ownedFurniture, type Placed } from './decor';
 import { hasItem } from './items';
 import { QuestBook } from './quests';
 import { Wallet } from './rewards';
@@ -13,6 +14,8 @@ export interface SaveData {
   outfit: Outfit;
   /** 드레스룸에서 이미 본 옷 (새 옷 표시용) */
   seenOutfits: string[];
+  /** 방별로 놓은 가구 */
+  rooms: Record<string, Placed[]>;
 }
 
 export const SAVE_KEY = 'save';
@@ -27,6 +30,10 @@ export class GameState {
   outfit: Outfit = defaultOutfit();
   /** 처음 가진 옷은 '새 옷'으로 치지 않음 */
   seenOutfits: string[] = [...STARTER_ITEMS];
+  /** 성 안 방들 (가구 배치) */
+  readonly rooms: Record<string, RoomLayout> = Object.fromEntries(
+    Object.entries(ROOMS).map(([id, def]) => [id, new RoomLayout(def)]),
+  );
   private saveTimer: ReturnType<typeof setTimeout> | null = null;
   private readonly listeners = new Set<() => void>();
 
@@ -42,6 +49,12 @@ export class GameState {
     return this.ownedOutfits.filter((id) => !this.seenOutfits.includes(id));
   }
 
+  /** 선물로 가구를 받으면 모든 방의 서랍 개수를 다시 계산 */
+  refreshFurniture(): void {
+    const owned = ownedFurniture(this.wallet.items);
+    for (const room of Object.values(this.rooms)) room.setOwned(owned);
+  }
+
   onChange(fn: () => void): () => void {
     this.listeners.add(fn);
     return () => this.listeners.delete(fn);
@@ -49,6 +62,7 @@ export class GameState {
 
   /** 무언가 바뀌었음 → 화면 갱신 + 0.5초 뒤 저장 */
   change(): void {
+    this.refreshFurniture();
     this.listeners.forEach((fn) => fn());
     if (!this.store) return;
     if (this.saveTimer) clearTimeout(this.saveTimer);
@@ -85,6 +99,7 @@ export class GameState {
       quests: this.quests.toJSON(),
       outfit: structuredClone(this.outfit),
       seenOutfits: [...this.seenOutfits],
+      rooms: Object.fromEntries(Object.entries(this.rooms).map(([id, room]) => [id, room.toJSON()])),
     };
   }
 
@@ -98,6 +113,9 @@ export class GameState {
     this.wallet.items.length = 0;
     this.wallet.items.push(...known);
     this.quests.load(s.quests);
+    this.refreshFurniture();
+    const rooms = s.rooms && typeof s.rooms === 'object' ? (s.rooms as Record<string, unknown>) : {};
+    for (const [id, room] of Object.entries(this.rooms)) room.load(rooms[id]);
     this.outfit = sanitizeOutfit(s.outfit, this.ownedOutfits);
     this.seenOutfits = Array.isArray(s.seenOutfits) ? s.seenOutfits.filter((x): x is string => typeof x === 'string') : [...STARTER_ITEMS];
     return true;

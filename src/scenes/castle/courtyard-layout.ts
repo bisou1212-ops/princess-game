@@ -19,6 +19,17 @@ export interface NpcPlacement {
   quest?: string;
 }
 
+/** 성 벽에 붙은 문. 톡하면 공주가 걸어가서 target 방으로 들어간다 */
+export interface DoorPlacement {
+  id: string;
+  /** 문 가운데 (벽 앞면) */
+  x: number;
+  z: number;
+  w: number;
+  h: number;
+  target: string;
+}
+
 export interface CourtyardLayout {
   width: number;
   depth: number;
@@ -26,6 +37,7 @@ export interface CourtyardLayout {
   start: Point;
   obstacles: Obstacle[];
   npcs: NpcPlacement[];
+  doors: DoorPlacement[];
 }
 
 export const courtyardLayout = layoutJson as CourtyardLayout;

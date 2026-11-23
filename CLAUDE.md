@@ -43,7 +43,8 @@ docs/GDD.md        # 기획서
 - [x] M2 대화·음성 — 플로라 톡 → 말풍선·TTS·어절 강조, 문장별 끊어 읽기·기분(mood) 억양, 대사 `src/data/dialogues.json`
 - [x] M3 부탁 시스템 — 토리 "빨간 꽃 세 송이"(`src/data/quests.json`), 수 세기·색 힌트(한글+영어), 선물·별사탕(`src/systems/quests.ts`, `rewards.ts`)
 - [x] M4 옷 꾸미기 — 드레스룸(5부위·색 8개, 한글+영어 읽기), 갈아입는 공주 모델 `princess-model.ts`, 옷 데이터 `src/data/wardrobe.json`·`items.json`. 자동 저장(IndexedDB) `src/systems/game-state.ts` — 부탁 진행·주운 꽃·별사탕·옷 유지
-- [ ] M5 성 꾸미기
+- [x] M5 성 꾸미기 — 마당 성 문 톡 → 침실(텅 빈 방). 서랍 카드 위로 끌어 놓기, 가구 톡 → 돌리기·색 8개·치우기, 끌어서 옮기기. 배치 로직 `src/systems/decor.ts`, 방·처음 가구 `src/data/rooms.json`, 가구 `items.json`(kind: furniture). 서랍 그림은 3D 모델에서 자동 생성
+- [ ] M6 지도·이동 연출
 
 ## 나중에 할 일
 - **사람 같은 음성 (보류, 기기 TTS가 로봇 같다는 피드백)**: 대사를 미리 음성 파일로 만들어 넣는다.
@@ -53,3 +54,4 @@ docs/GDD.md        # 기획서
   목소리 샘플을 여러 개 만들어 사용자가 직접 듣고 고른다.
 - **거울 사진 찍기** (GDD 5.1): 드레스룸에서 사진을 찍어 앨범에 저장 — 앨범 기능과 함께.
 - **저장 초기화**: 부모 설정(어른용 잠금) 뒤에 — M9.
+- **성 꾸미기 나머지** (GDD 5.2, M8): 드레스룸·파티홀 방 추가(`rooms.json`), 벽지·바닥·커튼 색 바꾸기, 친구 초대 반응("우와, 예쁘다!").
