@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { addOutline, toonMaterial } from '../../core/toon';
 import { footprint, getFurniture, type RoomLayout } from '../../systems/decor';
 import { getColor } from '../../systems/wardrobe';
 import { createFurnitureMesh, disposeObject, recolorFurniture } from './furniture-meshes';
@@ -68,11 +69,11 @@ export function createBedroomScene(aspect: number, layout: RoomLayout): BedroomS
   scene.add(sun);
 
   // 바닥 + 벽 2개 (뒤·왼쪽)
-  const floor = new THREE.Mesh(new THREE.PlaneGeometry(W, D), new THREE.MeshStandardMaterial({ color: def.floor, roughness: 0.9 }));
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(W, D), toonMaterial({ color: def.floor, roughness: 0.9 }));
   floor.rotation.x = -Math.PI / 2;
   floor.receiveShadow = true;
   scene.add(floor);
-  const wallMat = new THREE.MeshStandardMaterial({ color: def.wall, roughness: 1 });
+  const wallMat = toonMaterial({ color: def.wall, roughness: 1 });
   const back = new THREE.Mesh(new THREE.BoxGeometry(W + 0.2, WALL_H, 0.2), wallMat);
   back.position.set(0, WALL_H / 2, -D / 2 - 0.1);
   back.receiveShadow = true;
@@ -83,13 +84,13 @@ export function createBedroomScene(aspect: number, layout: RoomLayout): BedroomS
   // 창문 (뒷벽)
   const win = new THREE.Mesh(new THREE.BoxGeometry(1.4, 1, 0.05), new THREE.MeshBasicMaterial({ color: 0xbfe6ff }));
   win.position.set(1.2, 1.55, -D / 2 + 0.01);
-  const frame = new THREE.Mesh(new THREE.BoxGeometry(1.55, 1.15, 0.04), new THREE.MeshStandardMaterial({ color: 0xffffff }));
+  const frame = new THREE.Mesh(new THREE.BoxGeometry(1.55, 1.15, 0.04), toonMaterial({ color: 0xffffff }));
   frame.position.set(1.2, 1.55, -D / 2 - 0.005);
   scene.add(frame, win);
   // 바닥 테두리 (방 끝이 어딘지 보이게)
   const edge = new THREE.Mesh(
     new THREE.BoxGeometry(W, 0.06, 0.06),
-    new THREE.MeshStandardMaterial({ color: 0xd8c2ad }),
+    toonMaterial({ color: 0xd8c2ad }),
   );
   edge.position.set(0, 0.03, D / 2);
   const edge2 = edge.clone();
@@ -135,6 +136,7 @@ export function createBedroomScene(aspect: number, layout: RoomLayout): BedroomS
     const cs = def.cellSize;
     const obj = createFurnitureMesh(it.shape, getColor(color).hex, it.w * cs, it.d * cs);
     obj.userData.furniture = true;
+    addOutline(obj, 0.015);
     return obj;
   };
 
@@ -173,9 +175,10 @@ export function createBedroomScene(aspect: number, layout: RoomLayout): BedroomS
           const mesh = m as THREE.Mesh;
           if (!mesh.isMesh) return;
           mesh.castShadow = false;
-          const mat = (mesh.material as THREE.MeshStandardMaterial).clone();
+          const mat = (mesh.material as THREE.MeshToonMaterial).clone();
           mat.transparent = true;
           mat.userData.baseColor = mat.color.clone();
+          if (mesh.userData.isOutline) mesh.visible = false; // 미리보기는 외곽선 없이
           mesh.material = mat;
         });
         ghost = { key, obj };
@@ -185,7 +188,7 @@ export function createBedroomScene(aspect: number, layout: RoomLayout): BedroomS
       ghost.obj.position.y = 0.06;
       ghost.obj.visible = true;
       ghost.obj.traverse((m) => {
-        const mat = (m as THREE.Mesh).material as THREE.MeshStandardMaterial | undefined;
+        const mat = (m as THREE.Mesh).material as THREE.MeshToonMaterial | undefined;
         if (!mat?.userData?.baseColor) return;
         mat.opacity = valid ? 0.85 : 0.35;
         mat.color.copy(valid ? mat.userData.baseColor : new THREE.Color(0xbbb6c4));

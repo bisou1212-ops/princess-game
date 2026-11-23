@@ -19,6 +19,8 @@ interface RoundObstacle {
   r: number;
   h: number;
   color?: string;
+  /** 원기둥 위 고깔 지붕 색 (탑) */
+  roof?: string;
 }
 export type Obstacle =
   | (RectObstacle & { shape: 'box' })
@@ -41,6 +43,8 @@ export interface FlowerPatch {
   z: number;
   r: number;
   n: number;
+  /** 화단 위처럼 바닥보다 높을 때 */
+  y?: number;
 }
 
 /** 마당에 서 있는 친구 (characters.json·dialogues.json의 id를 가리킴) */

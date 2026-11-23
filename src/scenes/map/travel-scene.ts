@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { addOutline, toonMaterial } from '../../core/toon';
 import type { Outfit } from '../../systems/wardrobe';
 import { createPrincessModel, type PrincessModel } from '../castle/princess-model';
 
@@ -30,13 +31,13 @@ export function createTravelScene(aspect: number): TravelScene {
   // 열기구 + 공주
   const balloon = new THREE.Group();
   balloon.add(createEnvelope());
-  const basket = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.45, 0.6, 16), new THREE.MeshStandardMaterial({ color: 0xc99a74, roughness: 0.9 }));
+  const basket = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.45, 0.6, 16), toonMaterial({ color: 0xc99a74, roughness: 0.9 }));
   basket.position.y = -2.95;
-  const rim = new THREE.Mesh(new THREE.TorusGeometry(0.56, 0.06, 8, 24), new THREE.MeshStandardMaterial({ color: 0xa87b55 }));
+  const rim = new THREE.Mesh(new THREE.TorusGeometry(0.56, 0.06, 8, 24), toonMaterial({ color: 0xa87b55 }));
   rim.rotation.x = Math.PI / 2;
   rim.position.y = -2.65;
   balloon.add(basket, rim);
-  const ropeMat = new THREE.MeshStandardMaterial({ color: 0xffffff });
+  const ropeMat = toonMaterial({ color: 0xffffff });
   for (let i = 0; i < 4; i++) {
     const a = (i / 4) * Math.PI * 2 + Math.PI / 4;
     const rope = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 1.2, 4), ropeMat);
@@ -45,12 +46,13 @@ export function createTravelScene(aspect: number): TravelScene {
     rope.rotation.x = -Math.sin(a) * 0.25;
     balloon.add(rope);
   }
+  addOutline(balloon, 0.02);
   scene.add(balloon);
   let princess: PrincessModel | null = null;
 
   // 구름
   const clouds: Array<{ obj: THREE.Group; speed: number }> = [];
-  const cloudMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 1 });
+  const cloudMat = toonMaterial({ color: 0xffffff, roughness: 1 });
   for (let i = 0; i < 14; i++) {
     const obj = createCloud(cloudMat);
     scene.add(obj);
@@ -103,7 +105,7 @@ function createEnvelope(): THREE.Mesh {
   }
   const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
-  const m = new THREE.Mesh(new THREE.SphereGeometry(1.4, 36, 24), new THREE.MeshStandardMaterial({ map: tex, roughness: 0.5 }));
+  const m = new THREE.Mesh(new THREE.SphereGeometry(1.4, 36, 24), toonMaterial({ map: tex, roughness: 0.5 }));
   m.scale.set(1, 1.15, 1);
   return m;
 }

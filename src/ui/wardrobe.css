@@ -57,6 +57,7 @@
 .wr-tabs {
   flex: 1;
   display: flex;
+  flex-wrap: wrap; /* 좁은 화면에서도 부위 5개가 다 보이게 두 줄로 */
   gap: 6px;
   overflow-x: auto;
   scrollbar-width: none;

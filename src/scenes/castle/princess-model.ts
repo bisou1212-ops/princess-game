@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { addOutline, toonMaterial, type ToonParams } from '../../core/toon';
 import { getColor, getOutfitItem, SLOTS, type Outfit, type Worn } from '../../systems/wardrobe';
 
 /**
@@ -6,6 +7,11 @@ import { getColor, getOutfitItem, SLOTS, type Outfit, type Worn } from '../../sy
  * M7에서 부위별 .glb로 바꿀 때도 "부위 = 그룹 하나, 색 = 재질 색"이라는 틀은 그대로 둔다.
  */
 const SKIN = 0xffe9dc;
+/** 치비 비율(2~3등신): 목을 기준으로 머리(+머리카락·왕관)를 크게 */
+const HEAD_PIVOT = 1.02;
+const HEAD_SCALE = 1.32;
+/** 머리 쪽에 붙는 부위 */
+const HEAD_SLOTS = new Set(['hair', 'crown']);
 
 export interface PrincessModel {
   group: THREE.Group;
@@ -14,7 +20,11 @@ export interface PrincessModel {
 
 export function createPrincessModel(outfit: Outfit): PrincessModel {
   const group = new THREE.Group();
-  group.add(createBase());
+  const head = new THREE.Group();
+  head.position.y = HEAD_PIVOT;
+  head.scale.setScalar(HEAD_SCALE);
+  group.add(createBody(), head);
+  head.add(lowered(createFace()));
 
   const slotGroups = new Map<string, { key: string; obj: THREE.Object3D }>();
 
@@ -25,7 +35,7 @@ export function createPrincessModel(outfit: Outfit): PrincessModel {
       const prev = slotGroups.get(slot.id);
       if (prev?.key === key) continue;
       if (prev) {
-        group.remove(prev.obj);
+        prev.obj.parent?.remove(prev.obj);
         dispose(prev.obj);
       }
       const obj = worn ? createSlotMesh(worn) : new THREE.Group();
@@ -33,16 +43,24 @@ export function createPrincessModel(outfit: Outfit): PrincessModel {
       obj.traverse((m) => {
         if ((m as THREE.Mesh).isMesh && !m.userData.noShadow) m.castShadow = true;
       });
-      group.add(obj);
+      if (HEAD_SLOTS.has(slot.id)) head.add(lowered(obj));
+      else group.add(obj);
       slotGroups.set(slot.id, { key, obj });
     }
+    addOutline(group, 0.016);
   };
   setOutfit(outfit);
   return { group, setOutfit };
 }
 
-function mat(color: THREE.ColorRepresentation, extra: THREE.MeshStandardMaterialParameters = {}) {
-  return new THREE.MeshStandardMaterial({ color, roughness: 0.6, ...extra });
+/** 머리 그룹(목 기준) 안에 넣을 수 있게 높이를 내린다 */
+function lowered<T extends THREE.Object3D>(obj: T): T {
+  obj.position.y -= HEAD_PIVOT;
+  return obj;
+}
+
+function mat(color: THREE.ColorRepresentation, extra: ToonParams = {}) {
+  return toonMaterial({ color, roughness: 0.6, ...extra });
 }
 
 function mesh(geo: THREE.BufferGeometry, material: THREE.Material, x = 0, y = 0, z = 0): THREE.Mesh {
@@ -51,28 +69,44 @@ function mesh(geo: THREE.BufferGeometry, material: THREE.Material, x = 0, y = 0,
   return m;
 }
 
-/** 머리·얼굴·팔 (옷과 상관없는 몸) */
-function createBase(): THREE.Group {
+/** 목·팔 (옷과 상관없는 몸) */
+function createBody(): THREE.Group {
   const g = new THREE.Group();
   const skin = mat(SKIN);
-  g.add(mesh(new THREE.SphereGeometry(0.3, 24, 18), skin, 0, 1.3, 0));
-  g.add(mesh(new THREE.CylinderGeometry(0.07, 0.08, 0.12, 10), skin, 0, 0.98, 0)); // 목
-  // 눈 (앞 = +z)
-  const eye = mat(0x3d3a4a, { roughness: 0.3 });
-  for (const s of [-1, 1]) g.add(mesh(new THREE.SphereGeometry(0.04, 10, 8), eye, s * 0.1, 1.32, 0.26));
-  // 볼
-  const cheek = mat(0xffb3c7, { transparent: true, opacity: 0.7 });
-  for (const s of [-1, 1]) {
-    const c = mesh(new THREE.SphereGeometry(0.045, 10, 8), cheek, s * 0.17, 1.24, 0.22);
-    c.scale.z = 0.4;
-    g.add(c);
-  }
-  // 팔
+  g.add(mesh(new THREE.CylinderGeometry(0.07, 0.08, 0.14, 10), skin, 0, 0.97, 0)); // 목
   for (const s of [-1, 1]) {
     const arm = mesh(new THREE.CapsuleGeometry(0.06, 0.28, 4, 8), skin, s * 0.25, 0.72, 0);
     arm.rotation.z = s * 0.35;
     g.add(arm);
   }
+  g.traverse((m) => (m.castShadow = true));
+  return g;
+}
+
+/** 얼굴: 동그란 머리 + 반짝이는 큰 눈 + 볼터치 + 웃는 입 (앞 = +z) */
+function createFace(): THREE.Group {
+  const g = new THREE.Group();
+  g.add(mesh(new THREE.SphereGeometry(0.3, 28, 20), mat(SKIN), 0, 1.3, 0));
+  const eye = mat(0x3d3a4a);
+  const shine = mat(0xffffff, { emissive: 0xffffff, emissiveIntensity: 0.6 });
+  for (const s of [-1, 1]) {
+    const e = mesh(new THREE.SphereGeometry(0.052, 14, 10), eye, s * 0.105, 1.3, 0.255);
+    e.scale.set(0.9, 1.2, 0.6);
+    e.userData.noOutline = true;
+    const hl = mesh(new THREE.SphereGeometry(0.018, 8, 6), shine, s * 0.105 + 0.018, 1.33, 0.29);
+    hl.userData.noOutline = true;
+    g.add(e, hl);
+  }
+  const cheek = mat(0xffb3c7, { transparent: true, opacity: 0.75 });
+  for (const s of [-1, 1]) {
+    const c = mesh(new THREE.SphereGeometry(0.05, 10, 8), cheek, s * 0.17, 1.22, 0.22);
+    c.scale.z = 0.4;
+    g.add(c);
+  }
+  const smile = mesh(new THREE.TorusGeometry(0.035, 0.009, 6, 12, Math.PI), mat(0xd9607f), 0, 1.215, 0.285);
+  smile.rotation.z = Math.PI;
+  smile.userData.noOutline = true;
+  g.add(smile);
   g.traverse((m) => (m.castShadow = true));
   return g;
 }

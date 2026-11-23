@@ -46,6 +46,8 @@ docs/GDD.md        # 기획서
 - [x] M5 성 꾸미기 — 마당 성 문 톡 → 침실(텅 빈 방). 서랍 카드 위로 끌어 놓기, 가구 톡 → 돌리기·색 8개·치우기, 끌어서 옮기기. 배치 로직 `src/systems/decor.ts`, 방·처음 가구 `src/data/rooms.json`, 가구 `items.json`(kind: furniture). 서랍 그림은 3D 모델에서 자동 생성
 - [x] M6 지도·이동 연출 — 지도 버튼 → 왕국 지도(`src/data/world.json`, 바다·눈·하늘은 잠자는 왕국), 열기구 비행 연출 + 느릴 때 별 로딩(`src/scenes/map/`). 꽃 왕국 그레이박스 `src/data/flower-kingdom.json`(집·꽃밭·고고·도치, 갈 때 따로 불러옴). 장소별 색 테마, 부탁 물건은 `quests.json` location에만 나타남
 - [ ] M7 아트 교체
+  - [x] A단계(코드만): 툰 셰이딩 `src/core/toon.ts`(모든 재질은 `toonMaterial()`), 선택 외곽선 `addOutline()`, 파스텔 테마·하늘 그라데이션·탑 지붕, 치비 비율(머리 1.3배)·큰 눈, 금색 반짝이 `src/core/sparkles.ts`
+  - [ ] B단계: Blender MCP로 공주(부위별)·펫·친구 모델링 → `art-source/*.blend` → 압축 `.glb`(`public/assets/`), 나무·집·가구는 CC0 에셋(Kenney·Quaternius) + `CREDITS.md`. 모델을 바꿔도 "부위 = 그룹, 색 = tint 재질" 규칙 유지
 
 ## 나중에 할 일
 - **사람 같은 음성 (보류, 기기 TTS가 로봇 같다는 피드백)**: 대사를 미리 음성 파일로 만들어 넣는다.

@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import { Sparkles } from '../../core/sparkles';
+import { addOutline, toonMaterial } from '../../core/toon';
 import { FollowCamera } from '../../core/follow-camera';
 import { TapMarker } from '../../core/tap-marker';
 import { Walker } from '../../systems/navigation/walker';
@@ -56,6 +58,11 @@ export interface CourtyardOptions {
   onInteract?(what: Interaction): void;
 }
 
+/** 친구 머리 위 ♥ 높이 (치비 머리 + 토끼 귀 위) */
+const HEART_Y = 2.55;
+/** 하늘 아래쪽(지평선) 색 — 안개도 같은 색이라 땅 끝이 하늘에 녹아든다 */
+const HORIZON = '#fde8f3';
+
 /** 이 거리 안이면 걸어가지 않고 바로 말을 건다 */
 const TALK_DISTANCE = 1.6;
 /** 이 거리 안이면 바로 줍는다 */
@@ -86,8 +93,8 @@ export function createCourtyardScene(aspect: number, opts: CourtyardOptions = {}
   const layout = opts.layout ?? courtyardLayout;
   const scene = new THREE.Scene();
   const theme = layout.theme;
-  scene.background = new THREE.Color(theme.sky);
-  scene.fog = new THREE.Fog(theme.sky, 28, 60);
+  scene.background = skyGradient(theme.sky);
+  scene.fog = new THREE.Fog(HORIZON, 30, 70);
 
   const camera = new THREE.PerspectiveCamera(45, aspect, 0.1, 120);
 
@@ -96,7 +103,7 @@ export function createCourtyardScene(aspect: number, opts: CourtyardOptions = {}
   // 바닥: 바깥 들판 + 마당
   const ground = new THREE.Mesh(
     new THREE.PlaneGeometry(120, 120),
-    new THREE.MeshStandardMaterial({ color: theme.ground, roughness: 1 }),
+    toonMaterial({ color: theme.ground, roughness: 1 }),
   );
   ground.rotation.x = -Math.PI / 2;
   ground.receiveShadow = true;
@@ -104,7 +111,7 @@ export function createCourtyardScene(aspect: number, opts: CourtyardOptions = {}
 
   const yard = new THREE.Mesh(
     new THREE.PlaneGeometry(layout.width, layout.depth),
-    new THREE.MeshStandardMaterial({ color: theme.yard, roughness: 1 }),
+    toonMaterial({ color: theme.yard, roughness: 1 }),
   );
   yard.rotation.x = -Math.PI / 2;
   yard.position.y = 0.005;
@@ -126,16 +133,19 @@ export function createCourtyardScene(aspect: number, opts: CourtyardOptions = {}
     object.position.set(data.x, 0, data.z);
     object.rotation.y = data.facing;
     object.userData.npcId = data.id;
-    object.add(createHitArea(0.7, 2.3));
+    object.add(createHitArea(0.7, 2.6));
     // ♥ 표시: 말을 걸 수 있는 친구 (GDD 4)
     const heart = new THREE.Sprite(new THREE.SpriteMaterial({ map: heartTexture, depthWrite: false }));
     heart.scale.setScalar(0.6);
-    heart.position.y = 2.2;
+    heart.position.y = HEART_Y;
     object.add(heart);
     scene.add(object);
     tappables.push(object);
     return { data, object, heart };
   });
+
+  /** 매 프레임 깜빡이게 할 반짝이들 */
+  const sparkles: Sparkles[] = [];
 
   // 성 문 (톡하면 들어가기)
   const doorGlows: THREE.Mesh<THREE.PlaneGeometry, THREE.MeshBasicMaterial>[] = [];
@@ -143,16 +153,16 @@ export function createCourtyardScene(aspect: number, opts: CourtyardOptions = {}
     const door = new THREE.Group();
     const panel = new THREE.Mesh(
       new THREE.BoxGeometry(d.w, d.h, 0.12),
-      new THREE.MeshStandardMaterial({ color: 0xc99a74, roughness: 0.8 }),
+      toonMaterial({ color: 0xc99a74, roughness: 0.8 }),
     );
     panel.position.y = d.h / 2;
     const arch = new THREE.Mesh(
       new THREE.CylinderGeometry(d.w / 2, d.w / 2, 0.12, 24, 1, false, 0, Math.PI),
-      new THREE.MeshStandardMaterial({ color: 0xc99a74, roughness: 0.8 }),
+      toonMaterial({ color: 0xc99a74, roughness: 0.8 }),
     );
     arch.rotation.set(Math.PI / 2, Math.PI / 2, 0);
     arch.position.y = d.h;
-    const knob = new THREE.Mesh(new THREE.SphereGeometry(0.07, 10, 8), new THREE.MeshStandardMaterial({ color: COLORS.crown }));
+    const knob = new THREE.Mesh(new THREE.SphereGeometry(0.07, 10, 8), toonMaterial({ color: COLORS.crown }));
     knob.position.set(d.w * 0.3, d.h * 0.45, 0.08);
     // 바닥의 반짝이는 표시 (들어갈 수 있는 곳)
     const glow = new THREE.Mesh(
@@ -168,6 +178,11 @@ export function createCourtyardScene(aspect: number, opts: CourtyardOptions = {}
     door.traverse((m) => {
       if (m !== glow && (m as THREE.Mesh).isMesh && !m.userData.isHitArea) m.castShadow = true;
     });
+    addOutline(door, 0.025);
+    const doorSparkles = new Sparkles({ count: 7, radius: 1, height: [0.4, 2.6], size: 0.34 });
+    doorSparkles.position.z = 0.4;
+    door.add(doorSparkles);
+    sparkles.push(doorSparkles);
     scene.add(door);
     tappables.push(door);
   }
@@ -283,6 +298,10 @@ export function createCourtyardScene(aspect: number, opts: CourtyardOptions = {}
       object.userData.pickupId = id;
       const hit = createHitArea(0.6, 1.2);
       object.add(hit);
+      addOutline(object, 0.012);
+      const twinkle = new Sparkles({ count: 4, radius: 0.45, height: [0.3, 0.9], size: 0.26 });
+      object.add(twinkle);
+      object.userData.sparkles = twinkle;
       object.scale.setScalar(0.01); // 톡 나타나는 연출
       scene.add(object);
       pickups.set(id, { id, item, object, hit, phase: Math.random() * Math.PI * 2, vanish: null });
@@ -328,8 +347,10 @@ export function createCourtyardScene(aspect: number, opts: CourtyardOptions = {}
       elapsed += dt;
       walker.update(dt);
       if (pending && !walker.moving) arrive(pending);
-      for (const n of npcs) n.heart.position.y = 2.2 + Math.sin(elapsed * 3) * 0.08;
+      for (const n of npcs) n.heart.position.y = HEART_Y + Math.sin(elapsed * 3) * 0.08;
       for (const g of doorGlows) g.material.opacity = 0.25 + 0.2 * Math.sin(elapsed * 3);
+      for (const s of sparkles) s.update(dt);
+      for (const p of pickups.values()) (p.object.userData.sparkles as Sparkles | undefined)?.update(dt);
 
       for (const p of pickups.values()) {
         const bloom = p.object.getObjectByName('bloom')!;
@@ -377,9 +398,9 @@ export function createCourtyardScene(aspect: number, opts: CourtyardOptions = {}
       focus.set(walker.x, 0, walker.z);
       if (mirror) {
         const k = 1 - Math.exp(-6 * dt);
-        mirrorCam.set(walker.x, 1.25, walker.z + 3.3);
+        mirrorCam.set(walker.x, 1.45, walker.z + 3.9);
         camera.position.lerp(mirrorCam, k);
-        mirrorLook.lerp(lookTarget.set(walker.x, 0.85, walker.z), k);
+        mirrorLook.lerp(lookTarget.set(walker.x, 1.0, walker.z), k);
         camera.lookAt(mirrorLook);
       } else {
         follow.update(focus, dt);
@@ -406,4 +427,21 @@ function addLights(scene: THREE.Scene, layout: CourtyardLayout): void {
 
 function easeOut(t: number): number {
   return 1 - (1 - t) ** 3;
+}
+
+/** 위는 장소의 하늘색, 아래(지평선)는 연분홍으로 부드럽게 */
+function skyGradient(top: string): THREE.CanvasTexture {
+  const c = document.createElement('canvas');
+  c.width = 4;
+  c.height = 256;
+  const ctx = c.getContext('2d')!;
+  const g = ctx.createLinearGradient(0, 0, 0, 256);
+  g.addColorStop(0, top);
+  g.addColorStop(0.7, '#f4f2ff');
+  g.addColorStop(1, HORIZON);
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, 4, 256);
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
 }

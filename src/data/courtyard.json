@@ -1,32 +1,29 @@
 {
-  "_comment": "M1 그레이박스 성 마당 배치. 좌표 단위는 m, x=오른쪽, z=아래(카메라 쪽). 가운데가 (0,0).",
+  "_comment": "성 마당 배치. 좌표 단위는 m, x=오른쪽, z=아래(카메라 쪽). 가운데가 (0,0). color=따로 쓰는 색, roof=탑 지붕 색.",
   "id": "castle",
-  "theme": { "sky": "#bfe6ff", "ground": "#b8b8bc", "yard": "#cacacf", "structure": "#9d9da6", "prop": "#aaaab2" },
+  "theme": { "sky": "#a9dcff", "ground": "#bfe7b0", "yard": "#fbefe4", "structure": "#f3e6ff", "prop": "#ffd9e8" },
   "width": 24,
   "depth": 24,
   "cellSize": 0.5,
-  "start": {
-    "x": 0,
-    "z": 7
-  },
+  "start": { "x": 0, "z": 7 },
   "obstacles": [
-    { "id": "castle", "shape": "box", "x": 0, "z": -9, "w": 10, "d": 5, "h": 6 },
-    { "id": "tower-left", "shape": "cylinder", "x": -5.5, "z": -9, "r": 1.4, "h": 8 },
-    { "id": "tower-right", "shape": "cylinder", "x": 5.5, "z": -9, "r": 1.4, "h": 8 },
+    { "id": "castle", "shape": "box", "x": 0, "z": -9, "w": 10, "d": 5, "h": 6, "color": "#fff3f8" },
+    { "id": "tower-left", "shape": "cylinder", "x": -5.5, "z": -9, "r": 1.4, "h": 8, "color": "#fff3f8", "roof": "#ff9ccf" },
+    { "id": "tower-right", "shape": "cylinder", "x": 5.5, "z": -9, "r": 1.4, "h": 8, "color": "#fff3f8", "roof": "#ff9ccf" },
     { "id": "wall-north", "shape": "box", "x": 0, "z": -11.5, "w": 24, "d": 1, "h": 2.5 },
     { "id": "wall-west", "shape": "box", "x": -11.5, "z": 0, "w": 1, "d": 24, "h": 2.5 },
     { "id": "wall-east", "shape": "box", "x": 11.5, "z": 0, "w": 1, "d": 24, "h": 2.5 },
     { "id": "wall-south-left", "shape": "box", "x": -6.75, "z": 11.5, "w": 10.5, "d": 1, "h": 0.8 },
     { "id": "wall-south-right", "shape": "box", "x": 6.75, "z": 11.5, "w": 10.5, "d": 1, "h": 0.8 },
-    { "id": "fountain", "shape": "cylinder", "x": 0, "z": 0, "r": 1.8, "h": 0.8 },
+    { "id": "fountain", "shape": "cylinder", "x": 0, "z": 0, "r": 1.8, "h": 0.8, "color": "#d6efff" },
     { "id": "tree-1", "shape": "tree", "x": -8, "z": -4, "r": 0.5, "h": 3 },
     { "id": "tree-2", "shape": "tree", "x": 8, "z": -4, "r": 0.5, "h": 3 },
     { "id": "tree-3", "shape": "tree", "x": -8.5, "z": 6, "r": 0.5, "h": 3 },
     { "id": "tree-4", "shape": "tree", "x": 8.5, "z": 6, "r": 0.5, "h": 3 },
-    { "id": "flowerbed-left", "shape": "box", "x": -5, "z": 2, "w": 2.5, "d": 4, "h": 0.4 },
-    { "id": "flowerbed-right", "shape": "box", "x": 5, "z": 2, "w": 2.5, "d": 4, "h": 0.4 },
-    { "id": "bench-left", "shape": "box", "x": -8.5, "z": 1, "w": 0.8, "d": 2.2, "h": 0.5 },
-    { "id": "bench-right", "shape": "box", "x": 8.5, "z": 1, "w": 0.8, "d": 2.2, "h": 0.5 }
+    { "id": "flowerbed-left", "shape": "box", "x": -5, "z": 2, "w": 2.5, "d": 4, "h": 0.4, "color": "#a8d69a" },
+    { "id": "flowerbed-right", "shape": "box", "x": 5, "z": 2, "w": 2.5, "d": 4, "h": 0.4, "color": "#a8d69a" },
+    { "id": "bench-left", "shape": "box", "x": -8.5, "z": 1, "w": 0.8, "d": 2.2, "h": 0.5, "color": "#e8bf98" },
+    { "id": "bench-right", "shape": "box", "x": 8.5, "z": 1, "w": 0.8, "d": 2.2, "h": 0.5, "color": "#e8bf98" }
   ],
   "npcs": [
     { "id": "flora", "character": "flora", "x": -3, "z": 6, "facing": 0.8, "dialogue": "flora-hello" },
@@ -34,5 +31,9 @@
   ],
   "doors": [
     { "id": "castle-door", "x": 0, "z": -6.5, "w": 1.6, "h": 2.4, "target": "bedroom" }
+  ],
+  "flowerPatches": [
+    { "x": -5, "z": 2, "r": 1.0, "n": 12, "y": 0.4 },
+    { "x": 5, "z": 2, "r": 1.0, "n": 12, "y": 0.4 }
   ]
 }
