@@ -8,3 +8,6 @@ Thumbs.db
 # Blender 원본은 저장소 밖에서 관리 (용량 큼)
 art-source/
 *.blend1
+
+# 이 PC 전용 MCP 설정 (uvx 절대 경로 포함)
+.mcp.json

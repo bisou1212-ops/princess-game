@@ -21,6 +21,7 @@ import { createBedroomScene, type BedroomScene } from './scenes/castle/bedroom-s
 import { BedroomController } from './scenes/castle/bedroom-controller';
 import { MapScreen } from './scenes/map/map-screen';
 import { createTravelScene } from './scenes/map/travel-scene';
+import { preloadPrincessGlb } from './scenes/castle/princess-glb';
 
 /** 바깥 장소 하나 (성 마당, 꽃 왕국 …) */
 interface Town {
@@ -36,6 +37,9 @@ const TRAVEL_MIN_MS = 3000;
 async function start() {
   const container = document.getElementById('app')!;
   const renderer = createRenderer(container);
+
+  // Blender로 만든 공주 모델 (실패하면 도형 공주로 대신)
+  await preloadPrincessGlb();
 
   // 저장된 진행 상황 불러오기 (없거나 깨졌으면 처음부터)
   const state = new GameState(await openStore());

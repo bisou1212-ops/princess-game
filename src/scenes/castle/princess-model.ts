@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { addOutline, toonMaterial, type ToonParams } from '../../core/toon';
 import { getColor, getOutfitItem, SLOTS, type Outfit, type Worn } from '../../systems/wardrobe';
+import { createGlbPrincess, hasPrincessGlb } from './princess-glb';
 
 /**
  * 갈아입을 수 있는 임시 공주 모델 (GDD 8.1: 옷·머리는 부위별로 따로 만들어 갈아끼우는 구조).
@@ -18,7 +19,13 @@ export interface PrincessModel {
   setOutfit(outfit: Outfit): void;
 }
 
+/** Blender 모델(princess.glb)이 불러와져 있으면 그것을, 아니면 도형 공주를 쓴다 */
 export function createPrincessModel(outfit: Outfit): PrincessModel {
+  return hasPrincessGlb() ? createGlbPrincess(outfit) : createProceduralPrincess(outfit);
+}
+
+/** 도형으로 만든 공주 (모델을 못 불러왔을 때·테스트용) */
+export function createProceduralPrincess(outfit: Outfit): PrincessModel {
   const group = new THREE.Group();
   const head = new THREE.Group();
   head.position.y = HEAD_PIVOT;

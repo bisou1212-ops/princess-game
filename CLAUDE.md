@@ -47,7 +47,9 @@ docs/GDD.md        # 기획서
 - [x] M6 지도·이동 연출 — 지도 버튼 → 왕국 지도(`src/data/world.json`, 바다·눈·하늘은 잠자는 왕국), 열기구 비행 연출 + 느릴 때 별 로딩(`src/scenes/map/`). 꽃 왕국 그레이박스 `src/data/flower-kingdom.json`(집·꽃밭·고고·도치, 갈 때 따로 불러옴). 장소별 색 테마, 부탁 물건은 `quests.json` location에만 나타남
 - [ ] M7 아트 교체
   - [x] A단계(코드만): 툰 셰이딩 `src/core/toon.ts`(모든 재질은 `toonMaterial()`), 선택 외곽선 `addOutline()`, 파스텔 테마·하늘 그라데이션·탑 지붕, 치비 비율(머리 1.3배)·큰 눈, 금색 반짝이 `src/core/sparkles.ts`
-  - [ ] B단계: Blender MCP로 공주(부위별)·펫·친구 모델링 → `art-source/*.blend` → 압축 `.glb`(`public/assets/`), 나무·집·가구는 CC0 에셋(Kenney·Quaternius) + `CREDITS.md`. 모델을 바꿔도 "부위 = 그룹, 색 = tint 재질" 규칙 유지
+  - [x] B단계 준비: uv(winget) 설치, 애드온 `blender_mcp.py`(커뮤니티 mcp-for-blender, MIT) → `%APPDATA%\Blender Foundation\Blender\5.3\scripts\addons`, `.mcp.json`(이 PC 전용, git 제외)에 `blender` 서버(텔레메트리 끔). Blender에서 애드온 켜고 N패널 "MCP for Blender" → Start MCP Server(포트 9876) 후 사용. Blender MCP는 Blender 안에서 파이썬을 실행하므로 작업 전 .blend 저장
+  - [x] 공주 모델: `scripts/blender/build_princess.py`(다시 만들 수 있는 스크립트) → `art-source/princess.blend` → `src/assets/models/princess.glb`(배포 때 해시 붙음, 약 0.5MB). 물체 이름 = 옷 id, 재질 tint·tint_light·tint_wing만 색 변경. 게임은 `princess-glb.ts`로 불러오고 실패하면 도형 공주
+  - [ ] 남은 B단계: 펫·친구(플로라·토리·고고·도치) 모델, 나무·집·가구는 CC0 에셋(Kenney·Quaternius) + `CREDITS.md`. 모델은 `src/assets/models/`에 (public/assets는 1년 캐시라 갱신 안 됨)
 
 ## 나중에 할 일
 - **사람 같은 음성 (보류, 기기 TTS가 로봇 같다는 피드백)**: 대사를 미리 음성 파일로 만들어 넣는다.

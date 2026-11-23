@@ -40,7 +40,7 @@ function outlineMaterial(thickness: number): THREE.MeshBasicMaterial {
     shader.uniforms.outlineThickness = { value: thickness };
     shader.vertexShader = shader.vertexShader
       .replace('#include <common>', '#include <common>\nuniform float outlineThickness;')
-      .replace('#include <begin_vertex>', '#include <begin_vertex>\ntransformed += normalize(objectNormal) * outlineThickness;');
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\ntransformed += normalize(normal) * outlineThickness;');
   };
   m.customProgramCacheKey = () => `outline-${key}`;
   outlineMaterials.set(key, m);
