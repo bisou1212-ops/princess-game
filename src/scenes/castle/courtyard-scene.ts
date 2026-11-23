@@ -4,7 +4,9 @@ import { TapMarker } from '../../core/tap-marker';
 import { Walker } from '../../systems/navigation/walker';
 import type { Point } from '../../systems/navigation/nav-grid';
 import { getCharacter } from '../../systems/dialogue';
+import { defaultOutfit, type Outfit } from '../../systems/wardrobe';
 import { buildNavGrid, courtyardLayout, type CourtyardLayout, type NpcPlacement } from './courtyard-layout';
+import { createPrincessModel } from './princess-model';
 import {
   COLORS,
   createCharacterMesh,
@@ -29,10 +31,15 @@ export interface CourtyardScene {
   removePickup(id: string): void;
   /** 친구 머리 위 ♥ 표시 켜기/끄기 */
   setNpcAttention(npcId: string, on: boolean): void;
+  /** 공주 옷 갈아입히기. celebrate면 빙글 돌며 폴짝 */
+  setOutfit(outfit: Outfit, celebrate?: boolean): void;
+  /** 거울(드레스룸) 모드: 카메라가 공주 앞으로 다가가고 공주가 천천히 돈다. 이동 톡은 막힘 */
+  setMirror(on: boolean): void;
 }
 
 export interface CourtyardOptions {
   layout?: CourtyardLayout;
+  outfit?: Outfit;
   /** 공주가 친구·물건 앞에 도착하면 호출 */
   onInteract?(what: Interaction): void;
 }
@@ -117,8 +124,13 @@ export function createCourtyardScene(aspect: number, opts: CourtyardOptions = {}
 
   const grid = buildNavGrid(layout);
   const walker = new Walker(layout.start);
-  const princess = createCharacterMesh(getCharacter('princess'));
+  const princessModel = createPrincessModel(opts.outfit ?? defaultOutfit());
+  const princess = princessModel.group;
   scene.add(princess);
+  let mirror = false;
+  let mirrorSpin = 0;
+  /** 옷을 바꿨을 때 빙글+폴짝 (0→1) */
+  let celebrateT = 1;
 
   const marker = new TapMarker();
   scene.add(marker.object);
@@ -128,6 +140,9 @@ export function createCourtyardScene(aspect: number, opts: CourtyardOptions = {}
   follow.snap(focus);
 
   const raycaster = new THREE.Raycaster();
+  const mirrorCam = new THREE.Vector3();
+  const mirrorLook = new THREE.Vector3(walker.x, 0.8, walker.z);
+  const lookTarget = new THREE.Vector3();
   let walkTime = 0;
   let elapsed = 0;
   /** 걸어가는 중인 목적지(친구·물건) */
@@ -170,6 +185,7 @@ export function createCourtyardScene(aspect: number, opts: CourtyardOptions = {}
     camera,
 
     tap(ndc) {
+      if (mirror) return;
       raycaster.setFromCamera(ndc, camera);
       const hits = raycaster.intersectObjects([...tappables, ...[...pickups.values()].map((p) => p.object)], true);
       if (hits.length === 0) return;
@@ -214,6 +230,21 @@ export function createCourtyardScene(aspect: number, opts: CourtyardOptions = {}
       if (pending?.kind === 'pickup' && pending.pickup.id === id) pending = null;
     },
 
+    setOutfit(outfit, celebrate = false) {
+      princessModel.setOutfit(outfit);
+      if (celebrate) celebrateT = 0;
+    },
+
+    setMirror(on) {
+      if (mirror === on) return;
+      mirror = on;
+      if (on) {
+        pending = null;
+        walker.stop();
+        mirrorSpin = 0;
+      }
+    },
+
     setNpcAttention(npcId, on) {
       const npc = npcs.find((n) => n.data.id === npcId);
       if (npc) npc.heart.visible = on;
@@ -251,13 +282,34 @@ export function createCourtyardScene(aspect: number, opts: CourtyardOptions = {}
 
       // 걸을 때 통통 튀는 느낌
       walkTime = walker.moving ? walkTime + dt : 0;
-      const bob = walker.moving ? Math.abs(Math.sin(walkTime * 10)) * 0.08 : 0;
+      let bob = walker.moving ? Math.abs(Math.sin(walkTime * 10)) * 0.08 : 0;
+      let spin = 0;
+      if (celebrateT < 1) {
+        celebrateT = Math.min(1, celebrateT + dt / 0.7);
+        bob += Math.sin(celebrateT * Math.PI) * 0.35;
+        spin = easeOut(celebrateT) * Math.PI * 2;
+      }
       princess.position.set(walker.x, bob, walker.z);
-      princess.rotation.y = walker.heading;
+      if (mirror) {
+        // 거울 앞: 정면을 보다가 천천히 좌우로 몸을 돌려 옷을 보여 줌
+        mirrorSpin += dt;
+        princess.rotation.y = Math.sin(mirrorSpin * 0.9) * 0.9 + spin;
+      } else {
+        princess.rotation.y = walker.heading + spin;
+      }
 
       marker.update(dt);
       focus.set(walker.x, 0, walker.z);
-      follow.update(focus, dt);
+      if (mirror) {
+        const k = 1 - Math.exp(-6 * dt);
+        mirrorCam.set(walker.x, 1.25, walker.z + 3.3);
+        camera.position.lerp(mirrorCam, k);
+        mirrorLook.lerp(lookTarget.set(walker.x, 0.85, walker.z), k);
+        camera.lookAt(mirrorLook);
+      } else {
+        follow.update(focus, dt);
+        mirrorLook.set(walker.x, 0.8, walker.z);
+      }
     },
   };
 }
@@ -275,4 +327,8 @@ function addLights(scene: THREE.Scene, layout: CourtyardLayout): void {
   sun.shadow.radius = 3;
   sun.shadow.bias = -0.0005;
   scene.add(sun);
+}
+
+function easeOut(t: number): number {
+  return 1 - (1 - t) ** 3;
 }

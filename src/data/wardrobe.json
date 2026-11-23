@@ -1,0 +1,34 @@
+{
+  "_comment": "옷 꾸미기 (GDD 5.1). slots=부위(optional이면 '안 입기' 가능), palette=모든 옷에 쓰는 색 8개(한글·영어 이름은 톡하면 읽어 줌), starter=처음부터 가진 옷, default=처음 입고 있는 옷. 옷 아이템 자체는 items.json(kind: outfit).",
+  "slots": [
+    { "id": "hair", "name": "머리", "en": "Hair", "optional": false },
+    { "id": "crown", "name": "왕관", "en": "Crown", "optional": true },
+    { "id": "dress", "name": "드레스", "en": "Dress", "optional": false },
+    { "id": "shoes", "name": "신발", "en": "Shoes", "optional": false },
+    { "id": "accessory", "name": "장신구", "en": "Accessory", "optional": true }
+  ],
+  "palette": [
+    { "id": "pink", "name": "분홍", "en": "Pink", "hex": "#ff9ccf" },
+    { "id": "red", "name": "빨강", "en": "Red", "hex": "#ff6b7a" },
+    { "id": "yellow", "name": "노랑", "en": "Yellow", "hex": "#ffd84d" },
+    { "id": "green", "name": "초록", "en": "Green", "hex": "#86d98f" },
+    { "id": "blue", "name": "파랑", "en": "Blue", "hex": "#74c0ff" },
+    { "id": "purple", "name": "보라", "en": "Purple", "hex": "#b99cff" },
+    { "id": "brown", "name": "갈색", "en": "Brown", "hex": "#a0704c" },
+    { "id": "black", "name": "검정", "en": "Black", "hex": "#3d3a4a" }
+  ],
+  "starter": [
+    "hair-long", "hair-pigtails", "hair-bun",
+    "crown-gold", "headband-ribbon", "tiara",
+    "dress-basic", "dress-puffy",
+    "shoes-flat", "boots",
+    "necklace", "wings", "wand"
+  ],
+  "default": {
+    "hair": { "item": "hair-long", "color": "brown" },
+    "crown": { "item": "crown-gold", "color": "yellow" },
+    "dress": { "item": "dress-basic", "color": "pink" },
+    "shoes": { "item": "shoes-flat", "color": "pink" },
+    "accessory": { "item": null, "color": "yellow" }
+  }
+}

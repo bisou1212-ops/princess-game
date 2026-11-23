@@ -41,7 +41,9 @@ docs/GDD.md        # 기획서
 - [x] M0 프로젝트 세팅 — 빈 씬·PWA, GitHub → Cloudflare Workers 자동 배포 (docs/DEPLOY.md)
 - [x] M1 그레이박스 이동 — 성 마당 `src/data/courtyard.json`, 격자 A* `src/systems/navigation/`
 - [x] M2 대화·음성 — 플로라 톡 → 말풍선·TTS·어절 강조, 문장별 끊어 읽기·기분(mood) 억양, 대사 `src/data/dialogues.json`
-- [x] M3 부탁 시스템 — 토리 "빨간 꽃 세 송이"(`src/data/quests.json`), 수 세기·색 힌트(한글+영어), 선물·별사탕(`src/systems/quests.ts`, `rewards.ts`). 저장은 M4에서
+- [x] M3 부탁 시스템 — 토리 "빨간 꽃 세 송이"(`src/data/quests.json`), 수 세기·색 힌트(한글+영어), 선물·별사탕(`src/systems/quests.ts`, `rewards.ts`)
+- [x] M4 옷 꾸미기 — 드레스룸(5부위·색 8개, 한글+영어 읽기), 갈아입는 공주 모델 `princess-model.ts`, 옷 데이터 `src/data/wardrobe.json`·`items.json`. 자동 저장(IndexedDB) `src/systems/game-state.ts` — 부탁 진행·주운 꽃·별사탕·옷 유지
+- [ ] M5 성 꾸미기
 
 ## 나중에 할 일
 - **사람 같은 음성 (보류, 기기 TTS가 로봇 같다는 피드백)**: 대사를 미리 음성 파일로 만들어 넣는다.
@@ -49,3 +51,5 @@ docs/GDD.md        # 기획서
   엔진 후보: edge-tts(무료·가입 없음, 단어 타이밍 제공, 비공식) / Google Cloud TTS 무료 사용량(공식, 카드 등록 필요).
   **캐릭터마다 다른 목소리**를 `characters.json`에 지정. 음성 파일이 없으면 지금의 기기 TTS로 대체.
   목소리 샘플을 여러 개 만들어 사용자가 직접 듣고 고른다.
+- **거울 사진 찍기** (GDD 5.1): 드레스룸에서 사진을 찍어 앨범에 저장 — 앨범 기능과 함께.
+- **저장 초기화**: 부모 설정(어른용 잠금) 뒤에 — M9.

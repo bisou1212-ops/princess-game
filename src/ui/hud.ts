@@ -1,27 +1,44 @@
-import { candyIcon, flowerIcon } from './icons';
+import { candyIcon, flowerIcon, wardrobeIcon } from './icons';
 import './hud.css';
 
 /**
  * 화면 위 고정 표시.
  * - 오른쪽 위: 별사탕 개수
  * - 가운데 위: 지금 모으는 부탁 (빈 칸이 하나씩 채워짐 → 수 세기)
+ * - 왼쪽 위: 드레스룸 버튼 (GDD 7 고정 아이콘), 새 옷이 있으면 반짝 점
  */
 export class Hud {
   private readonly root: HTMLDivElement;
   private readonly candyEl: HTMLSpanElement;
   private readonly candyPill: HTMLDivElement;
   private readonly tracker: HTMLDivElement;
+  private readonly wardrobeBtn: HTMLButtonElement;
 
-  constructor(parent: HTMLElement) {
+  constructor(parent: HTMLElement, onWardrobe: () => void) {
     this.root = document.createElement('div');
     this.root.className = 'hud';
     this.root.innerHTML = `
       <div class="hud-tracker" hidden></div>
-      <div class="hud-candy" aria-label="별사탕">${candyIcon()}<span>0</span></div>`;
+      <div class="hud-candy" aria-label="별사탕">${candyIcon()}<span>0</span></div>
+      <button class="hud-wardrobe" type="button" aria-label="드레스룸">${wardrobeIcon()}</button>`;
     parent.appendChild(this.root);
     this.candyPill = this.root.querySelector('.hud-candy')!;
     this.candyEl = this.candyPill.querySelector('span')!;
     this.tracker = this.root.querySelector('.hud-tracker')!;
+    this.wardrobeBtn = this.root.querySelector('.hud-wardrobe')!;
+    this.wardrobeBtn.addEventListener('click', onWardrobe);
+  }
+
+  /** 드레스룸에 아직 안 본 새 옷이 있으면 반짝 점 */
+  setWardrobeNew(on: boolean): void {
+    const dot = this.wardrobeBtn.querySelector('.wr-new-dot');
+    if (on && !dot) this.wardrobeBtn.insertAdjacentHTML('beforeend', '<span class="wr-new-dot"></span>');
+    if (!on) dot?.remove();
+  }
+
+  /** 드레스룸·대화 중에는 숨김 */
+  setButtonsVisible(on: boolean): void {
+    this.wardrobeBtn.hidden = !on;
   }
 
   setCandy(n: number, celebrate = false): void {

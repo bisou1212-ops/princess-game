@@ -1,7 +1,25 @@
 {
-  "_comment": "아이템. name=한글, en=영어(톡하면 둘 다 읽어 줌, GDD 6). kind: flower(줍는 꽃), dress(옷 선물). color는 화면 표시용.",
+  "_comment": "아이템. name=한글, en=영어(톡하면 둘 다 읽어 줌, GDD 6). kind: flower(줍는 꽃), outfit(옷 — slot=wardrobe.json의 부위, shape=임시 도형 모양, defaultColor=palette id). color는 아이콘 표시용.",
   "flower-red": { "kind": "flower", "name": "빨간 꽃", "en": "Red flower", "color": "#ff5d73" },
   "flower-yellow": { "kind": "flower", "name": "노란 꽃", "en": "Yellow flower", "color": "#ffd23f" },
   "flower-blue": { "kind": "flower", "name": "파란 꽃", "en": "Blue flower", "color": "#5ab8ff" },
-  "dress-flower": { "kind": "dress", "name": "꽃 드레스", "en": "Flower dress", "color": "#ff9ccf" }
+
+  "hair-long": { "kind": "outfit", "slot": "hair", "shape": "long", "defaultColor": "brown", "name": "긴 머리", "en": "Long hair", "color": "#a0704c" },
+  "hair-pigtails": { "kind": "outfit", "slot": "hair", "shape": "pigtails", "defaultColor": "brown", "name": "양갈래 머리", "en": "Pigtails", "color": "#a0704c" },
+  "hair-bun": { "kind": "outfit", "slot": "hair", "shape": "bun", "defaultColor": "black", "name": "똥머리", "en": "Bun", "color": "#3d3a4a" },
+
+  "crown-gold": { "kind": "outfit", "slot": "crown", "shape": "crown", "defaultColor": "yellow", "name": "왕관", "en": "Crown", "color": "#ffd84d" },
+  "headband-ribbon": { "kind": "outfit", "slot": "crown", "shape": "ribbon", "defaultColor": "pink", "name": "리본 머리띠", "en": "Ribbon headband", "color": "#ff9ccf" },
+  "tiara": { "kind": "outfit", "slot": "crown", "shape": "tiara", "defaultColor": "purple", "name": "티아라", "en": "Tiara", "color": "#b99cff" },
+
+  "dress-basic": { "kind": "outfit", "slot": "dress", "shape": "basic", "defaultColor": "pink", "name": "드레스", "en": "Dress", "color": "#ff9ccf" },
+  "dress-puffy": { "kind": "outfit", "slot": "dress", "shape": "puffy", "defaultColor": "blue", "name": "풍성한 드레스", "en": "Puffy dress", "color": "#74c0ff" },
+  "dress-flower": { "kind": "outfit", "slot": "dress", "shape": "flower", "defaultColor": "pink", "name": "꽃 드레스", "en": "Flower dress", "color": "#ff9ccf" },
+
+  "shoes-flat": { "kind": "outfit", "slot": "shoes", "shape": "flat", "defaultColor": "pink", "name": "구두", "en": "Shoes", "color": "#ff9ccf" },
+  "boots": { "kind": "outfit", "slot": "shoes", "shape": "boots", "defaultColor": "brown", "name": "부츠", "en": "Boots", "color": "#a0704c" },
+
+  "necklace": { "kind": "outfit", "slot": "accessory", "shape": "necklace", "defaultColor": "yellow", "name": "목걸이", "en": "Necklace", "color": "#ffd84d" },
+  "wings": { "kind": "outfit", "slot": "accessory", "shape": "wings", "defaultColor": "blue", "name": "날개", "en": "Wings", "color": "#74c0ff" },
+  "wand": { "kind": "outfit", "slot": "accessory", "shape": "wand", "defaultColor": "purple", "name": "마법봉", "en": "Magic wand", "color": "#b99cff" }
 }

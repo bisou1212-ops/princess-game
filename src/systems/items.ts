@@ -1,10 +1,16 @@
 import itemsJson from '../data/items.json';
 import wordsJson from '../data/words.json';
 
-export type ItemKind = 'flower' | 'dress';
+export type ItemKind = 'flower' | 'outfit';
 
 export interface Item {
   kind: ItemKind;
+  /** 옷이면 입는 부위 (wardrobe.json slots) */
+  slot?: string;
+  /** 옷이면 임시 도형 모양 */
+  shape?: string;
+  /** 옷이면 처음 색 (wardrobe.json palette id) */
+  defaultColor?: string;
   /** 한글 이름 */
   name: string;
   /** 영어 이름 */

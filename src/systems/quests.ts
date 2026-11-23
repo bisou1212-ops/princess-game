@@ -36,6 +36,8 @@ export function allQuestDefs(): Record<string, QuestDef> {
 export interface QuestProgress {
   status: QuestStatus;
   count: number;
+  /** 이미 주운 spawns 번호 — 다시 켰을 때 주운 꽃이 또 나타나지 않게 */
+  collected: number[];
 }
 
 /** 친구에게 말을 걸었을 때 일어나는 일 */
@@ -58,7 +60,35 @@ export class QuestBook {
   private readonly progress = new Map<string, QuestProgress>();
 
   constructor(private readonly defs: Record<string, QuestDef> = questDefs) {
-    for (const id of Object.keys(defs)) this.progress.set(id, { status: 'available', count: 0 });
+    for (const id of Object.keys(defs)) this.progress.set(id, { status: 'available', count: 0, collected: [] });
+  }
+
+  /** 저장된 진행 상황 불러오기 (모르는 부탁·이상한 값은 무시) */
+  load(raw: unknown): void {
+    if (!raw || typeof raw !== 'object') return;
+    const statuses: QuestStatus[] = ['available', 'active', 'ready', 'completed'];
+    for (const [id, v] of Object.entries(raw as Record<string, Partial<QuestProgress>>)) {
+      const def = this.defs[id];
+      if (!def || !v || !statuses.includes(v.status as QuestStatus)) continue;
+      const collected = Array.isArray(v.collected)
+        ? [...new Set(v.collected.filter((n) => Number.isInteger(n) && n >= 0 && n < def.spawns.length))]
+        : [];
+      const count = Math.min(Math.max(0, Math.floor(Number(v.count) || 0)), def.goal.count);
+      let status = v.status as QuestStatus;
+      // 개수와 상태가 어긋나면 개수를 믿는다
+      if (status === 'active' && count >= def.goal.count) status = 'ready';
+      if (status === 'ready' && count < def.goal.count) status = 'active';
+      this.progress.set(id, { status, count, collected });
+    }
+  }
+
+  /** 진행 중인 부탁에서 아직 마당에 남아 있어야 할 물건들 (spawns 번호 포함) */
+  remainingSpawns(id: string): Array<QuestSpawn & { index: number }> {
+    const p = this.progress.get(id);
+    if (!p || (p.status !== 'active' && p.status !== 'ready')) return [];
+    return this.def(id)
+      .spawns.map((s, index) => ({ ...s, index }))
+      .filter((s) => !p.collected.includes(s.index));
   }
 
   def(id: string): QuestDef {
@@ -70,7 +100,7 @@ export class QuestBook {
   get(id: string): QuestProgress {
     const p = this.progress.get(id);
     if (!p) throw new Error(`quests.json에 없는 부탁: ${id}`);
-    return { ...p };
+    return { ...p, collected: [...p.collected] };
   }
 
   /** 부탁한 친구에게 말을 걸면 상태에 맞는 대사와 결과를 돌려준다 */
@@ -92,10 +122,14 @@ export class QuestBook {
   }
 
   /** 진행 중인 부탁 중 이 물건이 필요한 것이 있으면 하나 센다 */
-  collect(itemId: string): CollectResult | null {
+  collect(itemId: string, spawnIndex?: number): CollectResult | null {
     for (const [id, p] of this.progress) {
       const goal = this.defs[id].goal;
       if (p.status !== 'active' || goal.item !== itemId) continue;
+      if (spawnIndex !== undefined) {
+        if (p.collected.includes(spawnIndex)) return null;
+        p.collected.push(spawnIndex);
+      }
       p.count = Math.min(p.count + 1, goal.count);
       const nowReady = p.count >= goal.count;
       if (nowReady) p.status = 'ready';
@@ -123,13 +157,13 @@ export class QuestBook {
   /** 지금 모으는 중(또는 다 모은) 부탁 하나 — 화면 위 진행 표시용 */
   current(): { id: string; def: QuestDef; progress: QuestProgress } | null {
     for (const [id, p] of this.progress) {
-      if (p.status === 'active' || p.status === 'ready') return { id, def: this.defs[id], progress: { ...p } };
+      if (p.status === 'active' || p.status === 'ready') return { id, def: this.defs[id], progress: this.get(id) };
     }
     return null;
   }
 
   /** 저장용 (M4에서 IndexedDB 저장에 사용) */
   toJSON(): Record<string, QuestProgress> {
-    return Object.fromEntries([...this.progress].map(([id, p]) => [id, { ...p }]));
+    return Object.fromEntries([...this.progress].map(([id]) => [id, this.get(id)]));
   }
 }

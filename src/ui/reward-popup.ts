@@ -31,7 +31,7 @@ export class RewardPopup {
     const gifts = reward.items.map((id) => {
       const it = getItem(id);
       return `<div class="gift">
-        <div class="gift-icon">${itemIcon(it.kind, it.color)}</div>
+        <div class="gift-icon">${itemIcon(it)}</div>
         <div class="gift-name">${it.name}</div>
         <div class="gift-en">${it.en}</div>
       </div>`;

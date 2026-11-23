@@ -1,0 +1,216 @@
+/* ── 드레스룸 ── 가로 화면: 오른쪽 패널 / 세로 화면: 아래 패널 */
+.wardrobe {
+  position: fixed;
+  z-index: 15;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(48vw, 520px);
+  box-sizing: border-box;
+  padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  background: rgba(255, 250, 243, 0.94);
+  border-left: 6px solid #ff9ccf;
+  border-radius: 36px 0 0 36px;
+  box-shadow: -6px 0 0 rgba(120, 100, 160, 0.12);
+  font-family: 'Jua', 'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans KR', sans-serif;
+  animation: wr-in 0.3s ease-out;
+}
+.wardrobe[hidden] {
+  display: none;
+}
+@media (orientation: portrait) {
+  .wardrobe {
+    top: auto;
+    left: 0;
+    width: auto;
+    height: 52vh;
+    border-left: none;
+    border-top: 6px solid #ff9ccf;
+    border-radius: 36px 36px 0 0;
+    padding-left: max(16px, env(safe-area-inset-left));
+    animation-name: wr-up;
+  }
+}
+
+.wardrobe button {
+  border: none;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+.wardrobe svg {
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.wr-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.wr-tabs {
+  flex: 1;
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.wr-tabs::-webkit-scrollbar {
+  display: none;
+}
+.wr-tab {
+  position: relative;
+  flex: none;
+  width: 64px;
+  height: 64px;
+  padding: 8px !important;
+  border-radius: 22px;
+  background: #f1ebf7 !important;
+  transition: transform 0.12s;
+}
+.wr-tab.is-on {
+  background: #ffe3f1 !important;
+  box-shadow: inset 0 0 0 4px #ff9ccf;
+}
+.wr-tab:active,
+.wr-item:active,
+.wr-color:active {
+  transform: scale(0.92);
+}
+.wr-new-dot {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #ffd76a;
+  box-shadow: 0 0 0 3px #fff;
+  animation: wr-twinkle 1s ease-in-out infinite;
+}
+
+.wr-done {
+  flex: none;
+  width: 76px;
+  height: 76px;
+  padding: 12px !important;
+  border-radius: 50%;
+  background: #86d98f !important;
+  box-shadow: 0 5px 0 rgba(60, 140, 80, 0.3);
+}
+
+.wr-items {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 12px;
+  align-content: start;
+}
+.wr-item {
+  position: relative;
+  aspect-ratio: 1;
+  padding: 12px !important;
+  border-radius: 26px;
+  background: #fff !important;
+  box-shadow: 0 4px 0 rgba(120, 100, 160, 0.12);
+  transition: transform 0.12s;
+}
+.wr-item.is-on {
+  box-shadow: inset 0 0 0 5px #ff9ccf, 0 4px 0 rgba(120, 100, 160, 0.12);
+  background: #fff4fa !important;
+}
+.wr-new {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #ffd76a;
+  color: #8a5a00;
+  font-size: 14px;
+  font-weight: 700;
+  animation: wr-twinkle 1s ease-in-out infinite;
+}
+
+/* 색 동그라미: 64px 이상 (CLAUDE.md) */
+.wr-colors {
+  display: grid;
+  grid-template-columns: repeat(4, 64px);
+  justify-content: space-evenly;
+  gap: 12px;
+  transition: opacity 0.2s;
+}
+.wr-colors.is-disabled {
+  opacity: 0.35;
+  pointer-events: none;
+}
+.wr-color {
+  width: 64px;
+  height: 64px;
+  border-radius: 50% !important;
+  background: var(--c) !important;
+  box-shadow: inset 0 0 0 4px rgba(255, 255, 255, 0.7), 0 4px 0 rgba(120, 100, 160, 0.15);
+  transition: transform 0.12s;
+}
+.wr-color.is-on {
+  box-shadow: inset 0 0 0 4px #fff, 0 0 0 5px #5a4a6b;
+  transform: scale(1.08);
+}
+
+/* 드레스룸 여는 버튼 (HUD 왼쪽 위) */
+.hud-wardrobe {
+  position: absolute;
+  top: max(16px, env(safe-area-inset-top));
+  left: max(16px, env(safe-area-inset-left));
+  width: 80px;
+  height: 80px;
+  padding: 12px;
+  box-sizing: border-box;
+  border: 4px solid #ff9ccf;
+  border-radius: 28px;
+  background: #fffaf3;
+  box-shadow: 0 5px 0 rgba(120, 100, 160, 0.15);
+  pointer-events: auto;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.hud-wardrobe svg {
+  width: 100%;
+  height: 100%;
+}
+.hud-wardrobe:active {
+  transform: scale(0.92);
+}
+.hud-wardrobe .wr-new-dot {
+  top: -4px;
+  right: -4px;
+  width: 22px;
+  height: 22px;
+}
+.hud-wardrobe[hidden] {
+  display: none;
+}
+
+@keyframes wr-in {
+  from { transform: translateX(40px); opacity: 0; }
+  to { transform: none; opacity: 1; }
+}
+@keyframes wr-up {
+  from { transform: translateY(40px); opacity: 0; }
+  to { transform: none; opacity: 1; }
+}
+@keyframes wr-twinkle {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .wardrobe, .wr-new, .wr-new-dot { animation: none; }
+}
