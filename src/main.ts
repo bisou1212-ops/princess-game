@@ -14,6 +14,7 @@ import { DialogueBox } from './ui/dialogue-box';
 import { renderFurnitureThumbs } from './ui/furniture-thumbs';
 import { Hud } from './ui/hud';
 import { RewardPopup } from './ui/reward-popup';
+import { RoomUi } from './ui/room-ui';
 import { WardrobePanel } from './ui/wardrobe-panel';
 import type { CourtyardLayout } from './scenes/castle/courtyard-layout';
 import { createCourtyardScene, type CourtyardScene } from './scenes/castle/courtyard-scene';
@@ -118,6 +119,15 @@ async function start() {
     onPutAway: () => room?.controller.putAwaySelected(),
     onDone: () => room?.controller.deselect(),
   });
+  const roomUi = new RoomUi(document.body, {
+    onRoom: (id) => void goTo('room', id),
+    onPaintOpen: () => room?.controller.openPaint(),
+    onPaintPart: (part) => room?.controller.choosePaintPart(part),
+    onPaintColor: (c) => room?.controller.paint(c),
+    onInviteOpen: () => room?.controller.openInvite(),
+    onInvite: (id) => room?.controller.invite(id),
+    onPanelClose: () => room?.controller.closePanel(),
+  });
   let room: { id: string; scene: BedroomScene; controller: BedroomController } | null = null;
   const rooms = new Map<string, { scene: BedroomScene; controller: BedroomController }>();
   const getRoom = (id: string) => {
@@ -137,6 +147,14 @@ async function start() {
         voice: princessVoice,
         thumbs: getThumbs,
         toNdc,
+        roomUi,
+        dialogue,
+        onLayout: () => applyViewOffset(),
+        onMirror: () => void openWardrobeFromRoom(id),
+        setBusy: (busy) => {
+          roomUi.setButtonsVisible(!busy);
+          hud.setButtonsVisible(!busy);
+        },
       });
       r = { scene, controller: ctl };
       rooms.set(id, r);
@@ -173,8 +191,10 @@ async function start() {
       if (next === 'room') {
         room = getRoom(roomId);
         room.controller.enter();
+        roomUi.show(roomId);
       } else {
         room = null;
+        roomUi.show(null);
       }
       hud.setMode(next === 'room' ? 'room' : 'yard');
     });
@@ -276,9 +296,22 @@ async function start() {
         t.scene.camera.clearViewOffset();
       }
     }
-    if (room) room.scene.fitView(w, h, decorUi.drawer.getBoundingClientRect().height || 150);
+    if (room) {
+      // 아래를 가리는 것: 말풍선 > 색칠·초대 패널 > 가구 서랍
+      const bottom = dialogueCover || (roomUi.isPanelOpen ? roomUi.panel.getBoundingClientRect().height + 24 : 0) || decorUi.drawer.getBoundingClientRect().height || 150;
+      room.scene.fitView(w, h, bottom);
+    }
   }
   window.addEventListener('resize', applyViewOffset);
+
+  /** 드레스룸 거울: 마당 거울 화면에서 옷을 갈아입고, 닫으면 그 방으로 돌아온다 */
+  let wardrobeReturnRoom: string | null = null;
+  async function openWardrobeFromRoom(roomId: string) {
+    if (switching || dialogue.isOpen) return;
+    await goTo('town');
+    wardrobeReturnRoom = roomId;
+    openWardrobe();
+  }
 
   function openWardrobe() {
     if (dialogue.isOpen || mode !== 'town' || switching) return;
@@ -297,6 +330,10 @@ async function start() {
     town.scene.setMirror(false);
     hud.setButtonsVisible(true);
     applyViewOffset();
+    // 드레스룸 거울에서 왔으면 그 방으로 돌아간다
+    const back = wardrobeReturnRoom;
+    wardrobeReturnRoom = null;
+    if (back) void goTo('room', back);
   }
 
   // 앱을 내리거나 닫을 때 바로 저장

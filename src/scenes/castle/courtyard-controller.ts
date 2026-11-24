@@ -1,12 +1,14 @@
 import type { Speaker } from '../../core/tts';
-import { getCharacter, getDialogue } from '../../systems/dialogue';
+import { getCharacter, getDialogue, type DialogueLine } from '../../systems/dialogue';
+import { fillLines, makeRandomQuest, randomSpots, rollStoryQuest, type QuestVars, type RandomQuest } from '../../systems/random-quests';
+import type { NavGrid } from '../../systems/navigation/nav-grid';
 import type { GameState } from '../../systems/game-state';
 import { goalCount } from '../../systems/quests';
 import { countingWord, getItem } from '../../systems/items';
 import type { DialogueBox } from '../../ui/dialogue-box';
 import type { Hud } from '../../ui/hud';
 import type { RewardPopup } from '../../ui/reward-popup';
-import type { CourtyardLayout } from './courtyard-layout';
+import { buildNavGrid, type CourtyardLayout } from './courtyard-layout';
 import type { CourtyardScene, Interaction } from './courtyard-scene';
 
 interface Deps {
@@ -35,8 +37,39 @@ function parsePickupId(id: string): { questId: string; index: number } | null {
  */
 export class CourtyardController {
   private scene: CourtyardScene | null = null;
+  private grid: NavGrid | null = null;
 
   constructor(private readonly deps: Deps) {}
+
+  /** 대사 묶음 (무작위 부탁이면 친구 이름·물건을 끼워 넣음) */
+  private lines(dialogueId: string, vars?: QuestVars): DialogueLine[] {
+    const lines = getDialogue(dialogueId);
+    return vars ? fillLines(lines, vars, (id) => getCharacter(id).name) : lines;
+  }
+
+  /** 이 장소에서 물건을 놓을 빈자리 n개: 걸을 수 있고 친구·시작 자리·문에서 떨어진 곳 */
+  private spots(n: number) {
+    const { layout } = this.deps;
+    this.grid ??= buildNavGrid(layout);
+    const avoid = [
+      layout.start,
+      ...layout.npcs.map((p) => ({ x: p.x, z: p.z })),
+      ...layout.doors.map((d) => ({ x: d.x, z: d.z + 1 })),
+    ];
+    return randomSpots(this.grid, n, avoid);
+  }
+
+  /** 이 장소에서 새 부탁 만들기 */
+  private makeRandom(character: string): RandomQuest | null {
+    const { layout } = this.deps;
+    return makeRandomQuest({
+      giver: character,
+      location: layout.id,
+      townFriends: layout.npcs.map((n) => n.character),
+      spots: (n) => this.spots(n),
+      previous: this.quests.lastRandomVars(character),
+    });
+  }
 
   private get quests() {
     return this.deps.state.quests;
@@ -70,12 +103,18 @@ export class CourtyardController {
     if (!npc) return;
 
     // 이 친구의 부탁(또는 이 친구에게 전할 물건)이 있으면 그것, 없으면 그냥 인사
-    const result = this.quests.talkToCharacter(npc.character);
+    const result = this.quests.talkToCharacter(
+      npc.character,
+      () => this.makeRandom(npc.character),
+      // 이야기 부탁은 그 부탁의 장소에서 받을 때만 자리를 새로 정한다
+      (def) => (def.location === this.deps.layout.id ? rollStoryQuest(def, (n) => this.spots(n)) : null),
+    );
     if (!result) {
       if (npc.dialogue) this.deps.dialogue.open(getDialogue(npc.dialogue));
       return;
     }
     const questId = result.questId;
+    const vars = result.vars;
     this.refreshMarkers();
     const gotReward = result.event === 'completed' || result.event === 'delivered';
     // 선물은 바로 지갑에 넣고 저장 (대화 도중 앱을 꺼도 선물을 잃지 않게). 보여 주는 건 대화 뒤에
@@ -84,7 +123,7 @@ export class CourtyardController {
 
     switch (result.event) {
       case 'offered':
-        this.deps.dialogue.open(getDialogue(result.dialogue), () => {
+        this.deps.dialogue.open(this.lines(result.dialogue, vars), () => {
           // 대화가 끝나면 물건이 톡톡 나타난다 (배달 부탁은 물건을 들고 출발)
           this.spawnHere(questId);
           this.refreshHud();
@@ -92,16 +131,26 @@ export class CourtyardController {
         break;
       case 'completed':
       case 'delivered':
-        this.deps.dialogue.open(getDialogue(result.dialogue), () => {
+        // 끝난 무작위 부탁은 정리되어 없을 수도 있으니 물건 수를 먼저 센다
+        const spawnCount = this.spawnCountOf(questId);
+        this.deps.dialogue.open(this.lines(result.dialogue, vars), () => {
           // 남은 물건(오답 포함)은 정리. 세워 둔 화분은 그대로
-          this.quests.def(questId).spawns.forEach((_, i) => this.scene?.removePickup(pickupId(questId, i)));
+          for (let i = 0; i < spawnCount; i++) this.scene?.removePickup(pickupId(questId, i));
           this.refreshHud();
           this.deps.hud.setCandy(this.deps.state.wallet.candy, true);
           this.deps.reward.open(result.rewards);
         });
         break;
       default:
-        this.deps.dialogue.open(getDialogue(result.dialogue));
+        this.deps.dialogue.open(this.lines(result.dialogue, vars));
+    }
+  }
+
+  private spawnCountOf(questId: string): number {
+    try {
+      return this.quests.def(questId).spawns.length;
+    } catch {
+      return 0;
     }
   }
 
@@ -126,9 +175,10 @@ export class CourtyardController {
         this.refreshMarkers();
         // "셋!"을 다 듣고 나서 친구가 "다 모았구나!" (다른 대화가 열려 있으면 생략)
         const ready = this.quests.def(collected.questId).dialogue.ready;
+        const readyVars = this.quests.varsOf(collected.questId);
         if (ready) {
           window.setTimeout(() => {
-            if (!this.deps.dialogue.isOpen) this.deps.dialogue.open(getDialogue(ready));
+            if (!this.deps.dialogue.isOpen) this.deps.dialogue.open(this.lines(ready, readyVars));
           }, 900);
         }
       }
@@ -137,7 +187,10 @@ export class CourtyardController {
 
     // 정답이 아닌 물건: 실패가 아니라 친구의 힌트 (색 이름 한글·영어)
     const hint = this.quests.hintFor(itemId);
-    if (hint) this.deps.dialogue.open(getDialogue(hint));
+    if (hint) {
+      const hv = this.quests.varsOf(hint.questId);
+      this.deps.dialogue.open(this.lines(hint.dialogue, hv && { ...hv, decoy: getItem(itemId).name, decoyEn: getItem(itemId).en }));
+    }
   }
 
   /** ♥: 부탁이 없는 친구는 늘(인사), 부탁이 있는 친구는 받을 차례·가져다줄 때·배달받을 때만 */

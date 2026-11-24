@@ -1,4 +1,5 @@
 import questsJson from '../data/quests.json';
+import { hasRandomQuests, questVars, type QuestVars, type RandomQuest } from './random-quests';
 
 /**
  * 친구의 부탁 (GDD 4·5.3). 실패·시간 제한 없음 — 언제든 다시 말을 걸면 된다.
@@ -35,6 +36,8 @@ export interface QuestDef {
   title: string;
   /** 이 부탁보다 먼저 끝내야 하는 부탁 */
   requires?: string;
+  /** 게임마다 달라지는 부분: items 중 하나, count 범위, 자리는 무작위 (rollStoryQuest) */
+  vary?: { items: string[]; count: [number, number]; hint: string };
   /** 부탁을 해결하기 전까지 부탁한 친구의 기분 (sad면 눈물) */
   giverMood?: 'sad';
   goal: QuestGoal;
@@ -80,11 +83,89 @@ export interface CollectResult {
   nowReady: boolean;
 }
 
+/** 할 때마다 달라지는 부탁의 id는 "rq:"로 시작한다 (random-quests.ts) */
+export const isRandomQuest = (id: string) => id.startsWith('rq:');
+
 export class QuestBook {
   private readonly progress = new Map<string, QuestProgress>();
+  private readonly defs: Record<string, QuestDef>;
+  /** 무작위 부탁의 대사에 끼워 넣을 말 */
+  private readonly vars = new Map<string, QuestVars>();
 
-  constructor(private readonly defs: Record<string, QuestDef> = questDefs) {
+  constructor(
+    defs: Record<string, QuestDef> = questDefs,
+    private readonly canRandom: (character: string) => boolean = hasRandomQuests,
+  ) {
+    this.defs = { ...defs };
     for (const id of Object.keys(defs)) this.progress.set(id, { status: 'available', count: 0, collected: [] });
+  }
+
+  /** 새로 만든 무작위 부탁 넣기 */
+  addRandom(q: RandomQuest): void {
+    this.defs[q.id] = q.def;
+    this.vars.set(q.id, { ...q.vars });
+    this.progress.set(q.id, { status: 'available', count: 0, collected: [] });
+  }
+
+  /** 대사에 끼워 넣을 말 (굴린 부탁은 저장된 값, 아니면 부탁 내용에서) */
+  varsOf(id: string): QuestVars | undefined {
+    const d = this.defs[id];
+    return this.vars.get(id) ?? (d ? questVars(d) : undefined);
+  }
+
+  /** 이 친구의 무작위 부탁들 (오래된 것부터) */
+  private randomQuestsOf(character: string): string[] {
+    return [...this.progress.keys()].filter((id) => isRandomQuest(id) && this.defs[id].giver === character);
+  }
+
+  /** 끝난 무작위 부탁은 친구마다 마지막 하나만 남긴다 (저장이 끝없이 커지지 않게) */
+  private pruneRandom(character: string): void {
+    const done = this.randomQuestsOf(character).filter((id) => this.progress.get(id)!.status === 'completed');
+    for (const id of done.slice(0, -1)) {
+      this.progress.delete(id);
+      this.vars.delete(id);
+      delete this.defs[id];
+    }
+  }
+
+  /** 바로 전 무작위 부탁 (같은 부탁이 연달아 나오지 않게) */
+  lastRandomVars(character: string): QuestVars | undefined {
+    const list = this.randomQuestsOf(character);
+    return list.length ? this.vars.get(list[list.length - 1]) : undefined;
+  }
+
+  /** 이야기 부탁을 다 끝냈고, 지금 하는 부탁이 하나도 없으면 새 부탁을 할 수 있다 */
+  private canOfferRandom(character: string): boolean {
+    if (!this.canRandom(character)) return false;
+    if (this.storyQuestsOf(character).some((id) => this.progress.get(id)!.status !== 'completed')) return false;
+    return this.current() === null;
+  }
+
+  /** 저장용: 무작위 부탁·이번 게임에 굴린 이야기 부탁의 내용 (진행 상황은 toJSON에) */
+  randomToJSON(): Record<string, { def: QuestDef; vars: QuestVars }> {
+    const out: Record<string, { def: QuestDef; vars: QuestVars }> = {};
+    for (const id of this.progress.keys()) {
+      if (isRandomQuest(id) || this.vars.has(id)) out[id] = { def: this.defs[id], vars: { ...this.vars.get(id) } };
+    }
+    return out;
+  }
+
+  /** 이야기 부탁을 굴린 결과로 바꾸기 (받기 직전에 한 번) */
+  private applyRoll(id: string, rolled: { def: QuestDef; vars: QuestVars }): void {
+    this.defs[id] = rolled.def;
+    this.vars.set(id, { ...rolled.vars });
+  }
+
+  /** 저장된 무작위 부탁 다시 넣기 (load 전에). 모양이 이상하면 버린다 */
+  loadRandom(raw: unknown): void {
+    if (!raw || typeof raw !== 'object') return;
+    for (const [id, v] of Object.entries(raw as Record<string, { def?: QuestDef; vars?: QuestVars }>)) {
+      const def = v?.def;
+      if (!def || typeof def.giver !== 'string' || !def.goal || !Array.isArray(def.spawns) || !def.dialogue || !def.rewards) continue;
+      const vars = v.vars && typeof v.vars === 'object' ? v.vars : {};
+      if (isRandomQuest(id)) this.addRandom({ id, def, vars });
+      else if (this.defs[id]) this.applyRoll(id, { def, vars }); // 이번 게임에 굴린 이야기 부탁
+    }
   }
 
   /** 저장된 진행 상황 불러오기 (모르는 부탁·이상한 값은 무시) */
@@ -132,14 +213,19 @@ export class QuestBook {
     return { ...p, collected: [...p.collected] };
   }
 
-  /** 이 친구가 주는 부탁들 (quests.json 순서) */
+  /** 이 친구가 주는 부탁들 (quests.json 순서 + 무작위 부탁) */
   questsOf(character: string): string[] {
     return Object.keys(this.defs).filter((id) => this.defs[id].giver === character);
   }
 
+  /** 이 친구의 이야기 부탁 (quests.json) */
+  storyQuestsOf(character: string): string[] {
+    return this.questsOf(character).filter((id) => !isRandomQuest(id));
+  }
+
   /** 이 친구가 지금 줄 차례인 부탁 (앞 부탁을 다 끝내야 다음). 다 끝났으면 null */
   private nextQuestOf(character: string): string | null {
-    for (const id of this.questsOf(character)) {
+    for (const id of this.storyQuestsOf(character)) {
       const p = this.progress.get(id)!;
       if (p.status === 'completed') continue;
       const req = this.defs[id].requires;
@@ -160,23 +246,60 @@ export class QuestBook {
 
   /**
    * 친구(캐릭터)에게 말을 걸었을 때. 배달 물건을 받는 친구면 먼저 배달,
-   * 아니면 그 친구의 다음 부탁. 부탁이 없는 친구면 null (그냥 인사 대사).
+   * 아니면 그 친구의 다음 이야기 부탁, 다 끝났으면 무작위 부탁(make로 새로 만듦).
+   * 부탁이 없는 친구면 null (그냥 인사 대사). 무작위 부탁이면 vars(대사에 끼워 넣을 말)도 준다.
    */
-  talkToCharacter(character: string): (TalkResult & { questId: string }) | null {
+  talkToCharacter(
+    character: string,
+    make?: () => RandomQuest | null,
+    roll?: (def: QuestDef) => { def: QuestDef; vars: QuestVars } | null,
+  ): (TalkResult & { questId: string; vars?: QuestVars }) | null {
     const delivery = this.deliveryFor(character);
     if (delivery) {
       const d = this.defs[delivery];
       const p = this.progress.get(delivery)!;
       p.status = 'completed';
       p.count = 1;
-      return { questId: delivery, event: 'delivered', dialogue: d.dialogue.complete, rewards: d.rewards };
+      const vars = this.varsOf(delivery);
+      if (isRandomQuest(delivery)) this.pruneRandom(d.giver);
+      return { questId: delivery, event: 'delivered', dialogue: d.dialogue.complete, rewards: d.rewards, vars };
     }
     const next = this.nextQuestOf(character);
-    if (next) return { questId: next, ...this.talk(next) };
-    const all = this.questsOf(character);
-    const last = all[all.length - 1];
+    if (next) {
+      // 처음 받는 이야기 부탁: 이번 게임의 색·개수·자리를 정한다
+      if (roll && this.progress.get(next)!.status === 'available' && !this.vars.has(next)) {
+        const rolled = roll(this.defs[next]);
+        if (rolled) this.applyRoll(next, rolled);
+      }
+      return { questId: next, ...this.talk(next), vars: this.varsOf(next) };
+    }
+
+    // 하는 중인 무작위 부탁
+    const open = this.randomQuestsOf(character).find((id) => this.progress.get(id)!.status !== 'completed');
+    if (open) {
+      const vars = this.vars.get(open);
+      const r = this.talk(open);
+      if (r.event === 'completed') this.pruneRandom(character);
+      return { questId: open, ...r, vars };
+    }
+    // 새 무작위 부탁
+    if (make && this.canOfferRandom(character)) {
+      const q = make();
+      if (q) {
+        this.addRandom(q);
+        return { questId: q.id, ...this.talk(q.id), vars: this.vars.get(q.id) };
+      }
+    }
+    const story = this.storyQuestsOf(character);
+    const storyDone = story.every((id) => this.progress.get(id)!.status === 'completed');
+    // 다른 부탁을 하는 중이면: "그거 끝나면 나도 부탁할게!"
+    const cur = this.current();
+    if (make && storyDone && this.canRandom(character) && cur) {
+      return { questId: cur.id, event: 'done', dialogue: 'rq-busy', vars: { from: character } };
+    }
+    const last = story[story.length - 1];
     if (last && this.progress.get(last)?.status === 'completed') {
-      return { questId: last, event: 'done', dialogue: this.defs[last].dialogue.done };
+      return { questId: last, event: 'done', dialogue: this.defs[last].dialogue.done, vars: this.varsOf(last) };
     }
     // 앞 부탁(다른 친구의 부탁)이 안 끝나서 아직 줄 게 없음
     return null;
@@ -224,11 +347,11 @@ export class QuestBook {
   }
 
   /** 진행 중인 부탁에서 이 물건(오답)을 톡했을 때의 힌트 대사 */
-  hintFor(itemId: string): string | null {
+  hintFor(itemId: string): { questId: string; dialogue: string } | null {
     for (const [id, p] of this.progress) {
       if (p.status !== 'active') continue;
       const hint = this.defs[id].hints[itemId];
-      if (hint) return hint;
+      if (hint) return { questId: id, dialogue: hint };
     }
     return null;
   }
@@ -243,12 +366,14 @@ export class QuestBook {
   characterWantsAttention(character: string): boolean {
     if (this.deliveryFor(character)) return true;
     const next = this.nextQuestOf(character);
-    return next !== null && this.wantsAttention(next);
+    if (next !== null) return this.wantsAttention(next);
+    if (this.randomQuestsOf(character).some((id) => this.progress.get(id)!.status === 'ready')) return true;
+    return this.canOfferRandom(character);
   }
 
   /** 친구의 지금 기분 (아직 해결 안 한 부탁의 giverMood) */
   moodOf(character: string): 'sad' | null {
-    for (const id of this.questsOf(character)) {
+    for (const id of this.storyQuestsOf(character)) {
       const d = this.defs[id];
       if (d.giverMood && this.progress.get(id)!.status !== 'completed') return d.giverMood;
     }

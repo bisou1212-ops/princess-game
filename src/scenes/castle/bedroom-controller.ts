@@ -1,6 +1,9 @@
 import * as THREE from 'three';
 import type { Speaker } from '../../core/tts';
-import type { RoomLayout } from '../../systems/decor';
+import { ROOMS, SURFACES, praiseFor, type RoomLayout, type SurfaceId } from '../../systems/decor';
+import { getCharacter, getDialogue, type DialogueLine } from '../../systems/dialogue';
+import type { DialogueBox } from '../../ui/dialogue-box';
+import type { RoomUi } from '../../ui/room-ui';
 import type { GameState } from '../../systems/game-state';
 import { getItem } from '../../systems/items';
 import { getColor } from '../../systems/wardrobe';
@@ -16,6 +19,14 @@ interface Deps {
   speaker: Speaker;
   voice: { lang: string; pitch: number; rate: number };
   thumbs: () => Map<string, string>;
+  roomUi: RoomUi;
+  dialogue: DialogueBox;
+  /** 아래 UI 높이가 바뀌었을 때 (카메라 맞추기) */
+  onLayout(): void;
+  /** 친구가 와 있는 동안 위 버튼 숨기기 */
+  setBusy(busy: boolean): void;
+  /** 드레스룸 거울을 톡하면 옷 갈아입기 */
+  onMirror(): void;
   /** 화면 좌표 → NDC */
   toNdc(x: number, y: number): THREE.Vector2;
 }
@@ -34,6 +45,8 @@ export class BedroomController {
   private drag: Drag | null = null;
   private selected: string | null = null;
   private docListeners: (() => void) | null = null;
+  private paintPart: SurfaceId = 'wall';
+  private guestOn = false;
 
   constructor(private readonly d: Deps) {}
 
@@ -46,18 +59,114 @@ export class BedroomController {
   leave(): void {
     this.cancelDrag();
     this.select(null);
+    this.d.roomUi.hidePanel();
     this.d.ui.setVisible(false);
+    if (this.guestOn) {
+      this.d.dialogue.close();
+      this.d.scene.showGuest(null);
+      this.guestOn = false;
+    }
+  }
+
+  /** 친구가 와 있거나 패널이 열려 있으면 가구를 만지지 않는다 */
+  private get locked(): boolean {
+    return this.guestOn;
+  }
+
+  // ── 벽지·바닥·커튼 색칠 ──
+
+  openPaint(): void {
+    if (this.locked) return;
+    this.select(null);
+    this.d.ui.drawer.hidden = true;
+    this.d.roomUi.showPaint(this.paintPart, this.d.layout.style[this.paintPart]);
+    this.sayPart(this.paintPart);
+    this.d.onLayout();
+  }
+
+  choosePaintPart(part: SurfaceId): void {
+    this.paintPart = part;
+    this.d.roomUi.showPaint(part, this.d.layout.style[part]);
+    this.sayPart(part);
+  }
+
+  paint(color: string): void {
+    if (!this.d.layout.setSurface(this.paintPart, color)) return;
+    this.d.scene.applyStyle(this.paintPart);
+    this.d.roomUi.showPaint(this.paintPart, color);
+    const c = getColor(color);
+    this.say(`${c.name}!`, c.en);
+    this.d.state.change();
+  }
+
+  closePanel(): void {
+    this.d.roomUi.hidePanel();
+    if (!this.guestOn) this.d.ui.drawer.hidden = false;
+    this.d.onLayout();
+  }
+
+  // ── 친구 초대 (GDD 5.2: 꾸민 방을 보고 칭찬) ──
+
+  openInvite(): void {
+    if (this.locked) return;
+    this.select(null);
+    this.d.ui.drawer.hidden = true;
+    this.d.roomUi.showInvite();
+    this.d.speaker.speak('누구를 초대할까?', { ...this.d.voice, mood: 'curious' });
+    this.d.onLayout();
+  }
+
+  invite(characterId: string): void {
+    if (this.locked) return;
+    this.guestOn = true;
+    this.d.roomUi.hidePanel();
+    this.d.ui.drawer.hidden = true;
+    this.d.setBusy(true);
+    this.d.scene.showGuest(characterId);
+    const lines = this.inviteLines(characterId);
+    // 친구가 톡 나타난 다음 말하기
+    setTimeout(() => {
+      if (!this.guestOn) return;
+      this.d.dialogue.open(lines, () => {
+        this.d.scene.showGuest(null);
+        this.guestOn = false;
+        this.d.setBusy(false);
+        this.d.ui.drawer.hidden = false;
+        this.d.onLayout();
+      });
+    }, 450);
+  }
+
+  /** 인사 + 가구 개수에 맞는 칭찬 (+ 색을 바꿨으면 색 칭찬). 'guest'·{room}을 바꿔 넣는다 */
+  inviteLines(characterId: string): DialogueLine[] {
+    getCharacter(characterId); // 없는 친구면 여기서 알 수 있게
+    const count = this.d.layout.items.length;
+    const ids = ['invite-hello', praiseFor(count)];
+    if (count >= 3 && Object.keys(this.d.layout.style).length > 0) ids.push('invite-colors');
+    const roomName = ROOMS[this.d.roomId]?.name ?? '방';
+    return ids.flatMap((id) =>
+      getDialogue(id).map((l) => ({
+        ...l,
+        speaker: l.speaker === 'guest' ? characterId : l.speaker,
+        text: l.text.replaceAll('{room}', roomName),
+      })),
+    );
   }
 
   // ── 방 화면(캔버스) 제스처 ──
 
   onTap(x: number, y: number): void {
+    if (!this.locked && !this.selected && this.d.scene.pickMirror(this.d.toNdc(x, y))) {
+      this.d.onMirror();
+      return;
+    }
     const uid = this.d.scene.pickFurniture(this.d.toNdc(x, y));
     // 같은 가구를 다시 톡하면 고르기 해제, 빈 바닥을 톡해도 해제
     this.select(uid === this.selected ? null : uid);
   }
 
   onDragStart(x: number, y: number): boolean {
+    if (this.locked) return false;
     const uid = this.d.scene.pickFurniture(this.d.toNdc(x, y));
     if (!uid) return false;
     const p = this.d.layout.get(uid)!;
@@ -141,7 +250,7 @@ export class BedroomController {
 
   /** 서랍 카드를 위로 끌기 시작: 이후 움직임은 문서 전체에서 따라간다 */
   startNewDrag(item: string, e: PointerEvent): void {
-    if (this.d.layout.available(item) <= 0) return;
+    if (this.locked || this.d.layout.available(item) <= 0) return;
     this.select(null);
     const it = getItem(item);
     this.drag = { kind: 'new', item, rot: 0, color: it.defaultColor ?? 'pink', spot: null, valid: false };
@@ -212,6 +321,8 @@ export class BedroomController {
   }
 
   private select(uid: string | null): void {
+    if (uid && this.locked) return;
+    if (uid) this.d.roomUi.hidePanel();
     this.selected = uid;
     this.d.scene.select(uid);
     const p = uid ? this.d.layout.get(uid) : undefined;
@@ -230,6 +341,11 @@ export class BedroomController {
   private changed(): void {
     this.refreshDrawer();
     this.d.state.change();
+  }
+
+  private sayPart(part: SurfaceId): void {
+    const s = SURFACES.find((x) => x.id === part)!;
+    this.say(`${s.name}!`, s.en);
   }
 
   private sayItem(item: string): void {

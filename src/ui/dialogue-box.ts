@@ -140,7 +140,7 @@ export class DialogueBox {
     const correct = choice.correct !== false;
     card.classList.add(correct ? 'is-picked' : 'is-wobble');
     const question = this.session.current!;
-    const reply = choice.reply ? getDialogue(choice.reply) : [];
+    const reply = choice.replyLines ?? (choice.reply ? getDialogue(choice.reply) : []);
     this.session.insertNext(correct ? reply : [...reply, question]);
     const voice = getCharacter('princess').voice;
     const go = () => {

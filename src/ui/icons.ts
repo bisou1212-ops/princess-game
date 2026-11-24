@@ -111,7 +111,11 @@ export function itemIcon(item: { kind: string; color: string; slot?: string; sha
     if (item.shape === 'blueberry') return blueberryIcon(item.color);
     if (item.shape === 'pot') return potIcon(item.color);
   }
-  if (item.kind === 'letter') return letterIcon(item.color);
+  if (item.kind === 'letter') {
+    if (item.shape === 'gift') return giftIcon(item.color);
+    if (item.shape === 'cookie') return cookieIcon(item.color);
+    return letterIcon(item.color);
+  }
   if (item.kind === 'furniture') return giftIcon(item.color);
   return flowerIcon(item.color);
 }
@@ -135,6 +139,11 @@ export function potIcon(color: string): string {
 export function letterIcon(color: string): string {
   return svg(`<rect x="8" y="16" width="48" height="34" rx="5" fill="#fffaf3" ${OUTLINE}/><path d="M10 19l22 17 22-17" fill="none" stroke="${color}" stroke-width="4" stroke-linejoin="round"/>
     <path d="M32 44c-6-4-9-7-9-10a4 4 0 0 1 9-2 4 4 0 0 1 9 2c0 3-3 6-9 10z" fill="#ff8fc4"/>`);
+}
+
+export function cookieIcon(color: string): string {
+  return svg(`<circle cx="32" cy="32" r="24" fill="${color}" ${OUTLINE}/>
+    <g fill="#7a4a2a"><circle cx="24" cy="24" r="3.5"/><circle cx="38" cy="22" r="3"/><circle cx="40" cy="38" r="3.5"/><circle cx="26" cy="40" r="3"/><circle cx="32" cy="31" r="2.5"/></g>`);
 }
 
 export function giftIcon(color: string): string {

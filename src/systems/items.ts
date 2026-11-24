@@ -18,6 +18,8 @@ export interface Item {
   layer?: 'object' | 'floor';
   /** 줍는 물건: stand면 사라지지 않고 그 자리에 세워진다 (넘어진 화분) */
   onCollect?: 'stand';
+  /** 셀 때 단위 (없으면 '개') */
+  unit?: string;
   /** 한글 이름 */
   name: string;
   /** 영어 이름 */

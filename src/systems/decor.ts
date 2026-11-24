@@ -15,6 +15,32 @@ export interface RoomDef {
   cellSize: number;
   wall: string;
   floor: string;
+  curtain: string;
+  /** 방 고르기 버튼 그림 */
+  icon: string;
+  /** 왼쪽 벽에 큰 거울 (톡하면 옷 갈아입기) */
+  mirror?: boolean;
+}
+
+/** 색을 바꿀 수 있는 방 부분 (GDD 5.2: 벽지·바닥·커튼) */
+export const SURFACES = [
+  { id: 'wall', name: '벽지', en: 'Wallpaper' },
+  { id: 'floor', name: '바닥', en: 'Floor' },
+  { id: 'curtain', name: '커튼', en: 'Curtain' },
+] as const;
+export type SurfaceId = (typeof SURFACES)[number]['id'];
+/** 방 부분별로 고른 palette id (안 고르면 방의 처음 색) */
+export type RoomStyle = Partial<Record<SurfaceId, string>>;
+
+/** palette 색을 방에 어울리게 연하게: 벽은 아주 연하게, 바닥은 조금, 커튼은 거의 그대로 */
+const SURFACE_LIGHTEN: Record<SurfaceId, number> = { wall: 0.62, floor: 0.4, curtain: 0.12 };
+
+export function mixHex(a: string, b: string, t: number): string {
+  const pa = parseInt(a.slice(1), 16);
+  const pb = parseInt(b.slice(1), 16);
+  const ch = (p: number, sh: number) => (p >> sh) & 255;
+  const mix = (sh: number) => Math.round(ch(pa, sh) + (ch(pb, sh) - ch(pa, sh)) * t);
+  return `#${((mix(16) << 16) | (mix(8) << 8) | mix(0)).toString(16).padStart(6, '0')}`;
 }
 
 export type FurnitureItem = Item & { kind: 'furniture'; shape: string; w: number; d: number; layer: 'object' | 'floor' };
@@ -31,10 +57,21 @@ export interface Placed {
   color: string;
 }
 
-const data = roomsJson as unknown as { rooms: Record<string, RoomDef>; starterFurniture: Record<string, number> };
+const data = roomsJson as unknown as {
+  rooms: Record<string, RoomDef>;
+  starterFurniture: Record<string, number>;
+  praise: Array<{ min: number; dialogue: string }>;
+};
 
 export const ROOMS: Readonly<Record<string, RoomDef>> = data.rooms;
 export const STARTER_FURNITURE: Readonly<Record<string, number>> = data.starterFurniture;
+
+/** 친구 초대 때 칭찬 대사 id: 놓은 가구가 많을수록 더 크게 칭찬 */
+export function praiseFor(furnitureCount: number): string {
+  let best = data.praise[0].dialogue;
+  for (const p of data.praise) if (furnitureCount >= p.min) best = p.dialogue;
+  return best;
+}
 
 export function getFurniture(id: string): FurnitureItem | null {
   const it = allItems()[id];
@@ -58,6 +95,9 @@ export class RoomLayout {
   readonly rows: number;
   private placed: Placed[] = [];
   private seq = 0;
+  /** 같은 서랍을 함께 쓰는 다른 방들 (침대가 하나면 한 방에만 놓을 수 있다) */
+  private others: RoomLayout[] = [];
+  style: RoomStyle = {};
 
   constructor(
     readonly def: RoomDef,
@@ -75,13 +115,23 @@ export class RoomLayout {
     return this.placed.find((p) => p.uid === uid);
   }
 
+  /** 여러 방이 가진 가구를 함께 쓰도록 묶는다 */
+  static share(rooms: RoomLayout[]): void {
+    for (const r of rooms) r.others = rooms.filter((o) => o !== r);
+  }
+
+  private countPlaced(itemId: string): number {
+    return this.placed.filter((p) => p.item === itemId).length;
+  }
+
   setOwned(owned: Record<string, number>): void {
     this.owned = { ...owned };
   }
 
   /** 서랍에 남은 개수 */
   available(itemId: string): number {
-    return (this.owned[itemId] ?? 0) - this.placed.filter((p) => p.item === itemId).length;
+    const elsewhere = this.others.reduce((n, o) => n + o.countPlaced(itemId), 0);
+    return (this.owned[itemId] ?? 0) - this.countPlaced(itemId) - elsewhere;
   }
 
   /** 서랍에 보여 줄 가구 (가진 것 전부, 데이터 순서) */
@@ -195,6 +245,59 @@ export class RoomLayout {
     if (i < 0) return false;
     this.placed.splice(i, 1);
     return true;
+  }
+
+  /** 벽지·바닥·커튼 색 바꾸기 */
+  setSurface(part: SurfaceId, color: string): boolean {
+    if (!SURFACES.some((x) => x.id === part) || !PALETTE.some((x) => x.id === color)) return false;
+    this.style[part] = color;
+    return true;
+  }
+
+  /** 화면에 칠할 색 (고른 색을 연하게, 안 골랐으면 방의 처음 색) */
+  surfaceHex(part: SurfaceId): string {
+    const id = this.style[part];
+    const c = id && PALETTE.find((x) => x.id === id);
+    return c ? mixHex(c.hex, '#ffffff', SURFACE_LIGHTEN[part]) : this.def[part];
+  }
+
+  loadStyle(raw: unknown): void {
+    this.style = {};
+    if (!raw || typeof raw !== 'object') return;
+    for (const [k, v] of Object.entries(raw as Record<string, unknown>)) {
+      if (typeof v === 'string') this.setSurface(k as SurfaceId, v);
+    }
+  }
+
+  /**
+   * 초대한 친구가 설 자리: 앞쪽 가운데에서 가까운, size×size 칸이 비어 있는 곳 (러그 위는 괜찮음).
+   * 빈 곳이 하나도 없으면 앞쪽 가운데.
+   */
+  guestSpot(size = 2): { x: number; z: number } {
+    const busy = (c: number, r: number) =>
+      this.placed.some((p) => {
+        const it = getFurniture(p.item);
+        if (!it || it.layer === 'floor') return false;
+        const fp = footprint(it, p.rot);
+        return c < p.c + fp.w && p.c < c + size && r < p.r + fp.d && p.r < r + size;
+      });
+    const c0 = Math.round(this.cols / 2 - size / 2);
+    const r0 = this.rows - size - 1;
+    let best: { c: number; r: number } | null = null;
+    let bestD = Infinity;
+    for (let r = 0; r <= this.rows - size; r++) {
+      for (let c = 0; c <= this.cols - size; c++) {
+        if (busy(c, r)) continue;
+        const d = Math.hypot(c - c0, (r - r0) * 1.5);
+        if (d < bestD) {
+          bestD = d;
+          best = { c, r };
+        }
+      }
+    }
+    const at = best ?? { c: c0, r: r0 };
+    const cs = this.def.cellSize;
+    return { x: (at.c + size / 2) * cs - this.def.width / 2, z: (at.r + size / 2) * cs - this.def.depth / 2 };
   }
 
   toJSON(): Placed[] {

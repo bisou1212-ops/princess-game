@@ -43,7 +43,7 @@ describe('부탁 진행', () => {
     const book = new QuestBook({ q: def });
     expect(book.hintFor('flower-blue')).toBeNull();
     book.talk('q');
-    expect(book.hintFor('flower-blue')).toBe('hint-blue');
+    expect(book.hintFor('flower-blue')).toEqual({ questId: 'q', dialogue: 'hint-blue' });
     expect(book.hintFor('flower-red')).toBeNull();
   });
 
@@ -120,7 +120,7 @@ describe('친구마다 여러 부탁 + 배달 부탁', () => {
   };
 
   it('같은 친구의 부탁은 하나씩 차례로', () => {
-    const b = new QuestBook(defs);
+    const b = new QuestBook(defs, () => false); // 이야기 부탁만 (무작위 부탁 끔)
     expect(b.talkToCharacter('tori')).toMatchObject({ questId: 'a1', event: 'offered' });
     b.collect('flower-red');
     expect(b.talkToCharacter('tori')).toMatchObject({ questId: 'a1', event: 'completed' });
@@ -133,7 +133,7 @@ describe('친구마다 여러 부탁 + 배달 부탁', () => {
   });
 
   it('배달: 받는 친구에게 말을 걸면 끝나고 선물', () => {
-    const b = new QuestBook(defs);
+    const b = new QuestBook(defs, () => false); // 이야기 부탁만 (무작위 부탁 끔)
     expect(b.talkToCharacter('gogo')).toBeNull(); // 아직 받은 게 없음
     expect(b.talkToCharacter('flora')).toMatchObject({ questId: 'd1', event: 'offered' });
     expect(b.characterWantsAttention('gogo')).toBe(true);
@@ -145,7 +145,7 @@ describe('친구마다 여러 부탁 + 배달 부탁', () => {
   });
 
   it('배달 부탁은 저장에서 ready 로 불러와도 active 로 고친다', () => {
-    const b = new QuestBook(defs);
+    const b = new QuestBook(defs, () => false); // 이야기 부탁만 (무작위 부탁 끔)
     b.load({ d1: { status: 'ready', count: 0, collected: [] } });
     expect(b.get('d1').status).toBe('active');
   });
@@ -180,7 +180,7 @@ describe('talk 부탁 (삐삐 위로하기)', () => {
       t: { giver: 'pippi', location: 'flower-kingdom', title: '위로', giverMood: 'sad', goal: { type: 'talk' }, spawns: [], hints: {},
         dialogue: { offer: 'o', progress: 'o', complete: 'o', done: 'd' }, rewards: { candy: 1, items: [] } },
     };
-    const b = new QuestBook(defs);
+    const b = new QuestBook(defs, () => false); // 이야기 부탁만 (무작위 부탁 끔)
     expect(b.moodOf('pippi')).toBe('sad');
     expect(b.characterWantsAttention('pippi')).toBe(true);
     expect(b.talkToCharacter('pippi')).toMatchObject({ event: 'completed', dialogue: 'o' });

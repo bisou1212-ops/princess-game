@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { ROOMS, RoomLayout, STARTER_FURNITURE, footprint, getFurniture, ownedFurniture } from './decor';
+import { ROOMS, RoomLayout, STARTER_FURNITURE, footprint, getFurniture, ownedFurniture, praiseFor } from './decor';
 import { GameState } from './game-state';
 import { MemoryStore } from '../core/storage';
 import { PALETTE } from './wardrobe';
@@ -25,8 +25,8 @@ describe('가구 놓기', () => {
   });
 
   it('가진 개수만큼만 꺼낼 수 있고, 치우면 서랍으로 돌아온다', () => {
-    const r = room();
-    expect(r.available('chair')).toBe(STARTER_FURNITURE.chair);
+    expect(room().available('chair')).toBe(STARTER_FURNITURE.chair);
+    const r = new RoomLayout(ROOMS.bedroom, { chair: 2 });
     const a = r.place('chair', 0, 0)!;
     r.place('chair', 2, 0);
     expect(r.available('chair')).toBe(0);
@@ -128,5 +128,59 @@ describe('방 저장·불러오기', () => {
     ]);
     expect(r.items.map((p) => p.uid)).toEqual(['a', 'f']);
     expect(r.get('f')!.color).toBe('yellow');
+  });
+});
+
+describe('여러 방 (M8-3)', () => {
+  it('방은 침실·드레스룸·파티홀 3개', () => {
+    expect(Object.keys(ROOMS)).toEqual(['bedroom', 'dressroom', 'partyhall']);
+    for (const def of Object.values(ROOMS)) {
+      expect(def.wall).toMatch(/^#[0-9a-f]{6}$/i);
+      expect(def.curtain).toMatch(/^#[0-9a-f]{6}$/i);
+    }
+  });
+
+  it('가구 서랍은 모든 방이 함께 쓴다', () => {
+    const s = new GameState();
+    const bed = s.rooms.bedroom;
+    const dress = s.rooms.dressroom;
+    expect(bed.place('bed', 0, 0)).not.toBeNull();
+    expect(dress.available('bed')).toBe(0);
+    expect(dress.place('bed', 0, 0)).toBeNull();
+    bed.remove(bed.items[0].uid);
+    expect(dress.available('bed')).toBe(1);
+  });
+
+  it('벽지·바닥·커튼 색을 바꾸고 저장·불러오기 된다', async () => {
+    const store = new MemoryStore();
+    const a = new GameState(store);
+    const room = a.rooms.partyhall;
+    expect(room.surfaceHex('wall')).toBe(ROOMS.partyhall.wall);
+    expect(room.setSurface('wall', 'blue')).toBe(true);
+    expect(room.setSurface('wall', 'nope')).toBe(false);
+    expect(room.surfaceHex('wall')).not.toBe(ROOMS.partyhall.wall);
+    a.rooms.bedroom.place('bed', 0, 0);
+    await a.saveNow();
+    const b = new GameState(store);
+    await b.load();
+    expect(b.rooms.partyhall.style.wall).toBe('blue');
+    expect(b.rooms.bedroom.items).toHaveLength(1);
+  });
+
+  it('친구 칭찬은 가구가 많을수록 커진다', () => {
+    expect(praiseFor(0)).toBe('invite-empty');
+    expect(praiseFor(4)).toBe('invite-some');
+    expect(praiseFor(9)).toBe('invite-lots');
+  });
+
+  it('친구는 가구와 안 겹치는 자리에 선다', () => {
+    const r = new RoomLayout(ROOMS.bedroom, { toybox: 1 });
+    const free = r.guestSpot();
+    // 친구 자리 바로 그 칸에 장난감 상자를 놓으면 다른 자리로
+    const c = Math.round((free.x + 3) / 0.5 - 1);
+    const row = Math.round((free.z + 3) / 0.5 - 1);
+    expect(r.place('toybox', c, row)).not.toBeNull();
+    const moved = r.guestSpot();
+    expect(moved).not.toEqual(free);
   });
 });

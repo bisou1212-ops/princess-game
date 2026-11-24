@@ -1,5 +1,5 @@
 {
-  "_comment": "대사 묶음. speaker는 characters.json의 id. mood(normal·happy·excited·curious·shy·sad)로 말투에 변화를 준다. 문장부호(. ! ? ~ …)마다 끊어 읽으므로 추임새는 '우와!', '음~'처럼 부호로 끝낸다. lang을 쓰면 그 줄만 다른 언어로 읽는다(예: en-US).",
+  "_comment": "대사 묶음. speaker는 characters.json의 id. mood(normal·happy·excited·curious·shy·sad)로 말투에 변화를 준다. 문장부호(. ! ? ~ …)마다 끊어 읽으므로 추임새는 '우와!', '음~'처럼 부호로 끝낸다. lang을 쓰면 그 줄만 다른 언어로 읽는다(예: en-US). invite-* 대사의 speaker 'guest'는 초대한 친구로 바뀌고, 글 속 {room}은 방 이름으로 바뀐다. rq-* 대사는 할 때마다 달라지는 부탁(random-quests.json): speaker 'giver'·'receiver'와 {item}·{count}·{en}·{to}·{from}·{reason}이 바뀐다. 부탁 대사의 {counting}=\"하나, 둘, 셋\"처럼 센 말, {decoy}·{decoyEn}=잘못 고른 물건.",
   "flora-hello": [
     { "speaker": "flora", "mood": "excited", "text": "우와! 안녕? 나는 꽃 왕국에서 온 플로라 공주야." },
     { "speaker": "flora", "mood": "curious", "text": "음~ 새로 이사 온 공주님, 맞지?" },
@@ -10,33 +10,48 @@
   "tori-offer": [
     { "speaker": "tori", "mood": "excited", "text": "어머나, 새 공주님이다! 안녕? 나는 꽃집 토끼 토리야." },
     { "speaker": "tori", "mood": "curious", "text": "음~ 혹시 부탁 하나 들어줄 수 있어?" },
-    { "speaker": "tori", "mood": "happy", "text": "마당 여기저기에 꽃이 피었거든. 빨간 꽃 세 송이를 모아다 줄래?" },
-    { "speaker": "tori", "mood": "happy", "text": "빨간색은 영어로…" },
-    { "speaker": "tori", "mood": "excited", "text": "Red!", "lang": "en-US" },
+    {
+      "speaker": "tori",
+      "mood": "happy",
+      "text": "마당 여기저기에 꽃이 피었거든. {item} {count|을} 모아다 줄래?"
+    },
+    {
+      "speaker": "tori",
+      "mood": "happy",
+      "text": "{item|은} 영어로…"
+    },
+    {
+      "speaker": "tori",
+      "mood": "excited",
+      "text": "{en}!",
+      "lang": "en-US"
+    },
     { "speaker": "tori", "mood": "happy", "text": "반짝반짝 빛나는 꽃을 찾아봐!" }
   ],
   "tori-progress": [
-    { "speaker": "tori", "mood": "happy", "text": "빨간 꽃은 반짝반짝 빛나고 있어. 천천히 찾아봐!" }
+    {
+      "speaker": "tori",
+      "mood": "happy",
+      "text": "{item|은} 반짝반짝 빛나고 있어. 천천히 찾아봐!"
+    }
   ],
   "tori-ready": [
-    { "speaker": "tori", "mood": "excited", "text": "와아, 빨간 꽃을 다 모았구나! 토리한테 가져다줘!" }
+    {
+      "speaker": "tori",
+      "mood": "excited",
+      "text": "와아, {item|을} 다 모았구나! 토리한테 가져다줘!"
+    }
   ],
   "tori-complete": [
-    { "speaker": "tori", "mood": "excited", "text": "우와! 빨간 꽃 하나, 둘, 셋! 정말 고마워!" },
+    {
+      "speaker": "tori",
+      "mood": "excited",
+      "text": "우와! {item} {counting}! 정말 고마워!"
+    },
     { "speaker": "tori", "mood": "shy", "text": "헤헤… 고마워서 선물을 준비했어. 짜잔!" }
   ],
   "tori-done": [
     { "speaker": "tori", "mood": "happy", "text": "꽃이 정말 예쁘다. 또 놀러 와!" }
-  ],
-  "tori-hint-yellow": [
-    { "speaker": "tori", "mood": "curious", "text": "어? 그건 노란 꽃이야. 노란색은 영어로…" },
-    { "speaker": "tori", "mood": "happy", "text": "Yellow!", "lang": "en-US" },
-    { "speaker": "tori", "mood": "happy", "text": "빨간 꽃을 다시 찾아볼까?" }
-  ],
-  "tori-hint-blue": [
-    { "speaker": "tori", "mood": "curious", "text": "어? 그건 파란 꽃이야. 파란색은 영어로…" },
-    { "speaker": "tori", "mood": "happy", "text": "Blue!", "lang": "en-US" },
-    { "speaker": "tori", "mood": "happy", "text": "빨간 꽃을 다시 찾아볼까?" }
   ],
   "gogo-hello": [
     { "speaker": "gogo", "mood": "normal", "text": "음… 안녕. 나는 정원사 곰 고고야." },
@@ -50,32 +65,47 @@
   ],
   "tori-yellow-offer": [
     { "speaker": "tori", "mood": "happy", "text": "공주님, 또 와 줬구나! 헤헤." },
-    { "speaker": "tori", "mood": "curious", "text": "이번에는 노란 꽃이 필요해. 노란 꽃 네 송이를 모아 줄래?" },
-    { "speaker": "tori", "mood": "happy", "text": "노란색은 영어로…" },
-    { "speaker": "tori", "mood": "excited", "text": "Yellow!", "lang": "en-US" }
+    {
+      "speaker": "tori",
+      "mood": "curious",
+      "text": "이번에는 {item|이} 필요해. {item} {count|을} 모아 줄래?"
+    },
+    {
+      "speaker": "tori",
+      "mood": "happy",
+      "text": "{item|은} 영어로…"
+    },
+    {
+      "speaker": "tori",
+      "mood": "excited",
+      "text": "{en}!",
+      "lang": "en-US"
+    }
   ],
   "tori-yellow-progress": [
-    { "speaker": "tori", "mood": "happy", "text": "노란 꽃은 해님처럼 노랗게 빛나고 있어!" }
+    {
+      "speaker": "tori",
+      "mood": "happy",
+      "text": "{item|은} 마당 여기저기에서 빛나고 있어!"
+    }
   ],
   "tori-yellow-ready": [
-    { "speaker": "tori", "mood": "excited", "text": "와아, 노란 꽃 네 송이를 다 모았구나! 토리한테 가져다줘!" }
+    {
+      "speaker": "tori",
+      "mood": "excited",
+      "text": "와아, {item} {count|을} 다 모았구나! 토리한테 가져다줘!"
+    }
   ],
   "tori-yellow-complete": [
-    { "speaker": "tori", "mood": "excited", "text": "하나, 둘, 셋, 넷! 정말 예쁜 노란 꽃이야!" },
+    {
+      "speaker": "tori",
+      "mood": "excited",
+      "text": "{counting}! 정말 예쁜 {item|이야}!"
+    },
     { "speaker": "tori", "mood": "shy", "text": "고마워서 작은 화분을 선물할게. 성에 놓아 봐!" }
   ],
   "tori-yellow-done": [
     { "speaker": "tori", "mood": "happy", "text": "꽃집이 환해졌어. 공주님 덕분이야!" }
-  ],
-  "tori-hint-red-for-yellow": [
-    { "speaker": "tori", "mood": "curious", "text": "어? 그건 빨간 꽃이야. 빨간색은 영어로…" },
-    { "speaker": "tori", "mood": "happy", "text": "Red!", "lang": "en-US" },
-    { "speaker": "tori", "mood": "happy", "text": "이번엔 노란 꽃을 찾아볼까?" }
-  ],
-  "tori-hint-blue-for-yellow": [
-    { "speaker": "tori", "mood": "curious", "text": "어? 그건 파란 꽃이야. 파란색은 영어로…" },
-    { "speaker": "tori", "mood": "happy", "text": "Blue!", "lang": "en-US" },
-    { "speaker": "tori", "mood": "happy", "text": "이번엔 노란 꽃을 찾아볼까?" }
   ],
   "flora-invite-offer": [
     { "speaker": "flora", "mood": "excited", "text": "우와! 안녕? 나는 꽃 왕국에서 온 플로라 공주야." },
@@ -96,42 +126,70 @@
   ],
   "dochi-berry-offer": [
     { "speaker": "dochi", "mood": "excited", "text": "공주님, 마침 잘 왔어요!" },
-    { "speaker": "dochi", "mood": "curious", "text": "딸기 케이크를 만들려는데 딸기가 모자라요. 딸기 다섯 개를 모아 줄래요?" },
-    { "speaker": "dochi", "mood": "happy", "text": "딸기는 영어로…" },
-    { "speaker": "dochi", "mood": "excited", "text": "Strawberry!", "lang": "en-US" }
+    {
+      "speaker": "dochi",
+      "mood": "curious",
+      "text": "케이크를 만들려는데 {item|이} 모자라요. {item} {count|을} 모아 줄래요?"
+    },
+    {
+      "speaker": "dochi",
+      "mood": "happy",
+      "text": "{item|은} 영어로…"
+    },
+    {
+      "speaker": "dochi",
+      "mood": "excited",
+      "text": "{en}!",
+      "lang": "en-US"
+    }
   ],
   "dochi-berry-progress": [
-    { "speaker": "dochi", "mood": "happy", "text": "빨갛고 동그란 딸기는 풀밭 여기저기에 있어요. 킁킁!" }
+    {
+      "speaker": "dochi",
+      "mood": "happy",
+      "text": "{item|은} 풀밭 여기저기에 있어요. 킁킁!"
+    }
   ],
   "dochi-berry-ready": [
-    { "speaker": "dochi", "mood": "excited", "text": "와, 딸기 다섯 개! 빵집으로 가져다줘요!" }
+    {
+      "speaker": "dochi",
+      "mood": "excited",
+      "text": "와, {item} {count}! 빵집으로 가져다줘요!"
+    }
   ],
   "dochi-berry-complete": [
-    { "speaker": "dochi", "mood": "excited", "text": "하나, 둘, 셋, 넷, 다섯! 케이크에 딸기를 다섯 개 올렸어요!" },
+    {
+      "speaker": "dochi",
+      "mood": "excited",
+      "text": "{counting}! 케이크에 {item|을} {count} 올렸어요!"
+    },
     { "speaker": "dochi", "mood": "shy", "text": "헤헤… 고마워요. 케이크 먹을 동그란 탁자를 선물할게요!" }
   ],
   "dochi-berry-done": [
     { "speaker": "dochi", "mood": "happy", "text": "케이크 냄새 좋지요? 또 놀러 와요!" }
   ],
-  "dochi-hint-blueberry": [
-    { "speaker": "dochi", "mood": "curious", "text": "어? 그건 블루베리예요. 영어로…" },
-    { "speaker": "dochi", "mood": "happy", "text": "Blueberry!", "lang": "en-US" },
-    { "speaker": "dochi", "mood": "happy", "text": "빨간 딸기를 찾아볼까요?" }
-  ],
   "gogo-pots-offer": [
     { "speaker": "gogo", "mood": "sad", "text": "음… 바람이 불어서 화분이 넘어졌어." },
-    { "speaker": "gogo", "mood": "curious", "text": "넘어진 화분 세 개를 톡 해서 세워 줄래?" },
+    {
+      "speaker": "gogo",
+      "mood": "curious",
+      "text": "넘어진 화분 {count|을} 톡 해서 세워 줄래?"
+    },
     { "speaker": "gogo", "mood": "happy", "text": "화분은 영어로…" },
     { "speaker": "gogo", "mood": "happy", "text": "Flower pot!", "lang": "en-US" }
   ],
   "gogo-pots-progress": [
-    { "speaker": "gogo", "mood": "normal", "text": "넘어진 화분은 정원 창고 근처에 있어." }
+    { "speaker": "gogo", "mood": "normal", "text": "넘어진 화분은 정원 여기저기에 있어." }
   ],
   "gogo-pots-ready": [
     { "speaker": "gogo", "mood": "happy", "text": "화분이 다 섰구나. 고고한테 와 줄래?" }
   ],
   "gogo-pots-complete": [
-    { "speaker": "gogo", "mood": "happy", "text": "하나, 둘, 셋. 정리 정돈을 정말 잘하는구나." },
+    {
+      "speaker": "gogo",
+      "mood": "happy",
+      "text": "{counting}. 정리 정돈을 정말 잘하는구나."
+    },
     { "speaker": "gogo", "mood": "shy", "text": "고마워. 이 화분을 성에 놓아 줘." }
   ],
   "gogo-pots-done": [
@@ -192,5 +250,436 @@
   ],
   "pippi-done": [
     { "speaker": "pippi", "mood": "happy", "text": "라라라~ 공주님, 오늘도 내 노래 들어 줄래? 헤헤." }
+  ],
+  "invite-hello": [
+    { "speaker": "guest", "mood": "excited", "text": "똑똑! 공주님, 초대해 줘서 고마워!" }
+  ],
+  "invite-empty": [
+    {
+      "speaker": "guest",
+      "mood": "curious",
+      "text": "우와~ {room}, 정말 넓다!"
+    },
+    { "speaker": "guest", "mood": "happy", "text": "여기에 가구를 놓으면 더 예쁘겠다. 같이 꾸며 볼까?" }
+  ],
+  "invite-some": [
+    {
+      "speaker": "guest",
+      "mood": "happy",
+      "text": "우와, 예쁘다! {room}, 정말 아늑해."
+    },
+    { "speaker": "guest", "mood": "excited", "text": "공주님은 꾸미기를 정말 잘하는구나!" }
+  ],
+  "invite-lots": [
+    {
+      "speaker": "guest",
+      "mood": "excited",
+      "text": "우와아! 예쁘다! 이렇게 멋진 {room}은 처음 봐!"
+    },
+    { "speaker": "guest", "mood": "happy", "text": "나도 여기서 살고 싶어. 다음에 또 놀러 와도 돼?" }
+  ],
+  "invite-colors": [
+    { "speaker": "guest", "mood": "happy", "text": "벽지랑 바닥 색도 정말 잘 어울려!" }
+  ],
+  "rq-flowers-offer": [
+    { "speaker": "giver", "mood": "curious", "text": "공주님, 부탁 하나 들어줄래?" },
+    {
+      "speaker": "giver",
+      "mood": "happy",
+      "text": "{reason}"
+    },
+    {
+      "speaker": "giver",
+      "mood": "happy",
+      "text": "{item} {count|을} 찾아 줄래?"
+    },
+    {
+      "speaker": "giver",
+      "mood": "happy",
+      "text": "{item|은} 영어로…"
+    },
+    {
+      "speaker": "giver",
+      "mood": "excited",
+      "text": "{en}!",
+      "lang": "en-US"
+    }
+  ],
+  "rq-flowers-progress": [
+    {
+      "speaker": "giver",
+      "mood": "happy",
+      "text": "{item} {count}! 천천히 찾아봐~"
+    }
+  ],
+  "rq-flowers-ready": [
+    {
+      "speaker": "giver",
+      "mood": "excited",
+      "text": "우와, {count} 다 모았구나! 나한테 가져다줄래?"
+    }
+  ],
+  "rq-flowers-complete": [
+    { "speaker": "giver", "mood": "excited", "text": "와아, 고마워! 정말 예쁘다!" },
+    { "speaker": "giver", "mood": "happy", "text": "이건 고마워서 주는 선물이야." }
+  ],
+  "rq-flowers-done": [
+    { "speaker": "giver", "mood": "happy", "text": "공주님 덕분에 행복해!" }
+  ],
+  "rq-flowers-hint": [
+    {
+      "speaker": "giver",
+      "mood": "curious",
+      "text": "음~ 그건 {decoy|야}. 영어로 {decoyEn}!"
+    },
+    {
+      "speaker": "giver",
+      "mood": "happy",
+      "text": "우리는 {item|을} 찾고 있어. {en}!"
+    }
+  ],
+  "rq-berries-offer": [
+    { "speaker": "giver", "mood": "excited", "text": "공주님! 마침 잘 왔어." },
+    {
+      "speaker": "giver",
+      "mood": "happy",
+      "text": "{reason}"
+    },
+    {
+      "speaker": "giver",
+      "mood": "happy",
+      "text": "{item} {count|이} 필요해. 따 줄 수 있어?"
+    },
+    {
+      "speaker": "giver",
+      "mood": "happy",
+      "text": "{item|은} 영어로…"
+    },
+    {
+      "speaker": "giver",
+      "mood": "excited",
+      "text": "{en}!",
+      "lang": "en-US"
+    }
+  ],
+  "rq-berries-progress": [
+    {
+      "speaker": "giver",
+      "mood": "happy",
+      "text": "{item} {count|을} 모아 줘~"
+    }
+  ],
+  "rq-berries-ready": [
+    {
+      "speaker": "giver",
+      "mood": "excited",
+      "text": "{count} 다 모았네! 나한테 가져와 줘!"
+    }
+  ],
+  "rq-berries-complete": [
+    { "speaker": "giver", "mood": "excited", "text": "냠냠, 고마워! 맛있는 거 만들어서 같이 먹자!" },
+    { "speaker": "giver", "mood": "happy", "text": "이건 고마워서 주는 선물이야." }
+  ],
+  "rq-berries-done": [
+    { "speaker": "giver", "mood": "happy", "text": "공주님은 정말 친절해!" }
+  ],
+  "rq-berries-hint": [
+    {
+      "speaker": "giver",
+      "mood": "curious",
+      "text": "어? 그건 {decoy|야}. 영어로 {decoyEn}!"
+    },
+    {
+      "speaker": "giver",
+      "mood": "happy",
+      "text": "{item|을} 찾아 줄래? {en}!"
+    }
+  ],
+  "rq-pots-offer": [
+    { "speaker": "giver", "mood": "sad", "text": "아이고, 큰일 났어!" },
+    {
+      "speaker": "giver",
+      "mood": "normal",
+      "text": "{reason}"
+    },
+    {
+      "speaker": "giver",
+      "mood": "happy",
+      "text": "넘어진 {item} {count|을} 세워 줄래?"
+    }
+  ],
+  "rq-pots-progress": [
+    {
+      "speaker": "giver",
+      "mood": "happy",
+      "text": "넘어진 {item|을} 톡 하면 세울 수 있어~"
+    }
+  ],
+  "rq-pots-ready": [
+    {
+      "speaker": "giver",
+      "mood": "excited",
+      "text": "{count} 다 세웠구나! 와, 고마워!"
+    }
+  ],
+  "rq-pots-complete": [
+    { "speaker": "giver", "mood": "excited", "text": "공주님 덕분에 다시 예뻐졌어!" },
+    { "speaker": "giver", "mood": "happy", "text": "이건 고마워서 주는 선물이야." }
+  ],
+  "rq-pots-done": [
+    { "speaker": "giver", "mood": "happy", "text": "이제 화분이 넘어지지 않게 조심할게!" }
+  ],
+  "rq-pots-hint": [
+    {
+      "speaker": "giver",
+      "mood": "happy",
+      "text": "넘어진 {item|을} 찾아 줘~"
+    }
+  ],
+  "rq-deliver-offer": [
+    { "speaker": "giver", "mood": "curious", "text": "공주님, 부탁이 있어." },
+    {
+      "speaker": "giver",
+      "mood": "happy",
+      "text": "이 {item|을} {to}에게 전해 줄래? {reason}"
+    },
+    {
+      "speaker": "giver",
+      "mood": "happy",
+      "text": "{item|은} 영어로…"
+    },
+    {
+      "speaker": "giver",
+      "mood": "excited",
+      "text": "{en}!",
+      "lang": "en-US"
+    }
+  ],
+  "rq-deliver-progress": [
+    {
+      "speaker": "giver",
+      "mood": "happy",
+      "text": "{to}에게 {item|을} 전해 줘~ 머리 위에 하트가 있을 거야!"
+    }
+  ],
+  "rq-deliver-complete": [
+    {
+      "speaker": "receiver",
+      "mood": "excited",
+      "text": "어? {from|이} 보낸 {item|이야}?"
+    },
+    { "speaker": "receiver", "mood": "happy", "text": "우와, 정말 고마워! 공주님도 고마워!" },
+    { "speaker": "receiver", "mood": "happy", "text": "이건 내가 주는 선물이야." }
+  ],
+  "rq-deliver-done": [
+    { "speaker": "giver", "mood": "happy", "text": "잘 전해 줘서 고마워!" }
+  ],
+  "rq-deliver-hint": [
+    {
+      "speaker": "giver",
+      "mood": "happy",
+      "text": "{to}에게 가 보자!"
+    }
+  ],
+  "rq-busy": [
+    { "speaker": "giver", "mood": "happy", "text": "지금 하고 있는 부탁부터 끝내고 와~ 그다음에 나도 부탁할게!" }
+  ],
+  "story-hint": [
+    {
+      "speaker": "giver",
+      "mood": "curious",
+      "text": "어? 그건 {decoy|야}. {decoy|은} 영어로…"
+    },
+    {
+      "speaker": "giver",
+      "mood": "happy",
+      "text": "{decoyEn}!",
+      "lang": "en-US"
+    },
+    {
+      "speaker": "giver",
+      "mood": "happy",
+      "text": "{item|을} 다시 찾아볼까?"
+    }
+  ],
+  "story-hint-polite": [
+    {
+      "speaker": "giver",
+      "mood": "curious",
+      "text": "어? 그건 {decoy|예요}. 영어로…"
+    },
+    {
+      "speaker": "giver",
+      "mood": "happy",
+      "text": "{decoyEn}!",
+      "lang": "en-US"
+    },
+    {
+      "speaker": "giver",
+      "mood": "happy",
+      "text": "{item|을} 찾아볼까요?"
+    }
+  ],
+  "rq-feel-happy": [
+    { "speaker": "giver", "mood": "excited", "text": "공주님, 내 얘기 들어 볼래?" },
+    {
+      "speaker": "giver",
+      "mood": "excited",
+      "text": "{situation}"
+    },
+    {
+      "speaker": "princess",
+      "mood": "curious",
+      "text": "{from|은} 지금 어떤 기분일까? 골라 봐!",
+      "choices": [
+        { "id": "happy", "label": "기뻐요", "en": "Happy", "icon": "happy", "reply": "rq-feel-right-happy" },
+        { "id": "sad", "label": "슬퍼요", "en": "Sad", "icon": "sad", "correct": false, "reply": "rq-feel-hint-happy" },
+        { "id": "angry", "label": "화나요", "en": "Angry", "icon": "angry", "correct": false, "reply": "rq-feel-hint-happy" },
+        { "id": "scared", "label": "무서워요", "en": "Scared", "icon": "scared", "correct": false, "reply": "rq-feel-hint-happy" }
+      ]
+    },
+    { "speaker": "giver", "mood": "excited", "text": "같이 기뻐해 줘서 고마워! 이건 고마워서 주는 선물이야!" }
+  ],
+  "rq-feel-hint-happy": [
+    {
+      "speaker": "princess",
+      "mood": "curious",
+      "text": "{from|은} 웃고 있어. 좋은 일이 있었대. 다시 골라 볼까?"
+    }
+  ],
+  "rq-feel-right-happy": [
+    { "speaker": "giver", "mood": "excited", "text": "맞아! 정말 기뻐! 영어로는 Happy!" }
+  ],
+  "rq-feel-sad": [
+    { "speaker": "giver", "mood": "sad", "text": "공주님, 내 얘기 들어 볼래?" },
+    {
+      "speaker": "giver",
+      "mood": "sad",
+      "text": "{situation}"
+    },
+    {
+      "speaker": "princess",
+      "mood": "curious",
+      "text": "{from|은} 지금 어떤 기분일까? 골라 봐!",
+      "choices": [
+        { "id": "happy", "label": "기뻐요", "en": "Happy", "icon": "happy", "correct": false, "reply": "rq-feel-hint-sad" },
+        { "id": "sad", "label": "슬퍼요", "en": "Sad", "icon": "sad", "reply": "rq-feel-right-sad" },
+        { "id": "angry", "label": "화나요", "en": "Angry", "icon": "angry", "correct": false, "reply": "rq-feel-hint-sad" },
+        { "id": "scared", "label": "무서워요", "en": "Scared", "icon": "scared", "correct": false, "reply": "rq-feel-hint-sad" }
+      ]
+    },
+    {
+      "speaker": "princess",
+      "mood": "curious",
+      "text": "{from|을} 어떻게 도와줄까?",
+      "choices": [
+        { "id": "hug", "label": "안아 주기", "en": "Hug", "icon": "hug", "reply": "rq-feel-comfort-hug" },
+        { "id": "flower", "label": "꽃 주기", "en": "Flower", "icon": "give-flower", "reply": "rq-feel-comfort-flower" },
+        { "id": "sing", "label": "같이 노래하기", "en": "Sing", "icon": "sing", "reply": "rq-feel-comfort-sing" }
+      ]
+    },
+    { "speaker": "giver", "mood": "happy", "text": "공주님 덕분에 마음이 편해졌어. 고마워서 선물을 줄게!" }
+  ],
+  "rq-feel-hint-sad": [
+    {
+      "speaker": "princess",
+      "mood": "curious",
+      "text": "{from|은} 속상한 일이 있었대. 눈물이 날 것 같은 기분이야. 다시 골라 볼까?"
+    }
+  ],
+  "rq-feel-right-sad": [
+    { "speaker": "giver", "mood": "sad", "text": "응… 맞아. 너무 슬펐어." }
+  ],
+  "rq-feel-angry": [
+    { "speaker": "giver", "mood": "normal", "text": "공주님, 내 얘기 들어 볼래?" },
+    {
+      "speaker": "giver",
+      "mood": "normal",
+      "text": "{situation}"
+    },
+    {
+      "speaker": "princess",
+      "mood": "curious",
+      "text": "{from|은} 지금 어떤 기분일까? 골라 봐!",
+      "choices": [
+        { "id": "happy", "label": "기뻐요", "en": "Happy", "icon": "happy", "correct": false, "reply": "rq-feel-hint-angry" },
+        { "id": "sad", "label": "슬퍼요", "en": "Sad", "icon": "sad", "correct": false, "reply": "rq-feel-hint-angry" },
+        { "id": "angry", "label": "화나요", "en": "Angry", "icon": "angry", "reply": "rq-feel-right-angry" },
+        { "id": "scared", "label": "무서워요", "en": "Scared", "icon": "scared", "correct": false, "reply": "rq-feel-hint-angry" }
+      ]
+    },
+    {
+      "speaker": "princess",
+      "mood": "curious",
+      "text": "{from|을} 어떻게 도와줄까?",
+      "choices": [
+        { "id": "hug", "label": "안아 주기", "en": "Hug", "icon": "hug", "reply": "rq-feel-comfort-hug" },
+        { "id": "flower", "label": "꽃 주기", "en": "Flower", "icon": "give-flower", "reply": "rq-feel-comfort-flower" },
+        { "id": "sing", "label": "같이 노래하기", "en": "Sing", "icon": "sing", "reply": "rq-feel-comfort-sing" }
+      ]
+    },
+    { "speaker": "giver", "mood": "happy", "text": "공주님 덕분에 마음이 편해졌어. 고마워서 선물을 줄게!" }
+  ],
+  "rq-feel-hint-angry": [
+    {
+      "speaker": "princess",
+      "mood": "curious",
+      "text": "{from|은} 억울하고 속이 부글부글한대. 다시 골라 볼까?"
+    }
+  ],
+  "rq-feel-right-angry": [
+    { "speaker": "giver", "mood": "normal", "text": "응, 맞아. 정말 화가 났어!" }
+  ],
+  "rq-feel-scared": [
+    { "speaker": "giver", "mood": "shy", "text": "공주님, 내 얘기 들어 볼래?" },
+    {
+      "speaker": "giver",
+      "mood": "shy",
+      "text": "{situation}"
+    },
+    {
+      "speaker": "princess",
+      "mood": "curious",
+      "text": "{from|은} 지금 어떤 기분일까? 골라 봐!",
+      "choices": [
+        { "id": "happy", "label": "기뻐요", "en": "Happy", "icon": "happy", "correct": false, "reply": "rq-feel-hint-scared" },
+        { "id": "sad", "label": "슬퍼요", "en": "Sad", "icon": "sad", "correct": false, "reply": "rq-feel-hint-scared" },
+        { "id": "angry", "label": "화나요", "en": "Angry", "icon": "angry", "correct": false, "reply": "rq-feel-hint-scared" },
+        { "id": "scared", "label": "무서워요", "en": "Scared", "icon": "scared", "reply": "rq-feel-right-scared" }
+      ]
+    },
+    {
+      "speaker": "princess",
+      "mood": "curious",
+      "text": "{from|을} 어떻게 도와줄까?",
+      "choices": [
+        { "id": "hug", "label": "안아 주기", "en": "Hug", "icon": "hug", "reply": "rq-feel-comfort-hug" },
+        { "id": "flower", "label": "꽃 주기", "en": "Flower", "icon": "give-flower", "reply": "rq-feel-comfort-flower" },
+        { "id": "sing", "label": "같이 노래하기", "en": "Sing", "icon": "sing", "reply": "rq-feel-comfort-sing" }
+      ]
+    },
+    { "speaker": "giver", "mood": "happy", "text": "공주님 덕분에 마음이 편해졌어. 고마워서 선물을 줄게!" }
+  ],
+  "rq-feel-hint-scared": [
+    {
+      "speaker": "princess",
+      "mood": "curious",
+      "text": "{from|은} 몸이 덜덜 떨린대. 다시 골라 볼까?"
+    }
+  ],
+  "rq-feel-right-scared": [
+    { "speaker": "giver", "mood": "shy", "text": "응… 맞아. 너무 무서웠어." }
+  ],
+  "rq-feel-comfort-hug": [
+    { "speaker": "princess", "mood": "happy", "text": "꼬옥~ 괜찮아, 내가 옆에 있을게." },
+    { "speaker": "giver", "mood": "happy", "text": "따뜻하다… 고마워." }
+  ],
+  "rq-feel-comfort-flower": [
+    { "speaker": "princess", "mood": "happy", "text": "자, 예쁜 꽃이야. 기운 내!" },
+    { "speaker": "giver", "mood": "happy", "text": "와, 예쁘다… 고마워." }
+  ],
+  "rq-feel-comfort-sing": [
+    { "speaker": "princess", "mood": "excited", "text": "랄랄라~ 같이 노래하자!" },
+    { "speaker": "giver", "mood": "excited", "text": "랄랄라~ 헤헤, 기분이 좋아졌어!" }
   ]
 }

@@ -36,6 +36,8 @@ export interface Choice {
   correct?: boolean;
   /** 고른 뒤 이어지는 대사 묶음 (dialogues.json id) */
   reply?: string;
+  /** 이름 등을 미리 채운 대답 대사 (있으면 reply 대신) */
+  replyLines?: DialogueLine[];
 }
 
 export interface DialogueLine {

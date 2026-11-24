@@ -29,7 +29,10 @@ export class FollowCamera {
   }
 
   private apply(): void {
-    this.camera.position.copy(this.focus).add(this.offset);
+    // 세로 화면(태블릿 세로)에서는 옆이 잘려 친구가 안 보이므로 조금 뒤로 물러난다
+    const a = this.camera.aspect;
+    const pull = a < 1.4 ? Math.min(1.8, Math.sqrt(1.4 / a)) : 1;
+    this.camera.position.copy(this.focus).addScaledVector(this.offset, pull);
     this.camera.lookAt(this.focus.x, this.focus.y + 0.8, this.focus.z);
   }
 }

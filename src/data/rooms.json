@@ -1,18 +1,25 @@
 {
-  "_comment": "성 안 방 (GDD 5.2). width·depth는 m, cellSize 칸 단위로 가구를 놓는다. starterFurniture=처음부터 가진 가구와 개수(선물로 받은 가구는 하나씩 더해짐). 방은 처음엔 텅 비어 있다(GDD 2).",
+  "_comment": "성 안 방 (GDD 5.2). width·depth는 m, cellSize 칸 단위로 가구를 놓는다. wall·floor·curtain=처음 색(벽지·바닥·커튼 색은 palette에서 바꿀 수 있음). icon=방 고르기 버튼 그림(bed·dress·party). starterFurniture=처음부터 가진 가구와 개수 — 모든 방이 함께 쓴다(선물로 받은 가구는 하나씩 더해짐). 방은 처음엔 텅 비어 있다(GDD 2). mirror=왼쪽 벽에 큰 거울(톡하면 옷 갈아입기). praise=친구 초대 때 가구 개수에 따라 고르는 칭찬(min 이상).",
   "rooms": {
-    "bedroom": { "name": "침실", "en": "Bedroom", "width": 6, "depth": 6, "cellSize": 0.5, "wall": "#fbe3ef", "floor": "#e9d6c3" }
+    "bedroom": { "name": "침실", "en": "Bedroom", "icon": "bed", "width": 6, "depth": 6, "cellSize": 0.5, "wall": "#fbe3ef", "floor": "#e9d6c3", "curtain": "#ffb3d6" },
+    "dressroom": { "name": "드레스룸", "en": "Dressing room", "icon": "dress", "mirror": true, "width": 6, "depth": 6, "cellSize": 0.5, "wall": "#ece4ff", "floor": "#f1e2d3", "curtain": "#c7b3ff" },
+    "partyhall": { "name": "파티홀", "en": "Party hall", "icon": "party", "width": 8, "depth": 6, "cellSize": 0.5, "wall": "#fff1cc", "floor": "#f3e0c6", "curtain": "#ffd27a" }
   },
   "starterFurniture": {
     "bed": 1,
-    "closet": 1,
-    "table": 1,
-    "chair": 2,
-    "lamp": 1,
-    "plant": 2,
-    "rug": 1,
+    "closet": 2,
+    "table": 2,
+    "chair": 4,
+    "lamp": 2,
+    "plant": 3,
+    "rug": 2,
     "toybox": 1,
-    "bookshelf": 1,
+    "bookshelf": 2,
     "teddy": 1
-  }
+  },
+  "praise": [
+    { "min": 0, "dialogue": "invite-empty" },
+    { "min": 3, "dialogue": "invite-some" },
+    { "min": 7, "dialogue": "invite-lots" }
+  ]
 }

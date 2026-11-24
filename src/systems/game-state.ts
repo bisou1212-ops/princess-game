@@ -1,5 +1,5 @@
 import type { KeyValueStore } from '../core/storage';
-import { ROOMS, RoomLayout, ownedFurniture, type Placed } from './decor';
+import { ROOMS, RoomLayout, ownedFurniture, type Placed, type RoomStyle } from './decor';
 import { hasItem } from './items';
 import { QuestBook } from './quests';
 import { Wallet } from './rewards';
@@ -11,11 +11,15 @@ export interface SaveData {
   savedAt: number;
   wallet: { candy: number; items: string[] };
   quests: Record<string, unknown>;
+  /** 할 때마다 달라지는 부탁의 내용 (진행은 quests에) */
+  randomQuests?: Record<string, unknown>;
   outfit: Outfit;
   /** 드레스룸에서 이미 본 옷 (새 옷 표시용) */
   seenOutfits: string[];
   /** 방별로 놓은 가구 */
   rooms: Record<string, Placed[]>;
+  /** 방별 벽지·바닥·커튼 색 (M8-3에서 추가, 없으면 처음 색) */
+  roomStyles?: Record<string, RoomStyle>;
 }
 
 export const SAVE_KEY = 'save';
@@ -37,7 +41,10 @@ export class GameState {
   private saveTimer: ReturnType<typeof setTimeout> | null = null;
   private readonly listeners = new Set<() => void>();
 
-  constructor(private readonly store: KeyValueStore | null = null) {}
+  constructor(private readonly store: KeyValueStore | null = null) {
+    // 모든 방이 가구 서랍을 함께 쓴다
+    RoomLayout.share(Object.values(this.rooms));
+  }
 
   /** 가진 옷 전부 */
   get ownedOutfits(): string[] {
@@ -97,9 +104,11 @@ export class GameState {
       savedAt: Date.now(),
       wallet: this.wallet.toJSON(),
       quests: this.quests.toJSON(),
+      randomQuests: this.quests.randomToJSON(),
       outfit: structuredClone(this.outfit),
       seenOutfits: [...this.seenOutfits],
       rooms: Object.fromEntries(Object.entries(this.rooms).map(([id, room]) => [id, room.toJSON()])),
+      roomStyles: Object.fromEntries(Object.entries(this.rooms).map(([id, room]) => [id, { ...room.style }])),
     };
   }
 
@@ -112,10 +121,15 @@ export class GameState {
     const known = this.wallet.items.filter(hasItem);
     this.wallet.items.length = 0;
     this.wallet.items.push(...known);
+    this.quests.loadRandom(s.randomQuests);
     this.quests.load(s.quests);
     this.refreshFurniture();
     const rooms = s.rooms && typeof s.rooms === 'object' ? (s.rooms as Record<string, unknown>) : {};
+    for (const room of Object.values(this.rooms)) room.load(null);
+    // 방을 차례로 불러오므로, 가진 것보다 많이 놓인 가구는 뒤쪽 방에서 빠진다
     for (const [id, room] of Object.entries(this.rooms)) room.load(rooms[id]);
+    const styles = s.roomStyles && typeof s.roomStyles === 'object' ? (s.roomStyles as Record<string, unknown>) : {};
+    for (const [id, room] of Object.entries(this.rooms)) room.loadStyle(styles[id]);
     this.outfit = sanitizeOutfit(s.outfit, this.ownedOutfits);
     this.seenOutfits = Array.isArray(s.seenOutfits) ? s.seenOutfits.filter((x): x is string => typeof x === 'string') : [...STARTER_ITEMS];
     return true;
