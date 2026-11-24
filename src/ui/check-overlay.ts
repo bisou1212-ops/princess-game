@@ -68,6 +68,7 @@ export class CheckOverlay {
       `음성 ${voices.length}개 · 한국어 ${ko.length}개`,
       ...ko.map((v) => `  - ${v.name} [${v.lang}]${v.localService ? ' 설치됨' : ' 온라인'}${v.default ? ' 기본' : ''}`),
       `고른 한국어 음성: ${pick ? `${pick.name} [${pick.lang}]` : '없음 → 기기 설정에서 한국어 음성 설치 필요'}`,
+      `남자 목소리(고고): ${this.d.speaker.pickVoice('ko-KR', 'male')?.name ?? '없음'} · 영어: ${this.d.speaker.pickVoice('en-US')?.name ?? '없음'}`,
     ].join('\n');
     this.frames = 0;
     this.time = 0;

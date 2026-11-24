@@ -171,6 +171,7 @@ export class DialogueBox {
       lang: line.lang ?? voice.lang,
       pitch: voice.pitch,
       rate: voice.rate,
+      gender: voice.gender,
       mood: line.mood,
       onWord: (i) => this.highlight(i),
       onEnd: () => this.highlight(-1),

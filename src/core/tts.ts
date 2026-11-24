@@ -21,6 +21,8 @@ export interface SpeakOptions {
   lang: string;
   pitch: number;
   rate: number;
+  /** 목소리 성별 (고고처럼 낮은 목소리 친구). 기기에 맞는 음성이 있을 때만 */
+  gender?: VoiceGender;
   mood?: Mood;
   /** 지금 읽는 어절 번호 (대사 전체 기준) */
   onWord?(index: number): void;
@@ -35,6 +37,8 @@ export class Speaker {
   private token = 0;
   /** 말 빠르기 (부모 설정): 모든 대사의 속도에 곱한다 */
   rateScale = 1;
+  /** 이번에 실패한 온라인 음성 (인터넷이 끊기는 등) — 다음부터는 기기 음성으로 */
+  private readonly failed = new Set<string>();
 
   constructor() {
     if (!this.synth) return;
@@ -76,7 +80,7 @@ export class Speaker {
     const alive = () => my === this.token;
     const tokens = tokenize(text);
     const segments = splitSentences(text);
-    const voice = this.synth ? this.pickVoice(opts.lang) : undefined;
+    const voice = this.synth ? this.pickVoice(opts.lang, opts.gender) : undefined;
 
     opts.onWord?.(0);
 
@@ -142,7 +146,8 @@ export class Speaker {
 
     const u = new SpeechSynthesisUtterance(seg.text);
     u.lang = opts.lang;
-    u.pitch = opts.pitch;
+    // 자연스러운 음성은 높낮이를 많이 바꾸면 어색해져서 절반만 (캐릭터 구분은 그대로)
+    u.pitch = voice && NATURAL.test(voice.name) ? 1 + (opts.pitch - 1) * 0.5 : opts.pitch;
     u.rate = opts.rate;
     if (voice) u.voice = voice;
 
@@ -156,7 +161,10 @@ export class Speaker {
       opts.onWord?.(wordIndexAt(allTokens, seg.start + e.charIndex));
     };
     u.onend = finish;
-    u.onerror = () => {
+    u.onerror = (e) => {
+      // 온라인(자연스러운) 음성이 안 되면 다음부터는 기기 음성으로 (우리가 멈춘 것은 실패가 아님)
+      const err = (e as SpeechSynthesisErrorEvent).error;
+      if (voice && !voice.localService && err !== 'interrupted' && err !== 'canceled') this.failed.add(voice.name);
       // 음성이 실패해도 글자 강조는 끝까지
       if (!estimateStarted && !usingBoundary) startEstimate(true);
       else if (!usingBoundary) push(window.setTimeout(finish, total * 1000 + 150));
@@ -178,9 +186,13 @@ export class Speaker {
    * 해당 언어 음성 고르기: 정확히 같은 언어(ko-KR) → 같은 말(ko) 순서, 그 안에서 기기에 설치된 것 우선.
    * 음성을 직접 정해 주지 않으면 일부 태블릿은 lang 을 무시하고 기본(영어) 음성으로 한국어를 읽는다.
    */
-  pickVoice(lang: string): SpeechSynthesisVoice | undefined {
+  pickVoice(lang: string, gender?: VoiceGender): SpeechSynthesisVoice | undefined {
     if (!this.voices.some((v) => sameLang(v.lang, lang))) this.refreshVoices();
-    return pickVoiceFrom(this.voices, lang);
+    return pickVoiceFrom(
+      this.voices.filter((v) => !this.failed.has(v.name)),
+      lang,
+      gender,
+    );
   }
 
   /** 점검 화면용: 기기에 있는 음성 */
@@ -198,14 +210,40 @@ export class Speaker {
 const normLang = (l: string) => l.replace('_', '-').toLowerCase();
 const sameLang = (a: string, b: string) => normLang(a).split('-')[0] === normLang(b).split('-')[0];
 
-/** 음성 목록에서 고르기 (테스트용으로 밖에 둠) */
-export function pickVoiceFrom<V extends { lang: string; localService: boolean }>(voices: readonly V[], lang: string): V | undefined {
+export type VoiceGender = 'female' | 'male';
+
+/** 사람처럼 자연스러운 음성 (Edge·윈도의 Natural, 구글 온라인 음성 등) — 로봇 같은 기본 음성보다 먼저 */
+const NATURAL = /natural|neural|online|enhanced|premium|google/i;
+const MALE = /인준|injoon|hyunsu|현수|male|남성|guy|davis|tony|andrew|brian|eric|christopher|roger|steffan/i;
+const FEMALE = /선희|sunhi|heami|해미|yuna|유나|female|여성|ana|aria|jenny|michelle|emma|ava|samantha/i;
+
+/**
+ * 음성 목록에서 고르기 (테스트용으로 밖에 둠).
+ * 같은 언어 중에서 점수: 자연스러운 음성 +4, 원하는 성별 +3(반대 -3), 정확히 같은 지역(ko-KR) +1, 기기 설치 +0.5
+ */
+export function pickVoiceFrom<V extends { lang: string; localService: boolean; name?: string }>(
+  voices: readonly V[],
+  lang: string,
+  gender: VoiceGender = 'female',
+): V | undefined {
   const want = normLang(lang);
-  const exact = voices.filter((v) => normLang(v.lang) === want);
-  const same = voices.filter((v) => sameLang(v.lang, lang));
-  for (const list of [exact, same]) {
-    const v = list.find((x) => x.localService) ?? list[0];
-    if (v) return v;
+  let best: V | undefined;
+  let bestScore = -Infinity;
+  for (const v of voices) {
+    if (!sameLang(v.lang, lang)) continue;
+    const name = v.name ?? '';
+    const isMale = MALE.test(name);
+    const isFemale = !isMale && FEMALE.test(name);
+    let score = 0;
+    if (NATURAL.test(name)) score += 4;
+    if (gender === 'male' ? isMale : isFemale) score += 3;
+    else if (gender === 'male' ? isFemale : isMale) score -= 3;
+    if (normLang(v.lang) === want) score += 1;
+    if (v.localService) score += 0.5;
+    if (score > bestScore) {
+      best = v;
+      bestScore = score;
+    }
   }
-  return undefined;
+  return best;
 }

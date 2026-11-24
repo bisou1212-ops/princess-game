@@ -5,6 +5,8 @@ export interface Voice {
   lang: string;
   pitch: number;
   rate: number;
+  /** 낮은 목소리 친구는 male (기기에 남자 음성이 있을 때만 바뀜) */
+  gender?: 'female' | 'male';
 }
 
 export interface Character {

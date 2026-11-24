@@ -4,6 +4,13 @@ import { PerfGovernor, PERF_MAX, perfSettings } from './quality';
 import { attachGestures } from './gestures';
 
 const v = (name: string, lang: string, localService = true) => ({ name, lang, localService });
+const EDGE = [
+  v('Microsoft Heami - Korean (Korean)', 'ko-KR'),
+  v('Microsoft SunHi Online (Natural) - Korean (Korea)', 'ko-KR', false),
+  v('Microsoft InJoon Online (Natural) - Korean (Korea)', 'ko-KR', false),
+  v('Microsoft Ana Online (Natural) - English (United States)', 'en-US', false),
+  v('Microsoft David - English (United States)', 'en-US'),
+];
 
 describe('음성 고르기 (태블릿에서 한국어가 영어 음성으로 읽히던 문제)', () => {
   it('정확히 같은 언어를 먼저, 그 안에서 설치된 음성', () => {
@@ -13,6 +20,13 @@ describe('음성 고르기 (태블릿에서 한국어가 영어 음성으로 읽
   it('안드로이드식 이름(ko_KR)·말만 같은 것(ko)도 찾는다', () => {
     expect(pickVoiceFrom([v('en', 'en-US'), v('k', 'ko_KR')], 'ko-KR')?.name).toBe('k');
     expect(pickVoiceFrom([v('en', 'en-GB'), v('k', 'ko')], 'ko-KR')?.name).toBe('k');
+  });
+  it('사람 같은 자연스러운 음성을 먼저, 고고는 남자 목소리', () => {
+    expect(pickVoiceFrom(EDGE, 'ko-KR')?.name).toContain('SunHi');
+    expect(pickVoiceFrom(EDGE, 'ko-KR', 'male')?.name).toContain('InJoon');
+    expect(pickVoiceFrom(EDGE, 'en-US')?.name).toContain('Ana');
+    // 남자 음성이 없으면 있는 것 중에서
+    expect(pickVoiceFrom([v('Microsoft Heami - Korean', 'ko-KR')], 'ko-KR', 'male')?.name).toContain('Heami');
   });
   it('한국어 음성이 없으면 영어 음성을 고르지 않는다', () => {
     expect(pickVoiceFrom([v('en', 'en-US')], 'ko-KR')).toBeUndefined();

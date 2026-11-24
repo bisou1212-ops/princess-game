@@ -25,7 +25,7 @@
     "name": "고고",
     "color": "#c69c6d",
     "model": "bear",
-    "voice": { "lang": "ko-KR", "pitch": 0.9, "rate": 0.9 },
+    "voice": { "lang": "ko-KR", "pitch": 1.0, "rate": 0.92, "gender": "male" },
     "eyeColor": "#8a5a3c"
   },
   "dochi": {
