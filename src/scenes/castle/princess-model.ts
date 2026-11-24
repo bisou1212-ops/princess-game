@@ -131,7 +131,9 @@ function createSlotMesh(worn: Worn): THREE.Object3D {
     // ── 머리 ──
     case 'hair:long':
     case 'hair:pigtails':
-    case 'hair:bun': {
+    case 'hair:bun':
+    case 'hair:short':
+    case 'hair:ponytail': {
       const cap = mesh(new THREE.SphereGeometry(0.325, 24, 14, 0, Math.PI * 2, 0, Math.PI * 0.55), main, 0, 1.31, -0.01);
       cap.rotation.x = -0.35; // 이마는 살짝 보이게
       g.add(cap);
@@ -144,8 +146,27 @@ function createSlotMesh(worn: Worn): THREE.Object3D {
           g.add(mesh(new THREE.SphereGeometry(0.1, 12, 10), main, s * 0.33, 1.32, -0.06));
           g.add(mesh(new THREE.CapsuleGeometry(0.08, 0.3, 4, 10), main, s * 0.37, 1.08, -0.06));
         }
+      } else if (item.shape === 'short') {
+        const bob = mesh(new THREE.SphereGeometry(0.34, 20, 14), main, 0, 1.24, -0.06);
+        bob.scale.set(1, 0.75, 0.85);
+        g.add(bob);
+      } else if (item.shape === 'ponytail') {
+        g.add(mesh(new THREE.SphereGeometry(0.09, 12, 10), main, 0, 1.45, -0.32));
+        const tail = mesh(new THREE.CapsuleGeometry(0.09, 0.3, 4, 10), main, 0, 1.22, -0.42);
+        tail.rotation.x = 0.4;
+        g.add(tail);
       } else {
         g.add(mesh(new THREE.SphereGeometry(0.15, 14, 12), main, 0, 1.62, -0.06));
+      }
+      break;
+    }
+    case 'crown:flowers': {
+      const ring = mesh(new THREE.TorusGeometry(0.3, 0.025, 8, 28), mat(0x86d98f), 0, 1.55, 0);
+      ring.rotation.x = Math.PI / 2 - 0.3;
+      g.add(ring);
+      for (let i = 0; i < 8; i++) {
+        const a = (i / 8) * Math.PI * 2;
+        g.add(mesh(new THREE.SphereGeometry(0.06, 10, 8), main, Math.sin(a) * 0.3, 1.55 + Math.cos(a) * 0.09, Math.cos(a) * 0.29));
       }
       break;
     }
@@ -188,8 +209,21 @@ function createSlotMesh(worn: Worn): THREE.Object3D {
 
     // ── 드레스 ──
     case 'dress:basic':
-    case 'dress:flower': {
+    case 'dress:flower':
+    case 'dress:ribbon': {
       g.add(mesh(new THREE.CylinderGeometry(0.17, 0.42, 0.82, 24), main, 0, 0.5, 0));
+      if (item.shape === 'ribbon') {
+        for (const [y, r] of [[0.14, 0.42], [0.34, 0.35]] as const) {
+          const frill = mesh(new THREE.TorusGeometry(r, 0.035, 8, 28), light, 0, y, 0);
+          frill.rotation.x = Math.PI / 2;
+          g.add(frill);
+        }
+        for (const s of [-1, 1]) {
+          const loop = mesh(new THREE.SphereGeometry(0.12, 12, 8), light, s * 0.13, 0.7, -0.24);
+          loop.scale.set(1.2, 0.8, 0.5);
+          g.add(loop);
+        }
+      }
       if (item.shape === 'flower') {
         for (let i = 0; i < 10; i++) {
           const a = (i / 10) * Math.PI * 2;
@@ -216,6 +250,19 @@ function createSlotMesh(worn: Worn): THREE.Object3D {
     }
 
     // ── 신발 ──
+    case 'shoes:bunny': {
+      for (const s of [-1, 1]) {
+        const shoe = mesh(new THREE.SphereGeometry(0.09, 12, 8), main, s * 0.13, 0.05, 0.08);
+        shoe.scale.set(1, 0.65, 1.4);
+        g.add(shoe);
+        for (const e of [-1, 1]) {
+          const ear = mesh(new THREE.SphereGeometry(0.03, 8, 6), light, s * 0.13 + e * 0.03, 0.13, 0.1);
+          ear.scale.y = 2;
+          g.add(ear);
+        }
+      }
+      break;
+    }
     case 'shoes:flat': {
       for (const s of [-1, 1]) {
         const shoe = mesh(new THREE.SphereGeometry(0.08, 12, 8), main, s * 0.13, 0.05, 0.08);
@@ -255,6 +302,13 @@ function createSlotMesh(worn: Worn): THREE.Object3D {
         lower.userData.noShadow = true;
         g.add(upper, lower);
       }
+      break;
+    }
+    case 'accessory:heart-bag': {
+      for (const s of [-1, 1]) g.add(mesh(new THREE.SphereGeometry(0.06, 10, 8), main, -0.36 + s * 0.045, 0.5, 0.12));
+      const tip = mesh(new THREE.ConeGeometry(0.085, 0.1, 4), main, -0.36, 0.43, 0.12);
+      tip.rotation.x = Math.PI;
+      g.add(tip);
       break;
     }
     case 'accessory:wand': {

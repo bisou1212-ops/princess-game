@@ -70,7 +70,8 @@ describe('열린 장소의 배치 데이터', () => {
       if (n.dialogue) expect(dialogues[n.dialogue], n.id).toBeDefined();
       if (n.quest) expect(quests[n.quest]?.location, n.id).toBe(id);
     }
-    for (const d of layout.doors) expect(ROOMS[d.target], d.id).toBeDefined();
+    // 문은 성 안 방 또는 별사탕 가게로 이어진다
+    for (const d of layout.doors) expect(d.target === 'shop' || ROOMS[d.target] !== undefined, d.id).toBe(true);
     for (const key of ['sky', 'ground', 'yard', 'structure', 'prop'] as const) expect(layout.theme[key]).toMatch(/^#[0-9a-f]{6}$/i);
   });
 });

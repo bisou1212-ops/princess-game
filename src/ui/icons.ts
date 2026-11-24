@@ -16,6 +16,11 @@ export function candyIcon(): string {
 }
 
 export function dressIcon(color: string, shape = 'basic'): string {
+  if (shape === 'ribbon') {
+    return svg(`<path d="M24 6h16l-3 12 5 6-3 4 14 28H11l14-28-3-4 5-6z" fill="${color}" ${OUTLINE}/>
+      <path d="M14 44h36M12 50h40" stroke="#fff" stroke-width="3" opacity=".9"/>
+      <path d="M32 22l-9-6v12zM32 22l9-6v12z" fill="#fff" opacity=".9"/><circle cx="32" cy="22" r="3" fill="${color}"/>`);
+  }
   if (shape === 'puffy') {
     return svg(`<path d="M25 6h14l-2 12 4 4-2 4c12 4 16 14 16 26H9c0-12 4-22 16-26l-2-4 4-4z" fill="${color}" ${OUTLINE}/>
       <path d="M12 50q5 5 10 0 5 5 10 0 5 5 10 0 5 5 10 0" fill="none" stroke="#fff" stroke-width="3"/>`);
@@ -33,7 +38,11 @@ export function hairIcon(color: string, shape = 'long'): string {
       ? `<circle cx="10" cy="30" r="8" fill="${color}"/><circle cx="54" cy="30" r="8" fill="${color}"/><rect x="6" y="34" width="8" height="18" rx="4" fill="${color}"/><rect x="50" y="34" width="8" height="18" rx="4" fill="${color}"/>`
       : shape === 'bun'
         ? `<circle cx="32" cy="9" r="8" fill="${color}"/>`
-        : `<rect x="14" y="28" width="36" height="30" rx="12" fill="${color}"/>`;
+        : shape === 'short'
+          ? `<rect x="12" y="26" width="40" height="22" rx="10" fill="${color}"/>`
+          : shape === 'ponytail'
+            ? `<path d="M46 18c12 2 14 18 8 34-2-12-6-20-12-26z" fill="${color}"/><circle cx="46" cy="18" r="4" fill="#fff"/>`
+            : `<rect x="14" y="28" width="36" height="30" rx="12" fill="${color}"/>`;
   return svg(`${extra}<circle cx="32" cy="32" r="18" fill="#ffe9dc"/><path d="M14 32a18 18 0 0 1 36 0q-10-8-18-6-10 1-18 6z" fill="${color}"/>
     <circle cx="26" cy="36" r="2.2" fill="#3d3a4a"/><circle cx="38" cy="36" r="2.2" fill="#3d3a4a"/>`);
 }
@@ -43,6 +52,11 @@ export function crownIcon(color: string, shape = 'crown'): string {
     return svg(`<path d="M10 40a22 22 0 0 1 44 0" fill="none" stroke="${color}" stroke-width="6" stroke-linecap="round"/>
       <path d="M40 16l-14-8v20zM40 16l14-8v20z" fill="${color}" ${OUTLINE}/><circle cx="40" cy="16" r="4" fill="#fff"/>`);
   }
+  if (shape === 'flowers') {
+    const f = (x: number, y: number) =>
+      `<g transform="translate(${x} ${y})"><circle cx="0" cy="-5" r="4.5" fill="${color}"/><circle cx="5" cy="-1" r="4.5" fill="${color}"/><circle cx="3" cy="5" r="4.5" fill="${color}"/><circle cx="-3" cy="5" r="4.5" fill="${color}"/><circle cx="-5" cy="-1" r="4.5" fill="${color}"/><circle r="3" fill="#ffe680"/></g>`;
+    return svg(`<path d="M6 38q26-20 52 0" fill="none" stroke="#86d98f" stroke-width="5" stroke-linecap="round"/>${f(12, 32)}${f(32, 24)}${f(52, 32)}`);
+  }
   if (shape === 'tiara') {
     return svg(`<path d="M8 44q24-22 48 0l-4 4q-20-14-40 0z" fill="${color}" ${OUTLINE}/><path d="M32 16l7 10-7 10-7-10z" fill="#fff" stroke="${color}" stroke-width="3"/>`);
   }
@@ -50,6 +64,11 @@ export function crownIcon(color: string, shape = 'crown'): string {
 }
 
 export function shoesIcon(color: string, shape = 'flat'): string {
+  if (shape === 'bunny') {
+    return svg(`<path d="M22 22c-4-14 2-18 5-8l1 10zM34 22c0-14 8-16 6-6l-3 8z" fill="#fff" ${OUTLINE}/>
+      <path d="M8 42c0-12 10-20 24-20s24 8 24 20v6H8z" fill="${color}" ${OUTLINE}/>
+      <circle cx="26" cy="34" r="2.5" fill="#3d3a4a"/><circle cx="38" cy="34" r="2.5" fill="#3d3a4a"/><circle cx="32" cy="39" r="2" fill="#ff8fb0"/>`);
+  }
   if (shape === 'boots') {
     return svg(`<path d="M14 10h14v30l12 4c4 1 6 4 6 8v4H10V14z" fill="${color}" ${OUTLINE}/>`);
   }
@@ -60,6 +79,11 @@ export function accessoryIcon(color: string, shape = 'necklace'): string {
   if (shape === 'wings') {
     return svg(`<path d="M32 30C22 6 4 10 6 26c1 8 12 10 26 4zM32 30c10-24 28-20 26-4-1 8-12 10-26 4z" fill="${color}" opacity=".85" ${OUTLINE}/>
       <path d="M32 32c-8 14-20 18-22 8M32 32c8 14 20 18 22 8" fill="${color}" opacity=".7" ${OUTLINE}/>`);
+  }
+  if (shape === 'heart-bag') {
+    return svg(`<path d="M12 8l26 30" stroke="#d9d4e2" stroke-width="4" stroke-linecap="round"/>
+      <path d="M38 58C22 48 18 40 20 34c2-6 10-8 18-1 8-7 16-5 18 1 2 6-2 14-18 24z" fill="${color}" ${OUTLINE}/>
+      <circle cx="38" cy="42" r="3" fill="#fff"/>`);
   }
   if (shape === 'wand') {
     return svg(`<path d="M16 54L38 22" stroke="#d9d4e2" stroke-width="5" stroke-linecap="round"/>

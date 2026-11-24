@@ -1,5 +1,5 @@
 {
-  "_comment": "꽃 왕국 그레이박스 (GDD 2: 봄, 꽃밭·동물 친구). courtyard.json과 같은 형식. house=상자+지붕(roof 색), flowerPatches=장식 꽃밭(부딪히지 않음). 열기구는 start 근처에 내린다.",
+  "_comment": "꽃 왕국 그레이박스 (GDD 2: 봄, 꽃밭·동물 친구). courtyard.json과 같은 형식. house=상자+지붕(roof 색), flowerPatches=장식 꽃밭(부딪히지 않음). doors target 'shop'=별사탕 가게(shop.json). 열기구는 start 근처에 내린다.",
   "id": "flower-kingdom",
   "width": 26,
   "depth": 26,
@@ -7,7 +7,7 @@
   "start": { "x": 0, "z": 8 },
   "theme": { "sky": "#c9ecff", "ground": "#a9dc97", "yard": "#c4ebb0", "structure": "#d8cfc0", "prop": "#a8d69a" },
   "obstacles": [
-    { "id": "house-flower-shop", "shape": "house", "x": -7, "z": -8, "w": 5, "d": 4, "h": 2.6, "color": "#ffd6ea", "roof": "#ff8fc4" },
+    { "id": "house-candy-shop", "shape": "house", "x": -7, "z": -8, "w": 5, "d": 4, "h": 2.6, "color": "#ffd6ea", "roof": "#ff8fc4" },
     { "id": "house-bakery", "shape": "house", "x": 7, "z": -8, "w": 5, "d": 4, "h": 2.6, "color": "#fff1c4", "roof": "#ffb84d" },
     { "id": "house-garden-shed", "shape": "house", "x": -9.5, "z": 4, "w": 3.5, "d": 3, "h": 2.2, "color": "#dff3d2", "roof": "#7fc47a" },
     { "id": "well", "shape": "cylinder", "x": 0, "z": -1, "r": 1.2, "h": 0.9, "color": "#d8cfc0" },
@@ -35,5 +35,7 @@
     { "id": "dochi", "character": "dochi", "x": 7, "z": -4.8, "facing": -0.4, "wander": 2.5, "dialogue": "dochi-hello" },
     { "id": "pippi", "character": "pippi", "x": 9, "z": 3, "facing": -0.6, "wander": 1.5 }
   ],
-  "doors": []
+  "doors": [
+    { "id": "shop-door", "x": -7, "z": -6, "w": 1.4, "h": 2.0, "target": "shop" }
+  ]
 }

@@ -58,7 +58,10 @@ docs/GDD.md        # 기획서
   - [x] M8-2 삐삐(노란 새, 꽃 왕국, Blender 모델) + "우는 삐삐 위로하기": `goal.type: talk`, `giverMood: sad`(해결 전 눈물). 대사 줄에 `choices`(그림 카드 고르기: 틀리면 힌트 후 다시, `reply` 대사) — 기분 4개(기쁨·슬픔·화남·무서움) → 위로 3개. 대화 중엔 장면을 위로 올려 친구 얼굴이 보이게
   - [x] M8-3 성 방 3개(침실·드레스룸·파티홀, `rooms.json`) — 위 방 고르기 탭, 가구 서랍은 모든 방이 함께 씀(`RoomLayout.share`). 색칠 버튼 → 벽지·바닥·커튼 색(palette를 연하게, 저장 `roomStyles`). 초대 버튼 → 친구 고르기 → 방에 톡 나타나 칭찬(가구 개수별 `praise` → `invite-*` 대사, speaker `guest`·`{room}` 바꿔 넣기) 후 사라짐 (`src/ui/room-ui.ts`). 드레스룸 왼쪽 벽 거울(`rooms.json` mirror) 톡 → 옷 갈아입기, 다 입으면 드레스룸으로. 세로 화면이면 마당 카메라가 조금 뒤로(`follow-camera.ts`)
   - [x] 할 때마다 달라지는 부탁: 친구의 이야기 부탁(quests.json)을 다 끝내면, 말 걸 때마다 `src/data/random-quests.json` 템플릿(꽃 6색·딸기/블루베리·넘어진 화분·편지/선물 상자/쿠키 배달)으로 물건·개수·자리·이유·받는 친구를 무작위로 정함(`src/systems/random-quests.ts`, id `rq:`) + 기분 알아맞히기(`type: talk`, 상황 10개 → `rq-feel-<mood>`, 고르기 대답도 이름 채움 `replyLines`). 이야기 부탁도 `vary`(물건 후보·개수 범위)로 처음 받을 때 색·개수·자리를 굴림(`rollStoryQuest`), 대사는 `{item}`·`{count}`·`{counting}`·`{en}` 빈칸. 바로 전과 다른 물건, 하는 부탁이 있으면 `rq-busy`. speaker giver·receiver, `{item|을}` 조사 자동. 저장 `randomQuests`(굴린 이야기 부탁 포함)
-  - [ ] M8-4 아이템 30개+ (새 가구·옷) + 별사탕 가게
+  - [x] M8-4 아이템 30개+ (새 가구·옷) + 별사탕 가게
+    - [x] 새 가구 11개(소파·화장대·피아노·꽃병·풍선·케이크·인형의 집·어항·별 조명·쿠션·별 러그, 도형 `furniture-meshes.ts`) → 가구 21 + 옷 20 = 41
+    - [x] 별사탕 가게: 꽃 왕국 분홍 집 문(target `shop`, 문 위 큰 별 간판) → `src/ui/shop-panel.ts`. 진열대(값=별 그림 n개, 다섯 개씩 한 줄) → 계산대에서 큰 별사탕 버튼을 하나씩 톡해 "하나! 둘!" 세어서 내기. 모자라면 가진 만큼 연한 별 + "n개 더 있으면" (빨간 표시 없음). 값 `src/data/shop.json`(1~10), 로직 `src/systems/shop.ts`. 지갑은 가구를 여러 개 쌓음(`Wallet.add`, 옷은 하나)
+    - [x] 새 옷 6벌(단발머리·포니테일·꽃 화관·리본 드레스·토끼 슬리퍼·하트 가방): `build_princess.py`에 추가 → princess.glb(약 0.8MB), 아이콘 `icons.ts`, 도형 공주 `princess-model.ts`. 처음엔 없고 가게에서 삼(값 4~8). 재질 `leaf`(고정 초록) 추가
   - [ ] M8-5 펫 고르기·돌보기 (+ 펫 모델)
 
 ## 나중에 할 일

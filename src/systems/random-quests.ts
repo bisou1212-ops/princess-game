@@ -258,15 +258,19 @@ const JOSA: Record<string, [string, string]> = {
   이에요: ['이에요', '예요'],
 };
 
+/** 낱말 뒤에 받침에 맞는 조사 붙이기: ("소파", "을") → "소파를" */
+export function withJosa(word: string, josa: string): string {
+  const pair = JOSA[josa];
+  return pair ? word + (hasBatchim(word) ? pair[0] : pair[1]) : word + josa;
+}
+
 /** "{item|을}" → "빨간 꽃을" / "편지를" */
 export function fillText(text: string, vars: QuestVars, names: (id: string) => string): string {
   return text.replace(/\{(\w+)(?:\|([^}]+))?\}/g, (whole, key: string, josa?: string) => {
     let v = vars[key];
     if (v === undefined) return whole;
     if (key === 'to' || key === 'from') v = names(v);
-    if (!josa) return v;
-    const pair = JOSA[josa];
-    return pair ? v + (hasBatchim(v) ? pair[0] : pair[1]) : v + josa;
+    return josa ? withJosa(v, josa) : v;
   });
 }
 

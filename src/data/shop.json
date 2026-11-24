@@ -1,0 +1,30 @@
+{
+  "_comment": "별사탕 가게 (GDD 5.3·6: 별사탕을 하나씩 세어서 내기). 꽃 왕국 가게 문(flower-kingdom.json doors target 'shop')에서 연다. items=파는 물건과 값(별사탕 개수, 셈 연습이라 1~10). 같은 가구는 여러 번 살 수 있고, 옷은 한 번만.",
+  "name": "별사탕 가게",
+  "en": "Candy shop",
+  "items": [
+    { "item": "chair", "price": 2 },
+    { "item": "plant", "price": 2 },
+    { "item": "cushion", "price": 2 },
+    { "item": "vase", "price": 3 },
+    { "item": "balloons", "price": 3 },
+    { "item": "lamp", "price": 3 },
+    { "item": "cake", "price": 4 },
+    { "item": "fishbowl", "price": 4 },
+    { "item": "starlight", "price": 4 },
+    { "item": "hair-short", "price": 4 },
+    { "item": "hair-ponytail", "price": 4 },
+    { "item": "teddy", "price": 5 },
+    { "item": "table", "price": 5 },
+    { "item": "star-rug", "price": 5 },
+    { "item": "slippers-bunny", "price": 5 },
+    { "item": "toybox", "price": 6 },
+    { "item": "heart-bag", "price": 6 },
+    { "item": "dresser", "price": 7 },
+    { "item": "flower-crown", "price": 7 },
+    { "item": "sofa", "price": 8 },
+    { "item": "dress-ribbon", "price": 8 },
+    { "item": "dollhouse", "price": 9 },
+    { "item": "piano", "price": 10 }
+  ]
+}

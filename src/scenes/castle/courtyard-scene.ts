@@ -204,6 +204,7 @@ export function createCourtyardScene(aspect: number, opts: CourtyardOptions = {}
       if (m !== glow && (m as THREE.Mesh).isMesh && !m.userData.isHitArea) m.castShadow = true;
     });
     addOutline(door, 0.025);
+    if (d.target === 'shop') door.add(createShopSign(d.h));
     const doorSparkles = new Sparkles({ count: 7, radius: 1, height: [0.4, 2.6], size: 0.34 });
     doorSparkles.position.z = 0.4;
     door.add(doorSparkles);
@@ -565,5 +566,24 @@ function createTears(): THREE.Group {
     drop.position.set(side * 0.15, 1.22, 0.42);
     g.add(drop);
   }
+  return g;
+}
+
+/** 별사탕 가게 간판: 문 위에 큰 노란 별 (글을 몰라도 알아볼 수 있게) */
+function createShopSign(doorH: number): THREE.Group {
+  const g = new THREE.Group();
+  const shape = new THREE.Shape();
+  for (let i = 0; i < 10; i++) {
+    const a = (i / 10) * Math.PI * 2 + Math.PI / 2;
+    const r = i % 2 === 0 ? 0.55 : 0.25;
+    if (i === 0) shape.moveTo(Math.cos(a) * r, Math.sin(a) * r);
+    else shape.lineTo(Math.cos(a) * r, Math.sin(a) * r);
+  }
+  const mat = toonMaterial({ color: 0xffd76a, emissive: 0x553300, emissiveIntensity: 0.4 }, 'gem');
+  const star = new THREE.Mesh(new THREE.ExtrudeGeometry(shape, { depth: 0.14, bevelEnabled: true, bevelSize: 0.05, bevelThickness: 0.05 }), mat);
+  star.castShadow = true;
+  g.add(star);
+  g.position.set(0, doorH + 0.95, 0.05);
+  g.userData.noOutline = true;
   return g;
 }

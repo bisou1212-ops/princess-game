@@ -15,6 +15,10 @@ import { renderFurnitureThumbs } from './ui/furniture-thumbs';
 import { Hud } from './ui/hud';
 import { RewardPopup } from './ui/reward-popup';
 import { RoomUi } from './ui/room-ui';
+import { ShopPanel } from './ui/shop-panel';
+import { itemIcon } from './ui/icons';
+import { getItem } from './systems/items';
+import { buy } from './systems/shop';
 import { WardrobePanel } from './ui/wardrobe-panel';
 import type { CourtyardLayout } from './scenes/castle/courtyard-layout';
 import { createCourtyardScene, type CourtyardScene } from './scenes/castle/courtyard-scene';
@@ -88,7 +92,8 @@ async function start() {
       dialogue,
       hud,
       reward,
-      onEnterRoom: (roomId) => void goTo('room', roomId),
+      // 문: 성 안 방 또는 별사탕 가게
+      onEnterRoom: (target) => (target === 'shop' ? openShop() : void goTo('room', target)),
     });
     const scene = createCourtyardScene(aspect(), {
       layout,
@@ -334,6 +339,30 @@ async function start() {
     const back = wardrobeReturnRoom;
     wardrobeReturnRoom = null;
     if (back) void goTo('room', back);
+  }
+
+  // ── 별사탕 가게 (꽃 왕국) ──
+  const shop = new ShopPanel(document.body, {
+    speaker,
+    voice: princessVoice,
+    wallet: state.wallet,
+    thumb: (id) => getThumbs().get(id) ?? itemIcon(getItem(id)),
+    onBuy: (id) => {
+      const ok = buy(state.wallet, id);
+      if (ok) state.change();
+      return ok;
+    },
+    onClose: () => closeShop(),
+  });
+  function openShop() {
+    if (dialogue.isOpen || mode !== 'town' || switching || shop.isOpen) return;
+    hud.setButtonsVisible(false);
+    shop.open();
+  }
+  function closeShop() {
+    shop.close();
+    hud.setButtonsVisible(true);
+    town.controller.refreshHud();
   }
 
   // 앱을 내리거나 닫을 때 바로 저장

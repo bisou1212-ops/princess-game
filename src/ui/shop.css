@@ -1,0 +1,281 @@
+/* ── 별사탕 가게 (화면 가득) ── */
+.shop {
+  position: fixed;
+  z-index: 16;
+  inset: 0;
+  box-sizing: border-box;
+  padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  background:
+    radial-gradient(circle at 20% 10%, rgba(255, 255, 255, 0.8), transparent 40%),
+    linear-gradient(#fff4fb, #f3ecff);
+  font-family: 'Jua', 'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans KR', sans-serif;
+  color: #5a4a6b;
+  animation: shop-in 0.25s ease-out;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.shop[hidden] {
+  display: none;
+}
+.shop button {
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+.shop button:active {
+  transform: scale(0.95);
+}
+.shop svg {
+  pointer-events: none;
+}
+
+.shop-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.shop-title {
+  flex: 1;
+  font-size: 34px;
+  color: #ff6fae;
+  text-shadow: 0 3px 0 #fff;
+}
+.shop-candy {
+  height: 64px;
+  padding: 0 22px 0 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #fffaf3;
+  border: 4px solid #ffd76a;
+  border-radius: 999px;
+  font-size: 32px;
+}
+.shop-candy svg {
+  width: 48px;
+  height: 48px;
+}
+.shop-btn {
+  flex: none;
+  width: 72px;
+  height: 72px;
+  padding: 14px !important;
+  border-radius: 50%;
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.12);
+}
+.shop-btn svg {
+  width: 100%;
+  height: 100%;
+}
+.shop-close {
+  background: #86d98f;
+}
+.shop-back {
+  background: #b99cff;
+}
+
+/* 진열대 */
+.shop-shelf {
+  flex: 1;
+  overflow-y: auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 14px;
+  padding: 4px 4px 16px;
+  align-content: start;
+  scrollbar-width: none;
+}
+.shop-card {
+  position: relative;
+  padding: 10px 8px 12px !important;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  background: #fff !important;
+  border-radius: 28px;
+  box-shadow: 0 5px 0 rgba(120, 100, 160, 0.14);
+}
+.sc-img {
+  width: 110px;
+  height: 110px;
+  display: grid;
+  place-items: center;
+}
+.sc-img img,
+.sc-img svg {
+  width: 100%;
+  height: 100%;
+}
+.sc-name {
+  font-size: 22px;
+}
+.sc-price {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  max-width: 120px; /* 다섯 개씩 한 줄 — 세기 쉽게 */
+  min-height: 24px;
+}
+.sc-price i {
+  width: 24px;
+  height: 24px;
+}
+.sc-price i svg {
+  width: 100%;
+  height: 100%;
+}
+/* 별사탕이 모자란 물건: 흐리게만 (빨간 표시 없음) */
+.shop-card.is-short {
+  opacity: 0.55;
+}
+.shop-card.is-owned {
+  opacity: 0.7;
+}
+.sc-owned {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: #86d98f;
+  color: #fff;
+  font-size: 16px;
+}
+
+/* 계산대 */
+.shop-counter {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: safe center;
+  padding-bottom: 16px;
+  gap: 14px;
+  position: relative;
+}
+.counter-img {
+  flex: none;
+  width: min(28vh, 240px);
+  height: min(28vh, 240px);
+  display: grid;
+  place-items: center;
+  background: #fff;
+  border-radius: 40px;
+  box-shadow: 0 6px 0 rgba(120, 100, 160, 0.14);
+}
+.counter-img img,
+.counter-img svg {
+  width: 88%;
+  height: 88%;
+}
+.counter-name {
+  font-size: 32px;
+}
+.counter-name small {
+  font-size: 22px;
+  opacity: 0.7;
+}
+.pay-slots {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  max-width: 600px;
+}
+.pay-slot {
+  width: 54px;
+  height: 54px;
+  opacity: 0.22;
+  filter: grayscale(1);
+  transition: opacity 0.2s, transform 0.2s, filter 0.2s;
+}
+.pay-slot svg {
+  width: 100%;
+  height: 100%;
+}
+.pay-slot.is-have {
+  opacity: 0.6;
+  filter: none;
+}
+.pay-slot.is-paid {
+  opacity: 1;
+  filter: none;
+  animation: slot-pop 0.35s ease-out;
+}
+.pay-btn {
+  flex: none;
+  width: 112px;
+  height: 112px;
+  padding: 14px !important;
+  display: grid;
+  place-items: center;
+  position: relative;
+  background: #fff3c4 !important;
+  border: 6px solid #ffd76a !important;
+  border-radius: 50%;
+  box-shadow: 0 6px 0 rgba(200, 150, 40, 0.3);
+}
+.pay-btn svg {
+  width: 80%;
+  height: 80%;
+}
+.pay-btn span {
+  position: absolute;
+  bottom: -12px;
+  padding: 2px 14px;
+  border-radius: 999px;
+  background: #ff9ccf;
+  color: #fff;
+  font-size: 22px;
+}
+.pay-btn.is-pop {
+  animation: slot-pop 0.3s ease-out;
+}
+.pay-btn[disabled] {
+  opacity: 0.5;
+}
+.pay-hint {
+  font-size: 22px;
+  text-align: center;
+  line-height: 1.5;
+}
+.bought {
+  position: absolute;
+  top: 30%;
+  padding: 10px 34px;
+  border-radius: 999px;
+  background: #ff9ccf;
+  color: #fff;
+  font-size: 44px;
+  box-shadow: 0 6px 0 rgba(200, 80, 140, 0.3);
+  animation: slot-pop 0.45s ease-out;
+}
+
+@media (orientation: portrait) {
+  .shop-shelf {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  }
+}
+
+@keyframes shop-in {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes slot-pop {
+  0% { transform: scale(0.6); }
+  60% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .shop, .pay-slot.is-paid, .pay-btn.is-pop, .bought { animation: none; }
+}

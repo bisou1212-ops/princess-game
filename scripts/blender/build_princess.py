@@ -12,7 +12,7 @@ Blender MCP로 실행:  exec(open(r"<repo>/scripts/blender/build_princess.py", e
     tint        : 옷 색(팔레트)으로 바뀜
     tint_light  : 옷 색을 밝게 섞은 색으로 바뀜 (주름 장식·리본 등)
     tint_wing   : 옷 색 + 반투명 (날개)
-    skin, eye, shine, cheek, mouth, white, gem, yellow : 고정 색
+    skin, eye, shine, cheek, mouth, white, gem, yellow, leaf : 고정 색
 - Blender 좌표: Z 위, 공주 얼굴은 -Y 쪽을 본다 (glTF로 내보내면 게임의 +Z 앞쪽이 됨).
 - 바닥 z=0, 키 약 1.9m (게임의 치비 비율과 같음).
 """
@@ -37,6 +37,7 @@ MAT_COLORS = {
     "white": (1.0, 0.98, 0.95, 1.0),
     "gem": (0.85, 0.95, 1.0, 1.0),
     "yellow": (1.0, 0.93, 0.6, 1.0),
+    "leaf": (0.52, 0.82, 0.52, 1.0),
 }
 
 
@@ -306,6 +307,18 @@ def build_hair(kind):
     elif kind == "bun":
         P.append(sphere("tint", 0.16, (0, 0.1, 1.89), seg=20, rings=12))
         P.append(torus("tint_light", 0.12, 0.03, (0, 0.08, 1.8), rot=(0.25, 0, 0), seg=16, ring=6))
+    elif kind == "short":
+        # 단발: 뒤통수를 감싸는 둥근 머리 + 턱선까지 오는 옆머리 (끝이 안으로 동그랗게)
+        P.append(sphere("tint", 1.0, (0, 0.1, 1.34), scale=(0.47, 0.37, 0.34), seg=28, rings=16))
+        for s in (-1, 1):
+            P.append(sphere("tint", 1.0, (s * 0.37, -0.12, 1.3), scale=(0.12, 0.15, 0.22), seg=16, rings=10))
+            P.append(sphere("tint", 0.085, (s * 0.33, -0.17, 1.12), seg=14, rings=8))
+    elif kind == "ponytail":
+        # 높이 묶은 포니테일 + 리본 끈
+        P.append(sphere("tint", 0.11, (0, 0.42, 1.66), seg=16, rings=10))
+        P.append(torus("tint_light", 0.08, 0.03, (0, 0.47, 1.63), rot=(math.pi / 2 - 0.5, 0, 0), seg=16, ring=6))
+        P.append(sphere("tint", 1.0, (0, 0.6, 1.42), scale=(0.13, 0.14, 0.28), rot=(0.45, 0, 0), seg=18, rings=12))
+        P.append(sphere("tint", 0.095, (0, 0.7, 1.18), seg=14, rings=8))
     return build_item(f"hair-{kind}", P)
 
 
@@ -337,6 +350,32 @@ def build_tiara():
     return build_item("tiara", P)
 
 
+def build_flower_crown():
+    """꽃 화관: 초록 덩굴 고리 위에 꽃(꽃잎 = 옷 색, 가운데 노랑)이 빙 둘러 있다"""
+    c = Vector((0, 0.04, 1.7))
+    tilt = 0.3  # 앞이 살짝 내려오게
+    R = 0.4
+    P = [torus("leaf", R, 0.03, c, rot=(tilt, 0, 0), seg=32, ring=6)]
+    n = 8
+    for i in range(n):
+        a = -math.pi / 2 + math.tau * i / n
+        # 고리 위의 점 (x축으로 tilt 만큼 기울임)
+        x, y = math.cos(a) * R, math.sin(a) * R
+        p = c + Vector((x, y * math.cos(tilt), y * math.sin(tilt)))
+        big = 0.095 if i == 0 else 0.075
+        out = Vector((x, y, 0)).normalized()
+        for k in range(5):
+            b = math.tau * k / 5
+            off = Vector((math.cos(b) * big * 0.8, 0, math.sin(b) * big * 0.8))
+            # 꽃잎은 바깥(머리 밖)을 보게 고리 방향으로 돌림
+            rot = Matrix.Rotation(math.atan2(out.x, -out.y), 4, "Z")
+            P.append(sphere("tint", big * 0.62, p + rot @ off + out * 0.02, scale=(1, 0.5, 1), rot=(0, 0, math.atan2(out.x, -out.y)), seg=10, rings=6))
+        P.append(sphere("yellow", big * 0.45, p + out * 0.035, seg=10, rings=6))
+        if i % 2 == 1:
+            P.append(sphere("leaf", 0.035, p + out * 0.01 + Vector((0, 0, -0.03)), scale=(1.4, 0.5, 0.7), seg=8, rings=5))
+    return build_item("flower-crown", P)
+
+
 # ── 드레스 ───────────────────────────────────────────
 def build_dress(kind):
     P = []
@@ -353,6 +392,22 @@ def build_dress(kind):
                 a = math.tau * i / 5
                 P.append(sphere("tint_light", 0.04, c + Vector((math.cos(a) * 0.045, -0.01, math.sin(a) * 0.045)), scale=(1, 0.5, 1), seg=10, rings=6))
             P.append(sphere("yellow", 0.03, c + Vector((0, -0.02, 0)), seg=10, rings=6))
+    elif kind == "ribbon":
+        # 치마에 프릴 두 줄 + 뒤에 커다란 리본 + 가슴에 작은 리본
+        P.append(cone("tint", 0.52, 0.19, 0.86, (0, 0, 0.55), seg=36))
+        for z in (0.16, 0.38):
+            r = 0.52 - (z - 0.12) / 0.86 * 0.33
+            P.append(torus("tint_light", r + 0.01, 0.04, (0, 0, z), seg=36, ring=8))
+        P.append(torus("tint_light", 0.27, 0.035, (0, 0, 0.74), seg=28, ring=8))
+        bow = Vector((0, 0.3, 0.78))
+        for s in (-1, 1):
+            P.append(sphere("tint_light", 1.0, (bow.x + s * 0.15, bow.y + 0.02, bow.z + 0.04), scale=(0.15, 0.06, 0.1), rot=(0, s * -0.35, 0), seg=16, rings=10))
+            P.append(sphere("tint_light", 1.0, (bow.x + s * 0.07, bow.y + 0.04, bow.z - 0.2), scale=(0.05, 0.03, 0.18), rot=(0, s * 0.3, 0), seg=12, rings=8))
+        P.append(sphere("tint", 0.06, bow + Vector((0, 0.02, 0)), seg=12, rings=8))
+        front = Vector((0, -0.2, 0.9))
+        for s in (-1, 1):
+            P.append(cone("tint_light", 0.05, 0.0, 0.09, (front.x + s * 0.045, front.y, front.z), rot=(0, s * math.pi / 2, 0), scale=(1, 0.5, 1), seg=10))
+        P.append(sphere("tint", 0.025, front + Vector((0, -0.01, 0)), seg=8, rings=6))
     elif kind == "puffy":
         P.append(cone("tint", 0.22, 0.18, 0.34, (0, 0, 0.82), seg=28))
         P.append(sphere("tint", 0.56, (0, 0, 0.42), scale=(1, 1, 0.72), seg=36, rings=20))
@@ -370,11 +425,18 @@ def build_shoes(kind):
         if kind == "flat":
             P.append(sphere("tint", 0.09, (s * 0.1, -0.035, 0.045), scale=(1, 1.45, 0.6), seg=16, rings=10))
             P.append(sphere("tint_light", 0.025, (s * 0.1, -0.15, 0.07), seg=8, rings=6))
+        elif kind == "bunny":
+            # 폭신한 토끼 슬리퍼: 동그란 몸 + 귀 두 개 + 까만 눈
+            P.append(sphere("tint", 0.1, (s * 0.1, -0.04, 0.05), scale=(1, 1.4, 0.65), seg=16, rings=10))
+            for e in (-1, 1):
+                P.append(sphere("tint_light", 1.0, (s * 0.1 + e * 0.035, -0.08, 0.13), scale=(0.022, 0.018, 0.06), rot=(0.3, e * 0.25, 0), seg=10, rings=6))
+                P.append(sphere("eye", 0.011, (s * 0.1 + e * 0.03, -0.165, 0.075), seg=8, rings=5))
+            P.append(sphere("cheek", 0.013, (s * 0.1, -0.18, 0.06), seg=8, rings=5))
         else:
             P.append(cone("tint", 0.085, 0.08, 0.27, (s * 0.1, 0, 0.14), seg=16))
             P.append(sphere("tint", 0.088, (s * 0.1, -0.05, 0.05), scale=(1, 1.3, 0.65), seg=16, rings=10))
             P.append(torus("tint_light", 0.083, 0.018, (s * 0.1, 0, 0.27), seg=16, ring=6))
-    return build_item("shoes-flat" if kind == "flat" else "boots", P)
+    return build_item({"flat": "shoes-flat", "bunny": "slippers-bunny"}.get(kind, "boots"), P)
 
 
 # ── 장신구 ───────────────────────────────────────────
@@ -398,21 +460,40 @@ def build_wand():
     return build_item("wand", P)
 
 
+def build_heart_bag():
+    """하트 가방: 오른쪽 어깨에서 왼쪽 허리로 끈, 왼쪽 옆구리에 하트 가방"""
+    bag = Vector((-0.42, -0.12, 0.46))  # 왼손보다 아래, 치마 바깥
+    P = []
+    for s in (-1, 1):
+        P.append(sphere("tint", 0.075, bag + Vector((s * 0.055, 0, 0.04)), scale=(1, 0.55, 1), seg=14, rings=8))
+    P.append(cone("tint", 0.108, 0.0, 0.13, bag + Vector((0, 0, -0.05)), rot=(math.pi, 0, 0), scale=(1, 0.5, 1), seg=4))
+    P.append(sphere("gem", 0.022, bag + Vector((0, -0.045, 0.03)), seg=8, rings=5))
+    # 어깨끈: 오른쪽 어깨 → 가슴 앞(드레스 바깥) → 가방. 직선 두 토막
+    pts = [Vector((0.17, -0.17, 0.98)), Vector((-0.1, -0.33, 0.74)), bag + Vector((0.02, 0, 0.1))]
+    for a, b in zip(pts, pts[1:]):
+        d = b - a
+        P.append(cone("tint_light", 0.014, 0.014, d.length, (a + b) / 2, rot=d.to_track_quat("Z", "Y").to_euler(), seg=8))
+    return build_item("heart-bag", P)
+
+
 def build_all():
     reset()
     build_base()
-    for k in ("long", "pigtails", "bun"):
+    for k in ("long", "pigtails", "bun", "short", "ponytail"):
         build_hair(k)
     build_crown()
     build_ribbon()
     build_tiara()
-    for k in ("basic", "puffy", "flower"):
+    build_flower_crown()
+    for k in ("basic", "puffy", "flower", "ribbon"):
         build_dress(k)
     build_shoes("flat")
     build_shoes("boots")
+    build_shoes("bunny")
     build_necklace()
     build_wings()
     build_wand()
+    build_heart_bag()
     tmp = bpy.data.collections.get(TEMP)
     if tmp:
         bpy.data.collections.remove(tmp)
