@@ -34,6 +34,7 @@ import {
   createFlowerPatch,
   createObstacleMesh,
 } from './props';
+import { sfx } from '../../core/sound';
 
 /** 공주가 다가가서 하는 일: 친구에게 말 걸기 / 물건 줍기 */
 export type Interaction =
@@ -579,6 +580,7 @@ export function createCourtyardScene(aspect: number, opts: CourtyardOptions = {}
 
     petCelebrate() {
       if (!pet) return;
+      sfx('happy');
       pet.animator?.hop();
       for (let i = 0; i < 5; i++) {
         const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: heartTexture, transparent: true, depthWrite: false }));

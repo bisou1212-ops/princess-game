@@ -4,6 +4,7 @@ import { candyIcon, itemIcon, wardrobeIcon } from './icons';
 import { getItem } from '../systems/items';
 import { gearIcon } from './parent-panel';
 import './hud.css';
+import { sfx } from '../core/sound';
 
 /**
  * 화면 위 고정 표시.
@@ -77,7 +78,10 @@ export class Hud {
 
   setCandy(n: number, celebrate = false): void {
     this.candyEl.textContent = String(n);
-    if (celebrate) bounce(this.candyPill);
+    if (celebrate) {
+      bounce(this.candyPill);
+      sfx('coin');
+    }
   }
 
   /** 모으기 진행 표시. target=0이면 숨김 */

@@ -12,6 +12,9 @@ export interface Settings {
   speech: SpeechSpeed;
   /** 한 번에 놀 시간(분). 0 = 정하지 않음 (GDD 9: 10/15/20/30분) */
   playMinutes: number;
+  /** 효과음·배경 음악 켜기 */
+  sfx: boolean;
+  music: boolean;
 }
 
 export const PLAY_CHOICES = [0, 10, 15, 20, 30] as const;
@@ -19,7 +22,7 @@ export const PLAY_CHOICES = [0, 10, 15, 20, 30] as const;
 const KEY = 'settings';
 const QUALITY_KEY = 'quality';
 export const SPEECH_RATE: Record<SpeechSpeed, number> = { slow: 0.82, normal: 1, fast: 1.15 };
-const DEFAULTS: Settings = { speech: 'normal', playMinutes: 0 };
+const DEFAULTS: Settings = { speech: 'normal', playMinutes: 0, sfx: true, music: true };
 
 type Storage = Pick<globalThis.Storage, 'getItem' | 'setItem' | 'removeItem'>;
 const ls = (): Storage | null => {
@@ -35,7 +38,8 @@ export function loadSettings(store: Storage | null = ls()): Settings {
     const raw = JSON.parse(store?.getItem(KEY) ?? 'null') as Partial<Settings> | null;
     const speech = raw?.speech && raw.speech in SPEECH_RATE ? raw.speech : DEFAULTS.speech;
     const playMinutes = (PLAY_CHOICES as readonly number[]).includes(raw?.playMinutes as number) ? (raw!.playMinutes as number) : DEFAULTS.playMinutes;
-    return { speech, playMinutes };
+    const bool = (v: unknown, d: boolean) => (typeof v === 'boolean' ? v : d);
+    return { speech, playMinutes, sfx: bool(raw?.sfx, DEFAULTS.sfx), music: bool(raw?.music, DEFAULTS.music) };
   } catch {
     return { ...DEFAULTS };
   }

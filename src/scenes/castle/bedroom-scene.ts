@@ -9,6 +9,7 @@ import { createFurnitureMesh, disposeObject, recolorFurniture } from './furnitur
 import { createFriendFromGlb, hasFriendGlb } from './friends-glb';
 import { createCharacterMesh } from './props';
 import type { PrincessAnimator } from './princess-animator';
+import { sfx } from '../../core/sound';
 
 /**
  * 성 안 방 (GDD 5.2) — 앞·오른쪽 벽을 뗀 인형의 집 같은 시점.
@@ -370,6 +371,7 @@ export function createBedroomScene(aspect: number, layout: RoomLayout): BedroomS
     },
 
     pop(uid) {
+      sfx('pop');
       const s = shown.get(uid);
       if (s) s.anim = { kind: 'pop', t: 0 };
     },

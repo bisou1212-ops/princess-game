@@ -69,7 +69,7 @@ docs/GDD.md        # 기획서
   - [x] 태블릿 대응: 한국어 음성을 이름으로 지정(`pickVoiceFrom`), 톡 넉넉하게(28px·1.2초), 느리면 자동으로 빛번짐 끄기→해상도 낮추기(`PerfGovernor`, 단계 저장 `perfLevel`), 점검 화면 `?check=1`(fps·음성 목록·목소리 시험), 배포 직후 게임 파일 404면 한 번 다시 불러오기(index.html·sw.js)
   - [x] M9-1 부모 설정: 마당 오른쪽 아래 작은 톱니 → 어른 확인(6~9단 곱셈, 숫자판) → 말 빠르기(느리게·보통·빠르게, `Speaker.rateScale`)·그래픽 품질(자동·가볍게·고품질)·목소리 확인·저장 초기화(두 번 확인, `GameState.reset`). 설정은 localStorage `settings` (`src/core/settings.ts`, `src/ui/parent-panel.ts`)
   - [x] M9-2 플레이 시간: 부모 설정에서 정하지 않음·10·15·20·30분(`settings.playMinutes`, 기본 정하지 않음). 화면이 켜진 동안만 셈(`src/systems/playtime.ts`). 2분 전 펫이 예고(`bedtime-soon-pet`, 예고 뒤 최소 1분), 시간이 되면 하던 대화가 끝나길 기다렸다가 잠자리 장면(`src/ui/bedtime.ts`: 밤하늘·달·침대에서 눈 감은 공주·펫 — 3D 모델을 눈 감겨 찍은 그림, 대사 `bedtime`). 자는 동안 3D는 그리지 않음. 1시간 안에 다시 켜도 자는 화면(`sleepUntil`). 어른만 톱니 → 곱셈 → "10분 더·15분 더·오늘은 그만"
-  - [ ] M9-3 사운드: 효과음·배경음 (CC0)
+  - [x] M9-3 사운드: 음원 파일 없이 Web Audio 로 직접 만듦(`src/core/sound.ts`, 용량 0). 효과음 `sfx('tap'|'pop'|'sparkle'|'count'|'reward'|'coin'|'whoosh'|'happy'|'nom'|'bubble'|'page'|'dress')` — 밝은 소리만, 셀 때 한 음씩 올라감. 배경 음악: 오르골 소리로 장소마다(성·꽃 왕국·방·가게·자장가) 화음 진행 위 멜로디를 계속 지어 연주(`musicStep`), 대사 읽는 동안 작게. 첫 터치에 켜짐, 화면 내리면 멈춤. 부모 설정에서 효과음·음악 끄기. 나중에 CC0 음원으로 바꿔도 됨
   - [ ] M9-4 실기기 테스트 마감
 
 ## 나중에 할 일

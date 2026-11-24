@@ -5,6 +5,7 @@ import { withJosa } from '../systems/random-quests';
 import { SHOP_ITEMS, SHOP_NAME, priceOf, shopState } from '../systems/shop';
 import { candyIcon, checkIcon } from './icons';
 import './shop.css';
+import { sfx } from '../core/sound';
 
 /**
  * 별사탕 가게 화면 (GDD 5.3·6).
@@ -153,6 +154,7 @@ export class ShopPanel {
     const left = this.el.querySelector('.shop-candy span');
     if (left) left.textContent = String(this.d.wallet.candy - this.paid);
     if (this.paid < price) {
+      sfx('coin');
       this.say(`${countingWord(this.paid)}!`);
       return;
     }
@@ -162,6 +164,7 @@ export class ShopPanel {
     const it = getItem(itemId);
     const counter = this.el.querySelector('.shop-counter');
     counter?.classList.add('is-bought');
+    sfx('reward');
     counter?.insertAdjacentHTML('beforeend', `<div class="bought">샀어요!</div>`);
     const where = it.kind === 'furniture' ? '성 방 서랍에 넣어 둘게요.' : '드레스룸에서 입어 봐요.';
     // 말이 끝나면 진열대로 (소리가 안 나는 기기에서도 4초 뒤엔 돌아감)

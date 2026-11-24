@@ -13,7 +13,8 @@ describe('부모 설정', () => {
   it('말 빠르기 저장·불러오기 (깨진 값은 보통)', () => {
     const s = mem();
     expect(loadSettings(s).speech).toBe('normal');
-    saveSettings({ speech: 'slow', playMinutes: 15 }, s);
+    saveSettings({ speech: 'slow', playMinutes: 15, sfx: false, music: true }, s);
+    expect(loadSettings(s).sfx).toBe(false);
     expect(loadSettings(s).playMinutes).toBe(15);
     expect(loadSettings(s).speech).toBe('slow');
     s.setItem('settings', '{oops');

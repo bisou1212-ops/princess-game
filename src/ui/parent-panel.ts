@@ -59,6 +59,7 @@ export class ParentPanel {
       else if (act === 'reset-no') this.showSettings();
       else if (act === 'reload') location.reload();
       else if (act === 'play') this.setPlay(Number(value));
+      else if (act === 'sfx' || act === 'music') this.setSound(act, value === 'on');
       else if (act === 'more') this.d.onContinue(Number(value));
     });
   }
@@ -126,6 +127,11 @@ export class ParentPanel {
         <p class="pa-note">끝나기 2분 전에 펫이 알려 주고, 시간이 되면 잠자리 장면으로 끝나요. 지금까지 ${this.d.playedMinutes()}분 놀았어요.</p>
       </section>
       <section>
+        <h3>소리</h3>
+        <div class="pa-row">${this.choice('sfx', 'on', '효과음 켜기', this.settings.sfx)}${this.choice('sfx', 'off', '효과음 끄기', !this.settings.sfx)}</div>
+        <div class="pa-row" style="margin-top:8px">${this.choice('music', 'on', '음악 켜기', this.settings.music)}${this.choice('music', 'off', '음악 끄기', !this.settings.music)}</div>
+      </section>
+      <section>
         <h3>말 빠르기</h3>
         <div class="pa-row">${speech}</div>
       </section>
@@ -162,6 +168,13 @@ export class ParentPanel {
     this.d.onSettings(this.settings);
     this.showSettings();
     this.testVoice();
+  }
+
+  private setSound(which: 'sfx' | 'music', on: boolean): void {
+    this.settings = { ...this.settings, [which]: on };
+    saveSettings(this.settings);
+    this.d.onSettings(this.settings);
+    this.showSettings();
   }
 
   private setPlay(min: number): void {

@@ -11,6 +11,7 @@ import type { RewardPopup } from '../../ui/reward-popup';
 import { petVars, snackCount, type PetNeed } from '../../systems/pet';
 import { buildNavGrid, type CourtyardLayout } from './courtyard-layout';
 import type { CourtyardScene, Interaction } from './courtyard-scene';
+import { sfx } from '../../core/sound';
 
 interface Deps {
   layout: CourtyardLayout;
@@ -238,6 +239,8 @@ export class CourtyardController {
     const where = parsePickupId(id);
     const collected = this.quests.collect(itemId, where?.index);
     if (collected) {
+      sfx('sparkle');
+      sfx('count', collected.count);
       // 넘어진 화분은 그 자리에 세우고, 나머지는 쏙 줍기
       if (getItem(itemId).onCollect === 'stand') this.scene?.standPickup(id);
       else this.scene?.removePickup(id);

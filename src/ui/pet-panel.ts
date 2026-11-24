@@ -5,6 +5,7 @@ import { DIRT_SPOTS, PET_IDS, PET_KINDS, petVars, type Pet } from '../systems/pe
 import { fillLines, type QuestVars } from '../systems/random-quests';
 import { checkIcon, petFoodIcon } from './icons';
 import './pet-panel.css';
+import { sfx } from '../core/sound';
 
 /**
  * 펫 화면 (M8-5, GDD 3·4·6).
@@ -91,6 +92,7 @@ export class PetPanel {
   }
 
   private pickKind(kind: string): void {
+    sfx('tap');
     this.step = { at: 'choose', kind };
     this.el.querySelectorAll('.pp-card').forEach((c) => c.classList.toggle('is-picked', (c as HTMLElement).dataset.value === kind));
     (this.el.querySelector('.pp-ok') as HTMLElement).hidden = false;
@@ -119,6 +121,7 @@ export class PetPanel {
   }
 
   private pickName(name: string, btn: HTMLElement): void {
+    sfx('tap');
     if (this.step.at !== 'name') return;
     this.step.name = name;
     this.el.querySelectorAll('.pp-name').forEach((c) => c.classList.toggle('is-picked', c === btn));
@@ -160,6 +163,8 @@ export class PetPanel {
     this.el.querySelector(`.pp-slot[data-i="${this.fed - 1}"]`)?.classList.add('is-full');
     bounce(this.el.querySelector('.pp-eater'));
     if (this.fed < this.want) {
+      sfx('nom');
+      sfx('count', this.fed);
       this.d.speaker.speak(`${countingWord(this.fed)}!`, { ...getCharacter('princess').voice, mood: 'excited' });
       return;
     }
@@ -201,6 +206,7 @@ export class PetPanel {
     if (n < 5) return;
     spot.style.opacity = '';
     spot.classList.add('is-clean'); // 거품이 되어 퐁
+    sfx('bubble');
     const left = this.el.querySelectorAll('.pp-dirt:not(.is-clean)').length;
     if (left > 0) {
       this.d.speaker.speak('뽀득!', { ...getCharacter('princess').voice, mood: 'happy' });
@@ -225,6 +231,8 @@ export class PetPanel {
 
   /** 다 했다: 하트 + 펫이 고맙다고 말한 뒤 닫힘 (소리가 안 나는 기기도 6초 뒤엔 닫힘) */
   private finish(mode: 'feed' | 'bath', lines: DialogueLine[]): void {
+    sfx(mode === 'feed' ? 'nom' : 'sparkle');
+    window.setTimeout(() => sfx('reward'), 250);
     this.el.querySelector('.pp-big')?.insertAdjacentHTML('beforeend', '<span class="pp-hearts"><i>♥</i><i>♥</i><i>♥</i></span>');
     this.d.onCareDone(mode);
     let done = false;

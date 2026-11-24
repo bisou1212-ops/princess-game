@@ -2,6 +2,7 @@ import type { Speaker } from '../core/tts';
 import { DialogueSession, getCharacter, getDialogue, tokenize, type Choice, type DialogueLine } from '../systems/dialogue';
 import { choiceIcon } from './icons';
 import './dialogue-box.css';
+import { sfx } from '../core/sound';
 
 /**
  * 화면 아래 큰 말풍선 (GDD 7).
@@ -87,6 +88,7 @@ export class DialogueBox {
     if (!this.session || performance.now() - this.shownAt < 350) return;
     if (this.session.current?.choices?.length) return;
     const line = this.session.next();
+    sfx('page');
     if (line) this.show(line);
     else this.close();
   }
@@ -139,6 +141,7 @@ export class DialogueBox {
     this.choosing = true;
     const correct = choice.correct !== false;
     card.classList.add(correct ? 'is-picked' : 'is-wobble');
+    sfx(correct ? 'sparkle' : 'tap');
     const question = this.session.current!;
     const reply = choice.replyLines ?? (choice.reply ? getDialogue(choice.reply) : []);
     this.session.insertNext(correct ? reply : [...reply, question]);

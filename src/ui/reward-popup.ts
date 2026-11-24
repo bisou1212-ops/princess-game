@@ -2,6 +2,7 @@ import type { Speaker } from '../core/tts';
 import { countWithUnit, getItem } from '../systems/items';
 import type { Reward } from '../systems/quests';
 import { candyIcon, itemIcon } from './icons';
+import { sfx } from '../core/sound';
 
 /**
  * 선물 받기 화면 (GDD 4.5). 선물 이름을 한글·영어로 읽어 주고,
@@ -27,6 +28,7 @@ export class RewardPopup {
   }
 
   open(reward: Reward, onClose?: () => void): void {
+    sfx('reward');
     this.onClose = onClose ?? null;
     const gifts = reward.items.map((id) => {
       const it = getItem(id);

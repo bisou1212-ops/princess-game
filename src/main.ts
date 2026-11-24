@@ -4,6 +4,7 @@ import { PerfGovernor, perfSettings } from './core/quality';
 import { CheckOverlay } from './ui/check-overlay';
 import { ParentPanel } from './ui/parent-panel';
 import { loadSettings, SPEECH_RATE } from './core/settings';
+import { sound, sfx, type Tune } from './core/sound';
 import { createLook } from './core/look';
 import { registerServiceWorker } from './core/pwa';
 import { attachGestures } from './core/gestures';
@@ -72,6 +73,9 @@ async function start() {
   const speaker = new Speaker();
   speaker.installUnlock(window);
   speaker.rateScale = SPEECH_RATE[loadSettings().speech];
+  // 소리: 첫 터치에 켜짐 (브라우저 규칙). 효과음·음악은 부모 설정에서 끌 수 있다
+  sound.setEnabled(loadSettings().sfx, loadSettings().music);
+  window.addEventListener('pointerdown', () => sound.unlock(), { capture: true });
   const princessVoice = getCharacter('princess').voice;
 
   const hud = new Hud(document.body, {
@@ -209,6 +213,7 @@ async function start() {
     if (switching || (next === mode && (next === 'town' || room?.id === roomId))) return;
     if (next === 'room' && !state.rooms[roomId]) return;
     switching = true;
+    sfx('whoosh');
     speaker.stop();
     await withFade(() => {
       if (mode === 'room') room?.controller.leave();
@@ -231,6 +236,7 @@ async function start() {
     switching = true;
     const from = town;
     const dest = getLocation(id)!;
+    sfx('whoosh');
     await withFade(() => {
       map.close();
       mode = 'travel';
@@ -292,6 +298,7 @@ async function start() {
     speaker,
     voice: princessVoice,
     onChange: (outfit) => {
+      sfx('dress');
       state.outfit = outfit;
       for (const t of towns.values()) t.scene.setOutfit(outfit, t === town);
       state.change();
@@ -426,6 +433,7 @@ async function start() {
     speaker,
     onSettings: (s) => {
       speaker.rateScale = SPEECH_RATE[s.speech];
+      sound.setEnabled(s.sfx, s.music);
       playTimer.setLimit(s.playMinutes);
     },
     onReset: () => state.reset(),
@@ -512,19 +520,21 @@ async function start() {
   // 앱을 내리거나 닫을 때 바로 저장
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'hidden') void state.saveNow();
+    sound.suspend(document.visibilityState === 'hidden');
   });
   window.addEventListener('pagehide', () => void state.saveNow());
 
   // 개발 중 브라우저 콘솔에서 상태 확인용 (배포 빌드에는 없음)
   if (import.meta.env.DEV) {
     Object.assign(window, {
-      __game: { state, goTo, travelTo, town: () => town, room: () => room, mode: () => mode, towns, petPanel, playTimer, startBedtime, warnBedtime },
+      __game: { state, goTo, travelTo, town: () => town, room: () => room, mode: () => mode, towns, petPanel, playTimer, startBedtime, warnBedtime, sound },
     });
   }
 
   // 톡·끌기: 지금 장면으로 보낸다
   attachGestures(renderer.domElement, {
     onTap: (x, y) => {
+      sfx('tap');
       if (mode === 'town') town.scene.tap(toNdc(x, y));
       else if (mode === 'room') room?.controller.onTap(x, y);
     },
@@ -550,6 +560,10 @@ async function start() {
     perf.tick(raw, document.visibilityState === 'hidden' || switching);
     check?.update(raw);
     // 놀이 시간은 화면이 보이고 부모 설정이 닫혀 있을 때만 센다
+    // 장소에 맞는 곡, 말하는 동안은 음악을 작게
+    const tune: Tune = bedtime.isOpen ? 'lullaby' : shop.isOpen ? 'shop' : mode === 'room' ? 'room' : mode === 'travel' ? 'flower-kingdom' : (town.id as Tune);
+    sound.setTune(tune);
+    sound.setSpeaking(!!globalThis.speechSynthesis?.speaking);
     const play = playTimer.tick(raw, document.visibilityState === 'visible' && !parentPanel.isOpen && !bedtime.isOpen);
     if (play === 'warn') warnBedtime();
     else if (play === 'bedtime') startBedtime();
