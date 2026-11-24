@@ -31,17 +31,28 @@ describe('Blender 공주 모델 (princess.glb)', () => {
   });
 });
 
-describe('Blender 친구 모델 (friends.glb)', () => {
-  const gltf = readGlbJson(fileURLToPath(new URL('../../assets/models/friends.glb', import.meta.url)));
-  const names = new Set((gltf.nodes ?? []).map((n) => n.name));
+describe('Blender 친구 모델 (friend-<id>.glb)', () => {
+  const read = (id: string) => {
+    try {
+      return readGlbJson(fileURLToPath(new URL(`../../assets/models/friend-${id}.glb`, import.meta.url)));
+    } catch {
+      return null;
+    }
+  };
 
-  it('마당·꽃 왕국에 서 있는 친구가 모두 들어 있다 (이름 = characters.json id)', async () => {
+  it('마당·꽃 왕국에 서 있는 친구마다 뼈대·동작이 든 모델이 있다 (뼈대 이름 = characters.json id)', async () => {
     const { courtyardLayout } = await import('./courtyard-layout');
     const { loadLocationLayout, LOCATIONS, canTravelTo } = await import('../../systems/world');
     const ids = new Set(courtyardLayout.npcs.map((n) => n.character));
     for (const l of LOCATIONS.filter((x) => canTravelTo(x.id))) {
       for (const n of (await loadLocationLayout(l.id)).npcs) ids.add(n.character);
     }
-    for (const id of ids) expect(names.has(id), id).toBe(true);
+    for (const id of ids) {
+      const gltf = read(id) as (ReturnType<typeof readGlbJson> & { animations?: Array<{ name: string }>; skins?: unknown[] }) | null;
+      expect(gltf, id).not.toBeNull();
+      expect(gltf!.nodes?.some((n) => n.name === id), id).toBe(true);
+      expect(gltf!.skins?.length, id).toBe(1);
+      expect((gltf!.animations ?? []).map((a) => a.name).sort(), id).toEqual(['hop', 'idle', 'walk', 'wave']);
+    }
   });
 });

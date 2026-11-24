@@ -1,6 +1,7 @@
 {
   "_comment": "꽃 왕국 그레이박스 (GDD 2: 봄, 꽃밭·동물 친구). courtyard.json과 같은 형식. house=상자+지붕(roof 색), flowerPatches=장식 꽃밭(부딪히지 않음). doors target 'shop'=별사탕 가게(shop.json). 열기구는 start 근처에 내린다.",
   "id": "flower-kingdom",
+  "env": "flower-kingdom",
   "width": 26,
   "depth": 26,
   "cellSize": 0.5,
@@ -10,6 +11,7 @@
     { "id": "house-candy-shop", "shape": "house", "x": -7, "z": -8, "w": 5, "d": 4, "h": 2.6, "color": "#ffd6ea", "roof": "#ff8fc4" },
     { "id": "house-bakery", "shape": "house", "x": 7, "z": -8, "w": 5, "d": 4, "h": 2.6, "color": "#fff1c4", "roof": "#ffb84d" },
     { "id": "house-garden-shed", "shape": "house", "x": -9.5, "z": 4, "w": 3.5, "d": 3, "h": 2.2, "color": "#dff3d2", "roof": "#7fc47a" },
+    { "id": "garden-beds", "shape": "box", "x": -9.5, "z": 6.85, "w": 2.6, "d": 2.0, "h": 0.3, "color": "#c9a98a" },
     { "id": "well", "shape": "cylinder", "x": 0, "z": -1, "r": 1.2, "h": 0.9, "color": "#d8cfc0" },
     { "id": "tree-1", "shape": "tree", "x": -11, "z": -3, "r": 0.5, "h": 3 },
     { "id": "tree-2", "shape": "tree", "x": 11, "z": -2, "r": 0.5, "h": 3 },

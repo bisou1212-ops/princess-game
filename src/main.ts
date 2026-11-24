@@ -29,6 +29,7 @@ import { MapScreen } from './scenes/map/map-screen';
 import { createTravelScene } from './scenes/map/travel-scene';
 import { preloadPrincessGlb } from './scenes/castle/princess-glb';
 import { preloadFriendsGlb } from './scenes/castle/friends-glb';
+import { preloadEnv } from './scenes/castle/env-models';
 
 /** 바깥 장소 하나 (성 마당, 꽃 왕국 …) */
 interface Town {
@@ -85,6 +86,7 @@ async function start() {
     const existing = towns.get(id);
     if (existing) return existing;
     const layout = await loadLocationLayout(id);
+    await preloadEnv(layout.env); // 장소 배경 모델 (없거나 실패하면 도형 배경)
     const controller = new CourtyardController({
       layout,
       state,
@@ -283,6 +285,7 @@ async function start() {
   let dialogueCover = 0;
   dialogue.onCover = (px) => {
     dialogueCover = px;
+    town.scene.setTalking(px > 0);
     applyViewOffset();
   };
 

@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { addOutline, toonMaterial, type ToonParams } from '../../core/toon';
 import { getColor, getOutfitItem, SLOTS, type Outfit, type Worn } from '../../systems/wardrobe';
 import { createGlbPrincess, hasPrincessGlb } from './princess-glb';
+import type { PrincessAnimator } from './princess-animator';
 
 /**
  * 갈아입을 수 있는 임시 공주 모델 (GDD 8.1: 옷·머리는 부위별로 따로 만들어 갈아끼우는 구조).
@@ -17,6 +18,8 @@ const HEAD_SLOTS = new Set(['hair', 'crown']);
 export interface PrincessModel {
   group: THREE.Group;
   setOutfit(outfit: Outfit): void;
+  /** 뼈대·동작이 있는 Blender 모델이면 움직임 담당 (도형 공주는 없음) */
+  animator?: PrincessAnimator | null;
 }
 
 /** Blender 모델(princess.glb)이 불러와져 있으면 그것을, 아니면 도형 공주를 쓴다 */

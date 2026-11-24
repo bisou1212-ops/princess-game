@@ -1,6 +1,10 @@
 import type { Point } from './nav-grid';
 
-/** 경유점을 따라 일정한 속도로 걷고, 가는 방향으로 부드럽게 몸을 돌린다. */
+/**
+ * 경유점을 따라 걷고, 가는 방향으로 부드럽게 몸을 돌린다.
+ * accel을 주면 천천히 출발해 속도를 올리고, 도착 전에 부드럽게 멈춘다.
+ * 먼 곳(farDistance 넘게)은 조금 빠른 걸음(farBoost 배)으로 간다.
+ */
 export class Walker {
   x: number;
   z: number;
@@ -8,14 +12,38 @@ export class Walker {
   heading = 0;
   speed: number;
   turnSpeed: number;
+  /** 지금 실제 속도 (m/s) */
+  currentSpeed = 0;
   private path: Point[] = [];
   private targetHeading = 0;
+  private maxSpeed: number;
 
-  constructor(start: Point, speed = 3, turnSpeed = 10) {
+  constructor(
+    start: Point,
+    speed = 3,
+    turnSpeed = 10,
+    /** 가속도 (m/s²). Infinity면 바로 출발·바로 정지 */
+    readonly accel = Infinity,
+    readonly farDistance = 7,
+    readonly farBoost = 1,
+  ) {
     this.x = start.x;
     this.z = start.z;
     this.speed = speed;
     this.turnSpeed = turnSpeed;
+    this.maxSpeed = speed;
+  }
+
+  private remaining(): number {
+    let d = 0;
+    let px = this.x;
+    let pz = this.z;
+    for (const p of this.path) {
+      d += Math.hypot(p.x - px, p.z - pz);
+      px = p.x;
+      pz = p.z;
+    }
+    return d;
   }
 
   get moving(): boolean {
@@ -24,10 +52,12 @@ export class Walker {
 
   setPath(path: Point[]): void {
     this.path = path.slice();
+    this.maxSpeed = this.remaining() > this.farDistance ? this.speed * this.farBoost : this.speed;
   }
 
   stop(): void {
     this.path = [];
+    this.currentSpeed = 0;
   }
 
   /** 제자리에서 (x, z) 쪽으로 몸을 돌린다 */
@@ -38,7 +68,18 @@ export class Walker {
   }
 
   update(dt: number): void {
-    let budget = this.speed * dt;
+    if (!Number.isFinite(this.accel)) {
+      this.currentSpeed = this.path.length > 0 ? this.speed : 0;
+    } else if (this.path.length > 0) {
+      // 남은 거리 안에 멈출 수 있는 속도까지만 (부드러운 도착), 그 안에서 가속
+      const stopSpeed = Math.sqrt(2 * this.accel * this.remaining()) + 0.4;
+      const target = Math.min(this.maxSpeed, stopSpeed);
+      const step = this.accel * dt;
+      this.currentSpeed += clamp(target - this.currentSpeed, -step * 1.5, step);
+    } else {
+      this.currentSpeed = 0;
+    }
+    let budget = this.currentSpeed * dt;
     while (budget > 0 && this.path.length > 0) {
       const t = this.path[0];
       const dx = t.x - this.x;
@@ -62,4 +103,8 @@ export class Walker {
     const maxTurn = this.turnSpeed * dt;
     this.heading += Math.abs(diff) <= maxTurn ? diff : Math.sign(diff) * maxTurn;
   }
+}
+
+function clamp(v: number, lo: number, hi: number): number {
+  return Math.max(lo, Math.min(hi, v));
 }

@@ -9,7 +9,10 @@ Blender MCP로 실행:
 
 공주 스크립트(build_princess.py)의 도형 도구를 그대로 빌려 쓴다.
 규칙 (게임 코드 src/scenes/castle/friends-glb.ts 와 약속):
-- 물체 이름 = characters.json 의 id (flora, tori, gogo, dochi). 친구 하나 = 물체 하나.
+- 친구 하나 = 파일 하나: src/assets/models/friend-<id>.glb (export_all).
+  뼈대 물체 이름 = characters.json 의 id, 몸 메시 = <id>_body (뼈대에 붙은 SkinnedMesh).
+  뼈 이름은 공주와 같다(hips·spine·head·arm.L …) → 같은 동작 클립·움직임 코드를 쓴다.
+  동물은 귀(ear.L/R)·꼬리(tail) 뼈가 더 있다 (게임에서 스프링으로 출렁임).
 - 친구 색은 고정 (옷 갈아입기 없음). 재질 이름은 f_ 로 시작.
 - Blender 좌표: Z 위, 얼굴은 -Y. 바닥 z=0.
 """
@@ -72,6 +75,144 @@ def _join(name, pieces):
     return P["build_item"](name, pieces, FRIENDS)
 
 
+# ── 뼈대 ──────────────────────────────────────────────
+def make_rig(name, bones):
+    """친구 뼈대 (물체 이름 = 친구 id). 뼈 축 규칙은 공주와 같다 (X축 = 세상 +X)"""
+    col = _collection()
+    old = bpy.data.objects.get(name)
+    if old:
+        bpy.data.objects.remove(old)
+    arm = bpy.data.armatures.new(name + "_arm")
+    ob = bpy.data.objects.new(name, arm)
+    col.objects.link(ob)
+    bpy.context.view_layer.objects.active = ob
+    for o in bpy.context.scene.objects:
+        o.select_set(False)
+    ob.select_set(True)
+    bpy.ops.object.mode_set(mode="EDIT")
+    for bname, (h, t, parent) in bones.items():
+        b = arm.edit_bones.new(bname)
+        b.head = h
+        b.tail = t
+        d = (Vector(t) - Vector(h)).normalized()
+        b.align_roll(Vector((1, 0, 0)).cross(d))
+        if parent:
+            b.parent = arm.edit_bones[parent]
+    bpy.ops.object.mode_set(mode="OBJECT")
+    for pb in ob.pose.bones:
+        pb.rotation_mode = "XYZ"
+    return ob
+
+
+def animal_bones(head_z, head_r, body_r, ears=None, tail=None, wings=False):
+    neck = head_z - head_r * 0.8
+    b = {
+        "root": ((0, 0, 0), (0, 0, 0.2), None),
+        "hips": ((0, 0, 0.28), (0, 0, 0.58), "root"),
+        "spine": ((0, 0, 0.58), (0, 0, neck), "hips"),
+        "head": ((0, 0, neck), (0, 0, head_z + head_r), "spine"),
+    }
+    for s_, n in ((1, "L"), (-1, "R")):
+        if wings:
+            b[f"arm.{n}"] = ((s_ * 0.3, 0.03, 0.8), (s_ * 0.4, 0.03, 0.42), "spine")
+        else:
+            b[f"arm.{n}"] = ((s_ * body_r * 0.85, 0, 0.76), (s_ * (body_r + 0.14), -0.03, 0.5), "spine")
+        b[f"leg.{n}"] = ((s_ * 0.15, 0, 0.28), (s_ * 0.15, 0, 0.06), "hips")
+        b[f"foot.{n}"] = ((s_ * 0.15, 0, 0.06), (s_ * 0.15, -0.16, 0.03), f"leg.{n}")
+        if ears:
+            base, top = ears
+            b[f"ear.{n}"] = ((s_ * 0.15, 0.02, base), (s_ * 0.17, 0.02, top), "head")
+    if tail:
+        b["tail"] = (tail[0], tail[1], "hips")
+    return b
+
+
+def _smooth(e0, e1, x):
+    t = max(0.0, min(1.0, (x - e0) / (e1 - e0)))
+    return t * t * (3 - 2 * t)
+
+
+def join_skinned(name, pieces, rig, assign):
+    """조각들을 몸 메시 하나로 합치고, 조각마다 assign(조각, 가운데)이 고른 뼈에 붙인다.
+    assign 이 함수(z → {뼈: 무게})를 돌려주면 꼭짓점 높이로 나눠 붙인다 (몸통)."""
+    import bmesh
+    dg = bpy.context.evaluated_depsgraph_get()
+    dg.update()
+    bm = bmesh.new()
+    mats, ranges = [], []
+    for p in pieces:
+        mname = p["mat"]
+        if mname not in mats:
+            mats.append(mname)
+        idx = mats.index(mname)
+        ev = p.evaluated_get(dg)
+        me = ev.to_mesh()
+        me.transform(p.matrix_world)
+        center = sum((v.co for v in me.vertices), Vector()) / max(1, len(me.vertices))
+        v0, f0 = len(bm.verts), len(bm.faces)
+        bm.from_mesh(me)
+        bm.faces.ensure_lookup_table()
+        for f in bm.faces[f0:]:
+            f.material_index = idx
+        ranges.append((v0, len(bm.verts), assign(p, center)))
+        ev.to_mesh_clear()
+    me = bpy.data.meshes.new(name + "_body")
+    bm.normal_update()
+    bm.to_mesh(me)
+    bm.free()
+    for m in mats:
+        me.materials.append(P["get_mat"](m))
+    ob = bpy.data.objects.new(name + "_body", me)
+    _collection().objects.link(ob)
+    groups = {}
+
+    def g(n):
+        if n not in groups:
+            groups[n] = ob.vertex_groups.new(name=n)
+        return groups[n]
+
+    co = me.vertices
+    for a, b, bone in ranges:
+        if callable(bone):
+            for i in range(a, b):
+                for n, w in bone(co[i].co.z).items():
+                    if w > 1e-3:
+                        g(n).add([i], w, "REPLACE")
+        else:
+            g(bone).add(list(range(a, b)), 1.0, "REPLACE")
+    ob.parent = rig
+    mod = ob.modifiers.new("Armature", "ARMATURE")
+    mod.object = rig
+    for p in pieces:
+        d = p.data
+        bpy.data.objects.remove(p)
+        if d and d.users == 0:
+            bpy.data.meshes.remove(d)
+    return ob
+
+
+def animal_assign(head_z, head_r, body_r, ear_from=None, tail=False):
+    """동물 친구: 조각 위치로 뼈 고르기"""
+    def body(z):
+        sp = _smooth(0.5, 0.85, z)
+        return {"spine": sp, "hips": 1 - sp}
+
+    def assign(p, c):
+        side = "L" if c.x > 0 else "R"
+        if ear_from is not None and c.z > ear_from:
+            return f"ear.{side}"
+        if c.z > head_z - head_r * 0.9:
+            return "head"
+        if tail and c.y > 0.28 and c.z < 0.8:
+            return "tail"
+        if c.z < 0.16:
+            return f"foot.{side}"
+        if abs(c.x) > body_r * 0.8 and 0.3 < c.z < 1.0:
+            return f"arm.{side}"
+        return body
+    return assign
+
+
 def _capture(fn, *args, remap=None):
     """공주 부위를 만들되 합치지 않고 조각만 받아 재질 이름을 바꾼다"""
     P["CAPTURE"] = []
@@ -104,7 +245,12 @@ def build_flora():
     pieces += _capture(P["build_tiara"], remap={"tint": "f_gold"})
     pieces += _capture(P["build_dress"], "puffy", remap={"tint": "f_flora_dress", "tint_light": "f_flora_light"})
     pieces += _capture(P["build_shoes"], "flat", remap={"tint": "f_flora_dress", "tint_light": "f_flora_light"})
-    return _join("flora", pieces)
+    rig = make_rig("flora", P["BONES"])
+
+    def assign(p, c):
+        b = P["bone_for"](p.get("part", "base"), c)
+        return P["torso_weights"] if b == "torso" else b
+    return join_skinned("flora", pieces, rig, assign)
 
 
 # ── 동물 친구 공통 몸통: 동그란 배 + 짧은 팔다리 ─────────────
@@ -136,7 +282,8 @@ def build_tori():
         pieces.append(sphere("f_nose_pink", 0.03, c + Vector((math.cos(a) * 0.035, 0, math.sin(a) * 0.035)), scale=(1, 0.5, 1), seg=8, rings=5))
     pieces.append(sphere("yellow", 0.022, c + Vector((0, -0.01, 0)), seg=8, rings=5))
     pieces.append(sphere("f_tori_fur", 0.1, (0, 0.33, 0.35), seg=12, rings=8))  # 꼬리
-    return _join("tori", pieces)
+    rig = make_rig("tori", animal_bones(head_z, head_r, 0.34, ears=(head_z + 0.3, head_z + 0.85), tail=((0, 0.28, 0.38), (0, 0.42, 0.33))))
+    return join_skinned("tori", pieces, rig, animal_assign(head_z, head_r, 0.34, ear_from=head_z + 0.36, tail=True))
 
 
 # ── 고고: 정원사 곰 ───────────────────────────────────
@@ -160,7 +307,8 @@ def build_gogo():
     pieces.append(cone("f_straw", 0.42, 0.42, 0.04, (0, 0, hat_z), seg=32))
     pieces.append(cone("f_straw", 0.24, 0.21, 0.2, (0, 0, hat_z + 0.12), seg=24))
     pieces.append(torus("f_overall", 0.235, 0.03, (0, 0, hat_z + 0.05), seg=24, ring=6))
-    return _join("gogo", pieces)
+    rig = make_rig("gogo", animal_bones(head_z, head_r, 0.4))
+    return join_skinned("gogo", pieces, rig, animal_assign(head_z, head_r, 0.4))
 
 
 # ── 도치: 빵집 고슴도치 ────────────────────────────────
@@ -197,7 +345,8 @@ def build_dochi():
     # 앞치마의 딸기 무늬
     pieces.append(sphere("f_strawberry", 0.045, (0.08, -0.3, 0.48), scale=(1, 0.5, 1.15), seg=10, rings=6))
     pieces.append(sphere("f_apron_green", 0.02, (0.08, -0.315, 0.535), scale=(1.4, 0.5, 0.6), seg=8, rings=5))
-    return _join("dochi", pieces)
+    rig = make_rig("dochi", animal_bones(head_z, head_r, 0.33))
+    return join_skinned("dochi", pieces, rig, animal_assign(head_z, head_r, 0.33))
 
 
 # ── 삐삐: 부끄럼 많은 가수 새 ───────────────────────────
@@ -223,17 +372,21 @@ def build_pippi():
     # 분홍 스카프 + 음표 브로치
     pieces.append(torus("f_scarf", 0.2, 0.05, (0, 0, 0.88), seg=24, ring=8))
     pieces.append(sphere("f_scarf", 0.06, (0.08, -0.2, 0.84), scale=(1, 0.6, 1.3), seg=10, rings=6))
-    return _join("pippi", pieces)
+    rig = make_rig("pippi", animal_bones(head_z, head_r, 0.36, tail=((0, 0.3, 0.45), (0, 0.48, 0.42)), wings=True))
+    return join_skinned("pippi", pieces, rig, animal_assign(head_z, head_r, 0.3, tail=True))
 
 
 def build_friends():
     col = bpy.data.collections.get(FRIENDS)
     if col:
         for o in list(col.objects):
-            me = o.data
+            data = o.data
             bpy.data.objects.remove(o)
-            if me and me.users == 0:
-                bpy.data.meshes.remove(me)
+            if data is not None and data.users == 0:
+                if isinstance(data, bpy.types.Mesh):
+                    bpy.data.meshes.remove(data)
+                elif isinstance(data, bpy.types.Armature):
+                    bpy.data.armatures.remove(data)
     _collection()
     out = {}
     for name, fn in (("flora", build_flora), ("tori", build_tori), ("gogo", build_gogo), ("dochi", build_dochi), ("pippi", build_pippi)):
@@ -242,9 +395,9 @@ def build_friends():
     tmp = bpy.data.collections.get(P["TEMP"])
     if tmp:
         bpy.data.collections.remove(tmp)
-    # 나란히 세워 보기 (내보낼 때는 다시 0,0 으로)
+    # 나란히 세워 보기 — 몸이 아니라 뼈대를 옮긴다 (몸만 옮기면 뼈와 어긋남). 내보낼 때는 다시 0,0 으로
     for i, name in enumerate(("flora", "tori", "gogo", "dochi", "pippi")):
-        out[name].location.x = (i - 2) * 1.3
+        bpy.data.objects[name].location.x = (i - 2) * 1.3
     return out
 
 
@@ -272,3 +425,50 @@ def export_friends(path):
         )
     for o in objs:
         o.location = saved[o.name]
+
+
+IDS = ("flora", "tori", "gogo", "dochi", "pippi")
+
+
+def export_all(folder, anim_ns):
+    """친구마다 파일 하나: 그 친구의 뼈대 + 몸 + 동작 클립(idle·walk·hop·wave)"""
+    col = bpy.data.collections[FRIENDS]
+    sizes = {}
+    for fid in IDS:
+        rig = bpy.data.objects[fid]
+        body = bpy.data.objects[fid + "_body"]
+        saved = rig.location.copy()
+        rig.location = (0, 0, 0)
+        # 다른 친구의 클립이 섞이지 않게: 클립을 이 뼈대로 새로 만든다 (이름이 같으므로 앞 친구 것은 지워짐)
+        for other in IDS:
+            o = bpy.data.objects[other]
+            if o.animation_data:
+                for t in list(o.animation_data.nla_tracks):
+                    o.animation_data.nla_tracks.remove(t)
+        anim_ns["make_all"](fid)
+        for o in bpy.context.scene.objects:
+            o.select_set(False)
+        objs = [rig, body]
+        for o in objs:
+            o.hide_set(False)
+            o.select_set(True)
+        path = os.path.join(folder, f"friend-{fid}.glb")
+        with bpy.context.temp_override(selected_objects=objs, active_object=rig):
+            bpy.ops.export_scene.gltf(
+                filepath=path,
+                export_format="GLB",
+                use_selection=True,
+                export_apply=True,
+                export_yup=True,
+                export_texcoords=False,
+                export_skins=True,
+                export_animations=True,
+                export_animation_mode="ACTIONS",
+                export_force_sampling=True,
+                export_def_bones=False,
+                export_cameras=False,
+                export_lights=False,
+            )
+        rig.location = saved
+        sizes[fid] = os.path.getsize(path)
+    return sizes

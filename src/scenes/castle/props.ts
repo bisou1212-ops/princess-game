@@ -1,3 +1,4 @@
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import * as THREE from 'three';
 import { addOutline, toonMaterial } from '../../core/toon';
 import type { Character } from '../../systems/dialogue';
@@ -94,7 +95,8 @@ export function createObstacleMesh(o: Obstacle, theme?: Theme): THREE.Object3D {
 export function createHitArea(radius: number, height: number): THREE.Mesh {
   const hit = new THREE.Mesh(
     new THREE.CylinderGeometry(radius, radius, height, 12),
-    new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false, colorWrite: false }),
+    // visible=false: 그리지 않지만 톡 판정(raycast)은 된다 → 그리기 호출을 아낌
+    new THREE.MeshBasicMaterial({ visible: false }),
   );
   hit.position.y = height / 2;
   hit.userData.isHitArea = true;
@@ -224,13 +226,13 @@ export function createFlowerMesh(color: string): THREE.Group {
   bloom.position.y = 0.55;
   bloom.rotation.x = -0.5;
   const petalMat = toonMaterial({ color: new THREE.Color(color), roughness: 0.5 });
-  for (let i = 0; i < 5; i++) {
+  // 꽃잎 다섯 장을 메시 하나로 (그리기 한 번)
+  const petalGeos = Array.from({ length: 5 }, (_, i) => {
     const a = (i / 5) * Math.PI * 2;
-    const petal = new THREE.Mesh(new THREE.SphereGeometry(0.13, 10, 8), petalMat);
-    petal.scale.set(1, 0.45, 1);
-    petal.position.set(Math.cos(a) * 0.14, 0, Math.sin(a) * 0.14);
-    bloom.add(petal);
-  }
+    return new THREE.SphereGeometry(0.13, 10, 7).scale(1, 0.45, 1).translate(Math.cos(a) * 0.14, 0, Math.sin(a) * 0.14);
+  });
+  bloom.add(new THREE.Mesh(mergeGeometries(petalGeos)!, petalMat));
+  petalGeos.forEach((g) => g.dispose());
   const center = new THREE.Mesh(
     new THREE.SphereGeometry(0.08, 10, 8),
     toonMaterial({ color: 0xfff3b0, emissive: 0x443300 }),
@@ -303,7 +305,32 @@ export function createFlowerPatch(patch: FlowerPatch): THREE.Group {
     head.scale.y = 0.6;
     g.add(stem, head);
   }
-  return g;
+  return mergeByMaterial(g);
+}
+
+/** 움직이지 않는 장식: 같은 재질끼리 메시 하나로 합쳐 그리기 호출을 줄인다 */
+function mergeByMaterial(g: THREE.Group): THREE.Group {
+  g.updateMatrixWorld(true);
+  const groups = new Map<THREE.Material, THREE.BufferGeometry[]>();
+  g.traverse((o) => {
+    const mesh = o as THREE.Mesh;
+    if (!mesh.isMesh) return;
+    const geo = mesh.geometry.clone().applyMatrix4(mesh.matrixWorld);
+    const mat = mesh.material as THREE.Material;
+    if (!groups.has(mat)) groups.set(mat, []);
+    groups.get(mat)!.push(geo);
+  });
+  const out = new THREE.Group();
+  for (const [mat, geos] of groups) {
+    const merged = mergeGeometries(geos);
+    geos.forEach((x) => x.dispose());
+    if (!merged) continue;
+    const mesh = new THREE.Mesh(merged, mat);
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    out.add(mesh);
+  }
+  return out;
 }
 
 /**

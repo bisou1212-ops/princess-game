@@ -5,6 +5,7 @@ import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { STYLE } from './toon';
+import { QUALITY_SETTINGS } from './quality';
 
 /**
  * 화면 전체의 느낌 (부드러운 입체 화풍).
@@ -33,7 +34,7 @@ export function createLook(renderer: THREE.WebGLRenderer, container: HTMLElement
   const bloom = new UnrealBloomPass(new THREE.Vector2(container.clientWidth / 2 || 1, container.clientHeight / 2 || 1), 0.35, 0.4, 1.6);
   composer.addPass(renderPass);
   // ?bloom=0 으로 빛번짐 끄고 비교 (성능 점검용)
-  if (new URLSearchParams(location.search).get('bloom') !== '0') composer.addPass(bloom);
+  if (QUALITY_SETTINGS.bloom && new URLSearchParams(location.search).get('bloom') !== '0') composer.addPass(bloom);
   composer.addPass(new OutputPass());
 
   // 캔버스 크기·픽셀 비율이 바뀌면 (화면 회전·창 크기) 매 프레임 확인해서 맞춘다

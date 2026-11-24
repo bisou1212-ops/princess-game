@@ -1,6 +1,7 @@
 {
-  "_comment": "성 마당 배치. 좌표 단위는 m, x=오른쪽, z=아래(카메라 쪽). 가운데가 (0,0). color=따로 쓰는 색, roof=탑 지붕 색.",
+  "_comment": "성 마당 배치. 좌표 단위는 m, x=오른쪽, z=아래(카메라 쪽). 가운데가 (0,0). color=따로 쓰는 색, roof=탑 지붕 색. env=Blender 배경 모델(scripts/blender/build_castle_env.py, 보이는 모습만 — 충돌은 obstacles).",
   "id": "castle",
+  "env": "castle",
   "theme": { "sky": "#a9dcff", "ground": "#bfe7b0", "yard": "#fbefe4", "structure": "#f3e6ff", "prop": "#ffd9e8" },
   "width": 24,
   "depth": 24,

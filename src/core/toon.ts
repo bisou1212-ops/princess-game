@@ -134,6 +134,7 @@ export function addOutline(root: THREE.Object3D, thickness = 0.025): void {
   root.traverse((o) => {
     const mesh = o as THREE.Mesh;
     if (!mesh.isMesh || mesh.userData.isOutline || mesh.userData.isHitArea || mesh.userData.noOutline) return;
+    if ((mesh as THREE.SkinnedMesh).isSkinnedMesh) return; // 뼈대 메시: 외곽선 복사본이 따라 움직이지 않음
     const mat = mesh.material as THREE.Material;
     if (Array.isArray(mesh.material) || mat.transparent || (mat as THREE.MeshBasicMaterial).colorWrite === false) return;
     if (mesh.children.some((c) => c.userData.isOutline)) return;

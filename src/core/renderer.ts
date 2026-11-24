@@ -1,7 +1,9 @@
 import * as THREE from 'three';
 
-/** CLAUDE.md 성능 원칙: 픽셀 비율 최대 2 */
-export const MAX_PIXEL_RATIO = 2;
+import { QUALITY_SETTINGS } from './quality';
+
+/** CLAUDE.md 성능 원칙: 픽셀 비율 최대 2 (기본 품질은 1.25) */
+export const MAX_PIXEL_RATIO = QUALITY_SETTINGS.maxPixelRatio;
 
 export function createRenderer(container: HTMLElement): THREE.WebGLRenderer {
   const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });

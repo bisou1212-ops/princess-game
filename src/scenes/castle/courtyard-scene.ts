@@ -1,3 +1,4 @@
+import { QUALITY_SETTINGS } from '../../core/quality';
 import * as THREE from 'three';
 import { Sparkles } from '../../core/sparkles';
 import { createFriendFromGlb, hasFriendGlb } from './friends-glb';
@@ -17,6 +18,9 @@ import {
   type NpcPlacement,
 } from './courtyard-layout';
 import { createPrincessModel } from './princess-model';
+import { createEnv } from './env-models';
+import { AmbientFx } from '../../core/ambient-fx';
+import type { PrincessAnimator } from './princess-animator';
 import {
   COLORS,
   createCharacterMesh,
@@ -55,6 +59,8 @@ export interface CourtyardScene {
   setOutfit(outfit: Outfit, celebrate?: boolean): void;
   /** 거울(드레스룸) 모드: 카메라가 공주 앞으로 다가가고 공주가 천천히 돈다. 이동 톡은 막힘 */
   setMirror(on: boolean): void;
+  /** 대화 중: 카메라가 공주와 친구 사이로 살짝 다가간다 */
+  setTalking(on: boolean): void;
 }
 
 export interface CourtyardOptions {
@@ -70,7 +76,7 @@ const HEART_Y = 2.55;
 const HORIZON = '#fde8f3';
 
 /** 이 거리 안이면 걸어가지 않고 바로 말을 건다 */
-const TALK_DISTANCE = 1.6;
+const TALK_DISTANCE = 1.9;
 /** 이 거리 안이면 바로 줍는다 */
 const PICKUP_DISTANCE = 0.8;
 
@@ -87,12 +93,15 @@ interface Npc {
   walkTime: number;
   /** 슬플 때 흐르는 눈물 */
   tears: THREE.Group | null;
+  /** 뼈대 모델이면 동작 담당 */
+  animator: PrincessAnimator | null;
+  prevHeading: number;
 }
 
 /** 공주가 이만큼 가까이 오면 친구가 멈춰서 공주를 본다 */
 const NPC_NOTICE = 2.2;
 /** 돌아다니는 친구에게 다가갈 때 이만큼 가까워지면 말을 건다 */
-const NPC_REACH = 1.3;
+const NPC_REACH = 1.75; // 머리가 큰 치비라 1.3m 면 얼굴이 맞닿아 보임
 
 interface Pickup {
   id: string;
@@ -141,10 +150,21 @@ export function createCourtyardScene(aspect: number, opts: CourtyardOptions = {}
   scene.add(yard);
 
   const tappables: THREE.Object3D[] = [ground, yard];
-  for (const o of layout.obstacles) {
-    const mesh = createObstacleMesh(o, theme);
-    scene.add(mesh);
-    tappables.push(mesh);
+  // Blender 배경이 있으면 보이는 모습은 그것으로 (땅·마당 판은 톡 판정용으로만 남김)
+  const env = createEnv(layout.env);
+  if (env) {
+    for (const plane of [ground, yard]) {
+      (plane.material as THREE.Material).visible = false;
+      plane.receiveShadow = false;
+    }
+    scene.add(env.root);
+    tappables.push(...env.surfaces);
+  } else {
+    for (const o of layout.obstacles) {
+      const mesh = createObstacleMesh(o, theme);
+      scene.add(mesh);
+      tappables.push(mesh);
+    }
   }
   for (const patch of layout.flowerPatches ?? []) scene.add(createFlowerPatch(patch));
 
@@ -166,7 +186,8 @@ export function createCourtyardScene(aspect: number, opts: CourtyardOptions = {}
     object.add(heart);
     scene.add(object);
     tappables.push(object);
-    return { data, object, heart, walker: npcWalker, idle: 1 + Math.random() * 3, hold: 0, walkTime: 0, tears: null };
+    const animator = (object.userData.animator as PrincessAnimator | null | undefined) ?? null;
+    return { data, object, heart, walker: npcWalker, idle: 1 + Math.random() * 3, hold: 0, walkTime: 0, tears: null, animator, prevHeading: npcWalker.heading };
   });
 
   /** 매 프레임 깜빡이게 할 반짝이들 */
@@ -216,9 +237,18 @@ export function createCourtyardScene(aspect: number, opts: CourtyardOptions = {}
   const pickups = new Map<string, Pickup>();
 
   const grid = buildNavGrid(layout);
-  const walker = new Walker(layout.start);
+  // 공주: 천천히 출발·부드럽게 멈춤(가속 7m/s²), 먼 곳은 조금 빠른 걸음
+  const walker = new Walker(layout.start, 2.6, 9, 7, 7, 1.3);
   const princessModel = createPrincessModel(opts.outfit ?? defaultOutfit());
   const princess = princessModel.group;
+  const animator = princessModel.animator ?? null;
+  let prevHeading = walker.heading;
+  let prevSpeed = 0;
+  let accelSmooth = 0;
+  /** 공주가 바라볼 곳 (말하는 친구·거울 속 자기) */
+  let lookAtNpc: Npc | null = null;
+  let lookHold = 0;
+  const lookPoint = new THREE.Vector3();
   scene.add(princess);
   let mirror = false;
   let mirrorSpin = 0;
@@ -228,9 +258,23 @@ export function createCourtyardScene(aspect: number, opts: CourtyardOptions = {}
   const marker = new TapMarker();
   scene.add(marker.object);
 
+  // 먼지·꽃잎·구름
+  const fx = new AmbientFx();
+  scene.add(fx.group);
+  let stepDist = 0;
+  let stepSide = 1;
+  /** 폴짝 뒤 착지 먼지까지 남은 시간 */
+  let landIn = -1;
+  /** 카메라 실제 자리·보는 곳 (원하는 자리로 부드럽게 따라감) */
+  const camPos = new THREE.Vector3();
+  const camLook = new THREE.Vector3();
+  const wantPos = new THREE.Vector3();
+  const wantLook = new THREE.Vector3();
   const follow = new FollowCamera(camera);
   const focus = new THREE.Vector3(walker.x, 0, walker.z);
   follow.snap(focus);
+  camPos.copy(camera.position);
+  camLook.set(focus.x, 0.8, focus.z);
 
   const raycaster = new THREE.Raycaster();
   const mirrorCam = new THREE.Vector3();
@@ -240,6 +284,9 @@ export function createCourtyardScene(aspect: number, opts: CourtyardOptions = {}
   let elapsed = 0;
   /** 걸어가는 중인 목적지(친구·물건) */
   let pending: Target | null = null;
+  let talking = false;
+  /** 카메라가 가는 방향 앞쪽을 살짝 더 보게 (부드럽게) */
+  const lead = new THREE.Vector3();
 
   const targetFromHit = (obj: THREE.Object3D | null): Target | null => {
     for (let o = obj; o; o = o.parent) {
@@ -278,6 +325,11 @@ export function createCourtyardScene(aspect: number, opts: CourtyardOptions = {}
       t.npc.walker.stop();
       t.npc.walker.faceTowards(walker.x, walker.z);
       t.npc.hold = 3;
+      t.npc.animator?.play('wave');
+      // 친구를 바라보며 손 흔들어 인사
+      lookAtNpc = t.npc;
+      lookHold = 6;
+      animator?.play('wave');
       opts.onInteract?.({ kind: 'npc', npc: t.npc.data });
     } else if (t.kind === 'door') {
       walker.faceTowards(t.door.x, t.door.z - 1);
@@ -288,6 +340,7 @@ export function createCourtyardScene(aspect: number, opts: CourtyardOptions = {}
   };
 
   /** 친구들 돌아다니기: 쉬기 ↔ 집 둘레 산책. 공주가 오거나(가까이·다가오는 중) 말하는 동안엔 멈춰서 공주를 본다 */
+  const npcLook = new THREE.Vector3();
   const updateNpcs = (dt: number) => {
     for (const n of npcs) {
       const radius = n.data.wander ?? 0;
@@ -308,9 +361,17 @@ export function createCourtyardScene(aspect: number, opts: CourtyardOptions = {}
       }
       n.walker.update(dt);
       n.walkTime = n.walker.moving ? n.walkTime + dt : 0;
-      const bob = n.walker.moving ? Math.abs(Math.sin(n.walkTime * 9)) * 0.06 : 0;
+      const bob = !n.animator && n.walker.moving ? Math.abs(Math.sin(n.walkTime * 9)) * 0.06 : 0;
       n.object.position.set(n.walker.x, bob, n.walker.z);
       n.object.rotation.y = n.walker.heading;
+      if (n.animator && dt > 0) {
+        let turn = n.walker.heading - n.prevHeading;
+        turn = Math.atan2(Math.sin(turn), Math.cos(turn)) / dt;
+        n.prevHeading = n.walker.heading;
+        // 공주가 가까이 오면 공주를 바라본다
+        const look = near || targeted || n.hold > 0 ? npcLook.set(walker.x, 1.1, walker.z) : null;
+        n.animator.update(dt, { speed: n.walker.currentSpeed, turnRate: turn, accel: 0, lookAt: look });
+      }
       if (n.tears) {
         // 눈물 두 방울이 볼을 타고 똑똑 (번갈아)
         n.tears.children.forEach((drop, i) => {
@@ -391,11 +452,21 @@ export function createCourtyardScene(aspect: number, opts: CourtyardOptions = {}
       walker.heading = 0;
       princess.position.set(at.x, 0, at.z);
       follow.snap(focus.set(at.x, 0, at.z));
+      camPos.copy(camera.position);
+      camLook.set(at.x, 0.8, at.z);
     },
 
     setOutfit(outfit, celebrate = false) {
       princessModel.setOutfit(outfit);
-      if (celebrate) celebrateT = 0;
+      if (celebrate) {
+        celebrateT = 0;
+        animator?.play('hop');
+        if (animator) landIn = 0.62; // hop 클립의 착지 순간
+      }
+    },
+
+    setTalking(on) {
+      talking = on;
     },
 
     setMirror(on) {
@@ -437,6 +508,7 @@ export function createCourtyardScene(aspect: number, opts: CourtyardOptions = {}
       for (const n of npcs) n.heart.position.y = HEART_Y + Math.sin(elapsed * 3) * 0.08;
       for (const g of doorGlows) g.material.opacity = 0.25 + 0.2 * Math.sin(elapsed * 3);
       for (const s of sparkles) s.update(dt);
+      env?.update(elapsed);
       for (const p of pickups.values()) (p.object.userData.sparkles as Sparkles | undefined)?.update(dt);
 
       for (const p of pickups.values()) {
@@ -479,13 +551,13 @@ export function createCourtyardScene(aspect: number, opts: CourtyardOptions = {}
         }
       }
 
-      // 걸을 때 통통 튀는 느낌
+      // 걸을 때 통통 튀는 느낌 (뼈대 동작이 있으면 걷기 클립이 대신함)
       walkTime = walker.moving ? walkTime + dt : 0;
-      let bob = walker.moving ? Math.abs(Math.sin(walkTime * 10)) * 0.08 : 0;
+      let bob = !animator && walker.moving ? Math.abs(Math.sin(walkTime * 10)) * 0.08 : 0;
       let spin = 0;
       if (celebrateT < 1) {
-        celebrateT = Math.min(1, celebrateT + dt / 0.7);
-        bob += Math.sin(celebrateT * Math.PI) * 0.35;
+        celebrateT = Math.min(1, celebrateT + dt / (animator ? 0.85 : 0.7));
+        if (!animator) bob += Math.sin(celebrateT * Math.PI) * 0.35;
         spin = easeOut(celebrateT) * Math.PI * 2;
       }
       princess.position.set(walker.x, bob, walker.z);
@@ -497,16 +569,89 @@ export function createCourtyardScene(aspect: number, opts: CourtyardOptions = {}
         princess.rotation.y = walker.heading + spin;
       }
 
+      if (animator && dt > 0) {
+        // 몸 회전 속도·가속도 → 기울기·머리카락·치마 출렁임
+        let turn = walker.heading - prevHeading;
+        turn = Math.atan2(Math.sin(turn), Math.cos(turn)) / dt;
+        prevHeading = walker.heading;
+        const speed = walker.currentSpeed;
+        accelSmooth += ((speed - prevSpeed) / dt - accelSmooth) * Math.min(1, dt * 10);
+        prevSpeed = speed;
+        lookHold = Math.max(0, lookHold - dt);
+        if ((lookHold <= 0 && !talking) || walker.moving) lookAtNpc = null; // 대화 중엔 계속 친구를 봄
+        let look: THREE.Vector3 | null = null;
+        if (mirror) look = lookPoint.copy(camera.position);
+        else if (lookAtNpc) look = lookPoint.set(lookAtNpc.walker.x, 1.2, lookAtNpc.walker.z);
+        else if (pending?.kind === 'npc') look = lookPoint.set(pending.npc.walker.x, 1.2, pending.npc.walker.z);
+        animator.update(dt, { speed, turnRate: mirror ? 0 : turn, accel: accelSmooth, lookAt: look });
+      }
+
+      // 발걸음 먼지 (0.7m마다 왼발·오른발 번갈아), 폴짝 착지 먼지
+      if (walker.moving && walker.currentSpeed > 0.6) {
+        stepDist += walker.currentSpeed * dt;
+        if (stepDist > 0.7) {
+          stepDist = 0;
+          stepSide = -stepSide;
+          const h = walker.heading;
+          fx.puff(walker.x + Math.cos(h) * 0.12 * stepSide - Math.sin(h) * 0.15, walker.z - Math.sin(h) * 0.12 * stepSide - Math.cos(h) * 0.15, 0.3);
+        }
+      } else {
+        stepDist = 0.5;
+      }
+      if (landIn >= 0) {
+        landIn -= dt;
+        if (landIn < 0) fx.landing(walker.x, walker.z);
+      }
+      fx.update(dt, focus);
+
       marker.update(dt);
-      focus.set(walker.x, 0, walker.z);
+      // 걷는 방향 앞쪽을 조금 더 보여 주기 (빠를수록 더), 대화 중엔 친구와의 가운데를 보며 다가감
+      const sp = walker.currentSpeed;
+      lead.lerp(
+        new THREE.Vector3(Math.sin(walker.heading) * sp * 0.5, 0, Math.cos(walker.heading) * sp * 0.5),
+        1 - Math.exp(-3 * dt),
+      );
+      focus.set(walker.x + lead.x, 0, walker.z + lead.z);
+      const talkWith = talking ? lookAtNpc : null;
       if (mirror) {
         const k = 1 - Math.exp(-6 * dt);
         mirrorCam.set(walker.x, 1.45, walker.z + 3.9);
         camera.position.lerp(mirrorCam, k);
         mirrorLook.lerp(lookTarget.set(walker.x, 1.0, walker.z), k);
         camera.lookAt(mirrorLook);
+        camPos.copy(camera.position);
+        camLook.copy(mirrorLook);
       } else {
+        // 따라가는 카메라가 원하는 자리
         follow.update(focus, dt);
+        wantPos.copy(camera.position);
+        wantLook.set(focus.x, 0.8, focus.z);
+        if (talkWith) {
+          // 대화: 두 얼굴이 다 보이게 옆(카메라 쪽)에서 가까이
+          const mx = (walker.x + talkWith.walker.x) / 2;
+          const mz = (walker.z + talkWith.walker.z) / 2;
+          let nx = -(talkWith.walker.z - walker.z);
+          let nz = talkWith.walker.x - walker.x;
+          const len = Math.hypot(nx, nz) || 1;
+          nx /= len;
+          nz /= len;
+          if (nz < 0) {
+            nx = -nx;
+            nz = -nz;
+          }
+          // 너무 옆이면 카메라 쪽(+z)으로 섞어 화면 방향이 크게 뒤집히지 않게
+          const dx = nx;
+          const dz = nz + 0.35;
+          const dl = Math.hypot(dx, dz);
+          wantPos.set(mx + (dx / dl) * 5.2, 2.6, mz + (dz / dl) * 5.2);
+          wantLook.set(mx, 0.95, mz);
+        }
+        // 따라가기 ↔ 대화 사이를 부드럽게 오가기
+        const k = 1 - Math.exp(-4 * dt);
+        camPos.lerp(wantPos, k);
+        camLook.lerp(wantLook, k);
+        camera.position.copy(camPos);
+        camera.lookAt(camLook);
         mirrorLook.set(walker.x, 0.8, walker.z);
       }
     },
@@ -519,7 +664,7 @@ function addLights(scene: THREE.Scene, layout: CourtyardLayout): void {
   const sun = new THREE.DirectionalLight(0xffffff, 1.4);
   sun.position.set(8, 16, 6);
   sun.castShadow = true;
-  sun.shadow.mapSize.set(1024, 1024);
+  sun.shadow.mapSize.set(QUALITY_SETTINGS.shadowMap, QUALITY_SETTINGS.shadowMap);
   const half = Math.max(layout.width, layout.depth) / 2 + 2;
   Object.assign(sun.shadow.camera, { left: -half, right: half, top: half, bottom: -half, near: 1, far: 50 });
   sun.shadow.camera.updateProjectionMatrix();

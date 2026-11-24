@@ -1,3 +1,4 @@
+import { QUALITY_SETTINGS } from '../../core/quality';
 import * as THREE from 'three';
 import { addOutline, toonMaterial, type Surface } from '../../core/toon';
 import { footprint, getFurniture, type RoomLayout } from '../../systems/decor';
@@ -7,6 +8,7 @@ import { getCharacter } from '../../systems/dialogue';
 import { createFurnitureMesh, disposeObject, recolorFurniture } from './furniture-meshes';
 import { createFriendFromGlb, hasFriendGlb } from './friends-glb';
 import { createCharacterMesh } from './props';
+import type { PrincessAnimator } from './princess-animator';
 
 /**
  * 성 안 방 (GDD 5.2) — 앞·오른쪽 벽을 뗀 인형의 집 같은 시점.
@@ -72,7 +74,7 @@ export function createBedroomScene(aspect: number, layout: RoomLayout): BedroomS
   const sun = new THREE.DirectionalLight(0xffffff, 1.2);
   sun.position.set(4, 8, 5);
   sun.castShadow = true;
-  sun.shadow.mapSize.set(1024, 1024);
+  sun.shadow.mapSize.set(QUALITY_SETTINGS.shadowMap, QUALITY_SETTINGS.shadowMap);
   Object.assign(sun.shadow.camera, { left: -5, right: 5, top: 5, bottom: -5, near: 1, far: 20 });
   sun.shadow.camera.updateProjectionMatrix();
   sun.shadow.bias = -0.0005;
@@ -92,6 +94,49 @@ export function createBedroomScene(aspect: number, layout: RoomLayout): BedroomS
   left.position.set(-W / 2 - 0.1, WALL_H / 2, 0);
   left.receiveShadow = true;
   scene.add(back, left);
+
+  // ── 방 꾸밈 (그래픽 고도화): 나무 마루 결, 흰 걸레받이, 아래 벽 띠(징두리)와 가로대, 위 몰딩 ──
+  // 색은 고른 벽지·바닥 색을 따라간다 (applyStyle 에서 함께 갱신)
+  const grooveMat = toonMaterial({ color: 0x000000, roughness: 1 });
+  const wainscotMat = toonMaterial({ color: 0xffffff, roughness: 0.9 });
+  const trimMat = toonMaterial({ color: 0xfffbf6, roughness: 0.6 });
+  const decor = new THREE.Group();
+  const plankW = 0.5;
+  for (let x = -W / 2 + plankW; x < W / 2 - 0.01; x += plankW) {
+    const groove = new THREE.Mesh(new THREE.BoxGeometry(0.025, 0.004, D), grooveMat);
+    groove.position.set(x, 0.002, 0);
+    groove.receiveShadow = true;
+    decor.add(groove);
+  }
+  // 판자 이음매 (엇갈리게)
+  for (let i = 0; i < Math.round(W / plankW); i++) {
+    const x = -W / 2 + plankW * (i + 0.5);
+    const z = -D / 2 + ((i * 1.7) % D);
+    const seam = new THREE.Mesh(new THREE.BoxGeometry(plankW, 0.004, 0.02), grooveMat);
+    seam.position.set(x, 0.002, z);
+    decor.add(seam);
+  }
+  const WAINSCOT = 0.9;
+  const backLow = new THREE.Mesh(new THREE.BoxGeometry(W, WAINSCOT, 0.04), wainscotMat);
+  backLow.position.set(0, WAINSCOT / 2, -D / 2 + 0.02);
+  const leftLow = new THREE.Mesh(new THREE.BoxGeometry(0.04, WAINSCOT, D), wainscotMat);
+  leftLow.position.set(-W / 2 + 0.02, WAINSCOT / 2, 0);
+  decor.add(backLow, leftLow);
+  for (const [y, h, depth] of [[0.06, 0.12, 0.07], [WAINSCOT, 0.06, 0.06], [WALL_H - 0.06, 0.12, 0.08]] as const) {
+    const b = new THREE.Mesh(new THREE.BoxGeometry(W, h, depth), trimMat);
+    b.position.set(0, y, -D / 2 + depth / 2);
+    const l = new THREE.Mesh(new THREE.BoxGeometry(depth, h, D), trimMat);
+    l.position.set(-W / 2 + depth / 2, y, 0);
+    decor.add(b, l);
+  }
+  decor.traverse((o) => ((o as THREE.Mesh).isMesh ? ((o as THREE.Mesh).receiveShadow = true) : null));
+  scene.add(decor);
+  const syncDecorColors = () => {
+    grooveMat.color.set(layout.surfaceHex('floor')).multiplyScalar(0.8);
+    // 아래 벽은 벽지보다 살짝 진하게
+    wainscotMat.color.set(layout.surfaceHex('wall')).lerp(new THREE.Color(0xc9a0b8), 0.12);
+  };
+  syncDecorColors();
   // 창문 (뒷벽)
   const win = new THREE.Mesh(new THREE.BoxGeometry(1.4, 1, 0.05), new THREE.MeshBasicMaterial({ color: 0xbfe6ff }));
   win.position.set(1.2, 1.55, -D / 2 + 0.01);
@@ -337,6 +382,7 @@ export function createBedroomScene(aspect: number, layout: RoomLayout): BedroomS
     applyStyle(changed) {
       wallMat.color.set(layout.surfaceHex('wall'));
       floorMat.color.set(layout.surfaceHex('floor'));
+      syncDecorColors();
       curtainMat.color.set(layout.surfaceHex('curtain'));
       if (!changed) return;
       const at = { wall: [-W / 4, 1.3, -D / 2 + 0.3], floor: [0, 0.1, 0], curtain: [1.2, 1.5, -D / 2 + 0.3] }[changed];
@@ -369,6 +415,8 @@ export function createBedroomScene(aspect: number, layout: RoomLayout): BedroomS
       obj.add(sparkles);
       scene.add(obj);
       guest = { obj, sparkles, t: 0, leaving: false };
+      // 기뻐서 폴짝 (뼈대 모델이면)
+      (obj.userData.animator as PrincessAnimator | null | undefined)?.play('hop');
     },
 
     fitView(viewW, viewH, bottomPx) {
@@ -413,6 +461,12 @@ export function createBedroomScene(aspect: number, layout: RoomLayout): BedroomS
       if (guest) {
         guest.t += dt;
         guest.sparkles.update(dt);
+        (guest.obj.userData.animator as PrincessAnimator | null | undefined)?.update(dt, {
+          speed: 0,
+          turnRate: 0,
+          accel: 0,
+          lookAt: camera.position,
+        });
         if (guest.leaving) {
           // 깡충 뛰며 작아져서 사라짐
           const k = Math.max(0, 1 - guest.t / 0.45);

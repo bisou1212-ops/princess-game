@@ -85,8 +85,13 @@ function star(ctx: CanvasRenderingContext2D, x: number, y: number, r: number): v
   ctx.fill();
 }
 
-/** 이 메시(양쪽 눈)를 그림 눈으로 바꾼다. 앞 = +z */
-export function decorateEyes(eyeMesh: THREE.Mesh, iris: string): void {
+/**
+ * 이 메시(양쪽 눈)를 그림 눈으로 바꾼다. 앞 = +z.
+ * attach(머리 뼈)를 주면 그림 판을 거기에 붙인다 — 뼈대 모델은 메시 자체가 움직이지 않기 때문.
+ * 돌려주는 판은 눈 깜빡임(scale.y)에 쓴다.
+ */
+export function decorateEyes(eyeMesh: THREE.Mesh, iris: string, attach?: THREE.Object3D): THREE.Mesh[] {
+  const planes: THREE.Mesh[] = [];
   const pos = eyeMesh.geometry.attributes.position as THREE.BufferAttribute;
   const sides = [new THREE.Box3(), new THREE.Box3()];
   const v = new THREE.Vector3();
@@ -104,7 +109,16 @@ export function decorateEyes(eyeMesh: THREE.Mesh, iris: string): void {
     plane.renderOrder = 2;
     plane.userData.noOutline = true;
     plane.userData.eyeDecal = true; // 모델을 훑는 쪽이 이 판의 재질을 바꾸지 않게
-    eyeMesh.add(plane);
+    if (attach) {
+      eyeMesh.updateWorldMatrix(true, false);
+      attach.updateWorldMatrix(true, false);
+      plane.applyMatrix4(new THREE.Matrix4().copy(attach.matrixWorld).invert().multiply(eyeMesh.matrixWorld));
+      attach.add(plane);
+    } else {
+      eyeMesh.add(plane);
+    }
+    planes.push(plane);
   }
   (eyeMesh.material as THREE.Material).visible = false;
+  return planes;
 }

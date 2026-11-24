@@ -77,6 +77,8 @@ export interface DoorPlacement {
 export interface CourtyardLayout {
   /** world.json의 장소 id */
   id: string;
+  /** Blender로 만든 배경 모델 (env-<이름>.glb). 있으면 보이는 모습만 그걸로 바꾸고, 충돌은 obstacles 그대로 */
+  env?: string;
   theme: Theme;
   flowerPatches?: FlowerPatch[];
   width: number;

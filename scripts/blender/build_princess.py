@@ -15,6 +15,10 @@ Blender MCP로 실행:  exec(open(r"<repo>/scripts/blender/build_princess.py", e
     skin, eye, shine, cheek, mouth, white, gem, yellow, leaf : 고정 색
 - Blender 좌표: Z 위, 공주 얼굴은 -Y 쪽을 본다 (glTF로 내보내면 게임의 +Z 앞쪽이 됨).
 - 바닥 z=0, 키 약 1.9m (게임의 치비 비율과 같음).
+- 뼈대 (그래픽 고도화 시범): 모든 부위가 "Rig" 뼈대 하나를 함께 쓴다 (SkinnedMesh).
+  조각마다 어느 뼈를 따라갈지 build_item 이 위치로 정하고(bone_for), 드레스·가방끈처럼
+  몸통에 걸친 조각은 높이에 따라 골반·척추·치마 뼈에 부드럽게 나눠 붙인다(torso).
+  동작 클립은 scripts/blender/anim_princess.py 가 만든다.
 """
 import bpy
 import bmesh
@@ -38,6 +42,8 @@ MAT_COLORS = {
     "gem": (0.85, 0.95, 1.0, 1.0),
     "yellow": (1.0, 0.93, 0.6, 1.0),
     "leaf": (0.52, 0.82, 0.52, 1.0),
+    "brow": (0.45, 0.3, 0.28, 1.0),
+    "nose": (1.0, 0.8, 0.76, 1.0),
 }
 
 
@@ -185,6 +191,117 @@ def crown_band(mat, r_bottom, r_top, height, spike, loc, points=5, seg=40):
     return ob
 
 
+# ── 뼈대 ──────────────────────────────────────────────
+# 이름: (머리 위치, 꼬리 위치, 부모). .L = 공주의 왼쪽 = +X (얼굴이 -Y 를 봄)
+BONES = {
+    "root": ((0, 0, 0), (0, 0, 0.25), None),
+    "hips": ((0, 0, 0.5), (0, 0, 0.72), "root"),
+    "spine": ((0, 0, 0.72), (0, 0, 0.98), "hips"),
+    "head": ((0, 0, 0.98), (0, 0, 1.8), "spine"),
+    "hair_back": ((0, 0.2, 1.5), (0, 0.26, 1.12), "head"),
+    "skirt": ((0, 0, 0.62), (0, 0, 0.15), "hips"),
+}
+for _s, _n in ((1, "L"), (-1, "R")):
+    BONES[f"arm.{_n}"] = ((_s * 0.19, 0, 0.88), (_s * 0.3, -0.01, 0.64), "spine")
+    BONES[f"hand.{_n}"] = ((_s * 0.3, -0.01, 0.64), (_s * 0.34, -0.01, 0.53), f"arm.{_n}")
+    BONES[f"leg.{_n}"] = ((_s * 0.1, 0, 0.32), (_s * 0.1, 0, 0.07), "hips")
+    BONES[f"foot.{_n}"] = ((_s * 0.1, 0, 0.07), (_s * 0.1, -0.13, 0.03), f"leg.{_n}")
+
+RIG = "Rig"
+
+
+def build_armature():
+    """공통 뼈대. 뼈의 앞(-Y)·위(+Z) 방향을 고정해 두어 동작 스크립트가 같은 축을 쓰게 한다"""
+    col = bpy.data.collections[COLLECTION]
+    arm = bpy.data.armatures.new(RIG)
+    ob = bpy.data.objects.new(RIG, arm)
+    col.objects.link(ob)
+    bpy.context.view_layer.objects.active = ob
+    for o in bpy.context.scene.objects:
+        o.select_set(False)
+    ob.select_set(True)
+    bpy.ops.object.mode_set(mode="EDIT")
+    for name, (h, t, parent) in BONES.items():
+        b = arm.edit_bones.new(name)
+        b.head = h
+        b.tail = t
+        # 뼈의 X축이 늘 세상 +X 를 향하게 (위·아래·앞 어느 쪽을 향한 뼈든) → 앞뒤로 흔들기 = X축 회전
+        d = (Vector(t) - Vector(h)).normalized()
+        b.align_roll(Vector((1, 0, 0)).cross(d))
+        if parent:
+            b.parent = arm.edit_bones[parent]
+    bpy.ops.object.mode_set(mode="OBJECT")
+    for pb in ob.pose.bones:
+        pb.rotation_mode = "XYZ"
+    return ob
+
+
+def _smooth(e0, e1, x):
+    t = max(0.0, min(1.0, (x - e0) / (e1 - e0)))
+    return t * t * (3 - 2 * t)
+
+
+def torso_weights(z):
+    """몸통에 걸친 조각: 높이(z)에 따라 척추·골반·치마에 나눠 붙인다"""
+    spine = _smooth(0.72, 0.88, z)
+    skirt = 0.8 * _smooth(0.5, 0.1, z)
+    hips = max(0.0, 1.0 - spine - skirt)
+    return {"spine": spine, "hips": hips, "skirt": skirt}
+
+
+def bone_for(part, c):
+    """조각 하나(가운데 c)가 따라갈 뼈. 'torso' 면 꼭짓점 높이로 나눔"""
+    side = "L" if c.x > 0 else "R"
+    if part == "base":
+        if c.z > 0.95:
+            return "head"
+        if c.z < 0.09:
+            return f"foot.{side}"  # 발 (신발과 같은 뼈)
+        if c.z < 0.4:
+            return f"leg.{side}"
+        if abs(c.x) > 0.28:
+            return f"hand.{side}"
+        if abs(c.x) > 0.13:
+            return f"arm.{side}"
+        return "spine"
+    if part.startswith("hair"):
+        return "hair_back" if (c.z < 1.3 or c.y > 0.45) else "head"
+    if part in ("crown-gold", "headband-ribbon", "tiara", "flower-crown"):
+        return "head"
+    if part in ("shoes-flat", "boots", "slippers-bunny"):
+        return f"foot.{side}"
+    if part == "wand":
+        return "hand.L"
+    if part in ("necklace", "wings"):
+        return "spine"
+    return "torso"  # 드레스·하트 가방 …
+
+
+def _apply_weights(ob, ranges):
+    groups = {}
+
+    def g(name):
+        if name not in groups:
+            groups[name] = ob.vertex_groups.new(name=name)
+        return groups[name]
+
+    co = ob.data.vertices
+    for start, end, bone in ranges:
+        idx = list(range(start, end))
+        if bone != "torso":
+            g(bone).add(idx, 1.0, "REPLACE")
+            continue
+        for i in idx:
+            for name, w in torso_weights(co[i].co.z).items():
+                if w > 1e-3:
+                    g(name).add([i], w, "REPLACE")
+    rig = bpy.data.objects.get(RIG)
+    if rig:
+        ob.parent = rig
+        mod = ob.modifiers.new("Armature", "ARMATURE")
+        mod.object = rig
+
+
 # ── 합치기: 부위 하나 = 물체 하나 (재질 여러 개) ──────────────
 # CAPTURE 가 리스트이면 합치지 않고 조각만 모은다 (친구 모델이 공주 부위를 다시 쓸 때)
 CAPTURE = None
@@ -192,6 +309,8 @@ CAPTURE = None
 
 def build_item(name, pieces, collection=None):
     if CAPTURE is not None:
+        for p in pieces:
+            p["part"] = name  # 친구 모델이 뼈를 고를 때 쓴다
         CAPTURE.extend(pieces)
         return None
     col = bpy.data.collections.get(collection or COLLECTION)
@@ -205,6 +324,7 @@ def build_item(name, pieces, collection=None):
     dg.update()
     bm = bmesh.new()
     mats = []
+    ranges = []  # (첫 꼭짓점, 끝, 뼈)
     for p in pieces:
         mname = p["mat"]
         if mname not in mats:
@@ -213,11 +333,14 @@ def build_item(name, pieces, collection=None):
         ev = p.evaluated_get(dg)
         me = ev.to_mesh()
         me.transform(p.matrix_world)
+        vstart = len(bm.verts)
+        center = sum((v.co for v in me.vertices), Vector()) / max(1, len(me.vertices))
         start = len(bm.faces)
         bm.from_mesh(me)
         bm.faces.ensure_lookup_table()
         for f in bm.faces[start:]:
             f.material_index = idx
+        ranges.append((vstart, len(bm.verts), p.get("bone") or bone_for(name, center)))
         ev.to_mesh_clear()
     me = bpy.data.meshes.new(name)
     bm.normal_update()
@@ -227,6 +350,8 @@ def build_item(name, pieces, collection=None):
         me.materials.append(get_mat(m))
     ob = bpy.data.objects.new(name, me)
     col.objects.link(ob)
+    if collection is None:
+        _apply_weights(ob, ranges)
     # 임시 조각 지우기
     for p in pieces:
         pm = p.data
@@ -241,10 +366,13 @@ def reset():
         col = bpy.data.collections.get(cname)
         if col:
             for o in list(col.objects):
-                me = o.data
+                data = o.data
                 bpy.data.objects.remove(o)
-                if me and me.users == 0:
-                    bpy.data.meshes.remove(me)
+                if data is not None and data.users == 0:
+                    if isinstance(data, bpy.types.Mesh):
+                        bpy.data.meshes.remove(data)
+                    elif isinstance(data, bpy.types.Armature):
+                        bpy.data.armatures.remove(data)
             bpy.data.collections.remove(col)
     col = bpy.data.collections.new(COLLECTION)
     bpy.context.scene.collection.children.link(col)
@@ -276,13 +404,21 @@ def build_base():
     # 웃는 입 (아래쪽 반원 호)
     mx, my, mz = on_head(0, -0.14, 0.004)
     P.append(torus("mouth", 0.04, 0.011, (mx, my, mz), rot=(math.pi / 2, 0, 0), arc=(math.pi + 0.35, math.tau - 0.35), seg=12, ring=6))
-    # 팔 + 손
+    # 눈썹 (살짝 웃는 아치) + 작은 코
     for s in (-1, 1):
+        bx, by, bz = on_head(s * 0.15, 0.11, 0.002)
+        P.append(torus("brow", 0.05, 0.009, (bx, by, bz), rot=(math.pi / 2, 0, 0), arc=(0.5, math.pi - 0.5), seg=10, ring=5))
+    P.append(sphere("nose", 0.017, on_head(0, -0.075, 0.0), scale=(1.2, 0.7, 0.8), seg=10, rings=6))
+    # 팔 + 손 (어깨에 둥근 이음새, 손은 엄지가 있는 벙어리장갑 모양)
+    for s in (-1, 1):
+        P.append(sphere("skin", 0.062, (s * 0.19, 0, 0.88), seg=14, rings=8))
         P.append(capsule("skin", 0.055, 0.26, (s * 0.25, 0, 0.76), rot=(0, s * 0.42, 0)))
-        P.append(sphere("skin", 0.065, (s * 0.32, -0.01, 0.6), seg=14, rings=8))
-    # 다리
+        P.append(sphere("skin", 0.065, (s * 0.32, -0.01, 0.6), scale=(0.9, 0.75, 1.1), seg=14, rings=8))
+        P.append(sphere("skin", 0.026, (s * 0.3, -0.06, 0.63), seg=10, rings=6))
+    # 다리 + 발
     for s in (-1, 1):
-        P.append(cone("skin", 0.065, 0.065, 0.26, (s * 0.1, 0, 0.13), seg=14))
+        P.append(cone("skin", 0.065, 0.06, 0.26, (s * 0.1, 0, 0.15), seg=14))
+        P.append(sphere("skin", 0.07, (s * 0.1, -0.03, 0.04), scale=(1, 1.35, 0.6), seg=14, rings=8))
     return build_item("base", P)
 
 
@@ -478,6 +614,7 @@ def build_heart_bag():
 
 def build_all():
     reset()
+    build_armature()
     build_base()
     for k in ("long", "pigtails", "bun", "short", "ponytail"):
         build_hair(k)
@@ -512,7 +649,7 @@ def export_glb(path):
     col = bpy.data.collections[COLLECTION]
     for o in bpy.context.scene.objects:
         o.select_set(False)
-    objs = list(col.objects)
+    objs = sorted(col.objects, key=lambda o: o.type != "ARMATURE")  # 뼈대가 먼저
     for o in objs:
         o.hide_set(False)
         o.hide_render = False
@@ -525,7 +662,12 @@ def export_glb(path):
             export_apply=True,
             export_yup=True,
             export_texcoords=False,
-            export_animations=False,
+            export_skins=True,
+            export_animations=True,
+            export_animation_mode="ACTIONS",
+            export_force_sampling=True,
+            export_frame_step=1,
+            export_def_bones=False,
             export_cameras=False,
             export_lights=False,
         )
