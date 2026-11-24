@@ -517,6 +517,9 @@ async function start() {
     /* 무시 */
   }
 
+  // 길게 누르면 뜨는 메뉴(이미지 저장·복사 등) 막기 — 아이가 오래 누르는 일이 많다
+  document.addEventListener('contextmenu', (e) => e.preventDefault());
+
   // 앱을 내리거나 닫을 때 바로 저장
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'hidden') void state.saveNow();

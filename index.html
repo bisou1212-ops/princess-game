@@ -14,8 +14,11 @@
     <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
     <title>로은이의 공주 왕국</title>
     <style>
-      html, body { margin: 0; height: 100%; overflow: hidden; background: #bfe6ff; }
-      body { touch-action: none; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
+      /* overscroll-behavior: 목록을 끌다가 맨 위에서 당겨도 페이지가 새로고침(당겨서 새로고침)되지 않게 */
+      html, body { margin: 0; height: 100%; overflow: hidden; background: #bfe6ff; overscroll-behavior: none; }
+      body { touch-action: none; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; -webkit-touch-callout: none; }
+      /* 그림을 길게 누르면 뜨는 "이미지 저장" 메뉴·끌기 막기 (그림 위를 눌러도 버튼이 눌림) */
+      img { pointer-events: none; -webkit-user-drag: none; -webkit-touch-callout: none; }
       #app { position: fixed; inset: 0; }
       #app canvas { display: block; width: 100%; height: 100%; }
     </style>
