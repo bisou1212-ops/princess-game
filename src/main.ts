@@ -5,7 +5,12 @@ import { registerServiceWorker } from './core/pwa';
 import { attachGestures } from './core/gestures';
 import { openStore } from './core/storage';
 import { Speaker } from './core/tts';
-import { getCharacter } from './systems/dialogue';
+import { getCharacter, getDialogue, registerCharacter } from './systems/dialogue';
+import { PET_IDS, Pet, petCharacter, petVars } from './systems/pet';
+import { fillLines } from './systems/random-quests';
+import { PetPanel } from './ui/pet-panel';
+import { petThumb } from './ui/pet-thumbs';
+import { preloadPet } from './scenes/castle/pet-glb';
 import { GameState } from './systems/game-state';
 import { allItems } from './systems/items';
 import { START_LOCATION, getLocation, loadLocationLayout } from './systems/world';
@@ -54,6 +59,9 @@ async function start() {
   // 저장된 진행 상황 불러오기 (없거나 깨졌으면 처음부터)
   const state = new GameState(await openStore());
   await state.load();
+  // 펫: 있으면 그 펫만, 아직 없으면 고를 수 있게 세 마리 모두 불러 둔다
+  if (state.pet) registerCharacter('pet', petCharacter(state.pet));
+  await Promise.all(state.pet ? [preloadPet(state.pet.kind)] : PET_IDS.map((k) => preloadPet(k)));
 
   const speaker = new Speaker();
   speaker.installUnlock(window);
@@ -96,6 +104,7 @@ async function start() {
       reward,
       // 문: 성 안 방 또는 별사탕 가게
       onEnterRoom: (target) => (target === 'shop' ? openShop() : void goTo('room', target)),
+      onPetCare: (mode, count) => openPetCare(mode, count),
     });
     const scene = createCourtyardScene(aspect(), {
       layout,
@@ -368,6 +377,41 @@ async function start() {
     town.controller.refreshHud();
   }
 
+  // ── 펫 (M8-5): 처음엔 고르기, 그다음엔 밥·목욕 ──
+  const petPanel = new PetPanel(document.body, {
+    speaker,
+    thumb: (kind) => petThumb(renderer, kind),
+    onAdopt: (kind, name) => {
+      state.pet = new Pet(kind, name);
+      registerCharacter('pet', petCharacter(state.pet));
+      state.change();
+      petPanel.close();
+      hud.setButtonsVisible(true);
+      town.controller.refreshPet();
+      town.scene.petCelebrate();
+      dialogue.open(fillLines(getDialogue('pet-adopted'), petVars(state.pet), (c) => getCharacter(c).name));
+    },
+    onCareDone: (mode) => void town.controller.finishPetCare(mode),
+    onClose: () => {
+      petPanel.close();
+      hud.setButtonsVisible(true);
+    },
+  });
+  function openPetCare(mode: 'feed' | 'bath', count: number) {
+    if (!state.pet) return;
+    hud.setButtonsVisible(false);
+    if (mode === 'feed') petPanel.openFeed(state.pet, count);
+    else petPanel.openBath(state.pet);
+  }
+  if (!state.pet) {
+    hud.setButtonsVisible(false);
+    window.setTimeout(() => petPanel.openChoose(), 600);
+  }
+  // 시간이 지나면 다시 배고파진다 → 머리 위 그림을 가끔 다시 맞춤
+  window.setInterval(() => {
+    if (mode === 'town' && !dialogue.isOpen) town.controller.refreshPet();
+  }, 30_000);
+
   // 앱을 내리거나 닫을 때 바로 저장
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'hidden') void state.saveNow();
@@ -377,7 +421,7 @@ async function start() {
   // 개발 중 브라우저 콘솔에서 상태 확인용 (배포 빌드에는 없음)
   if (import.meta.env.DEV) {
     Object.assign(window, {
-      __game: { state, goTo, travelTo, town: () => town, room: () => room, mode: () => mode, towns },
+      __game: { state, goTo, travelTo, town: () => town, room: () => room, mode: () => mode, towns, petPanel },
     });
   }
 

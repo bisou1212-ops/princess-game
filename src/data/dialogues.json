@@ -681,5 +681,65 @@
   "rq-feel-comfort-sing": [
     { "speaker": "princess", "mood": "excited", "text": "랄랄라~ 같이 노래하자!" },
     { "speaker": "giver", "mood": "excited", "text": "랄랄라~ 헤헤, 기분이 좋아졌어!" }
+  ],
+  "pet-choose": [
+    { "speaker": "princess", "mood": "excited", "text": "나랑 함께 살 친구를 골라 볼까?" }
+  ],
+  "pet-name": [
+    { "speaker": "princess", "mood": "curious", "text": "{kind|에게} 이름을 지어 주자! 어떤 이름이 좋을까?" }
+  ],
+  "pet-adopted": [
+    { "speaker": "pet", "mood": "excited", "text": "안녕, 공주님! 나는 {name|이야}!" },
+    { "speaker": "pet", "mood": "happy", "text": "오늘부터 공주님이랑 같이 살 거예요. 어디든 졸졸 따라갈게요!" },
+    { "speaker": "pet", "mood": "curious", "text": "배고프거나 꼬질꼬질해지면 머리 위에 그림이 떠요. 그때 나를 톡 해 줘요!" }
+  ],
+  "pet-hungry": [
+    { "speaker": "pet", "mood": "sad", "text": "꼬르륵~ 배고파요…" },
+    { "speaker": "pet", "mood": "curious", "text": "{food} {count} 주세요!" },
+    { "speaker": "pet", "mood": "happy", "text": "{food|은} 영어로…" },
+    { "speaker": "pet", "mood": "excited", "text": "{en}!", "lang": "en-US" }
+  ],
+  "pet-dirty": [
+    { "speaker": "pet", "mood": "shy", "text": "몸이 간질간질해요. 꼬질꼬질해졌어요…" },
+    { "speaker": "pet", "mood": "curious", "text": "보글보글 거품으로 씻겨 줄래요?" }
+  ],
+  "pet-feed-start": [
+    { "speaker": "princess", "mood": "happy", "text": "{food|을} 하나씩 톡 해서 줘 보자!" }
+  ],
+  "pet-fed": [
+    { "speaker": "pet", "mood": "excited", "text": "냠냠! {counting}! 정말 맛있어요!" },
+    { "speaker": "pet", "mood": "happy", "text": "고마워요, 공주님! 배가 빵빵해요~" }
+  ],
+  "pet-bath-start": [
+    { "speaker": "princess", "mood": "happy", "text": "얼룩을 문질러서 깨끗이 씻겨 주자!" }
+  ],
+  "pet-bathed": [
+    { "speaker": "pet", "mood": "excited", "text": "반짝반짝! 깨끗해졌어요!" },
+    { "speaker": "pet", "mood": "happy", "text": "뽀송뽀송해서 기분 좋아요. 고마워요!" }
+  ],
+  "pet-hint-collect": [
+    { "speaker": "pet", "mood": "curious", "text": "킁킁… {item|이} 저쪽에 있어요!" },
+    { "speaker": "pet", "mood": "excited", "text": "나를 따라오세요!" }
+  ],
+  "pet-hint-friend": [
+    { "speaker": "pet", "mood": "excited", "text": "{to|이} 공주님을 기다리고 있어요!" },
+    { "speaker": "pet", "mood": "happy", "text": "이쪽이에요. 나를 따라오세요!" }
+  ],
+  "pet-hint-deliver": [
+    { "speaker": "pet", "mood": "curious", "text": "{item|을} {to}에게 갖다주러 가요!" },
+    { "speaker": "pet", "mood": "happy", "text": "이쪽이에요. 나를 따라오세요!" }
+  ],
+  "pet-hint-elsewhere": [
+    { "speaker": "pet", "mood": "curious", "text": "음… 여기에는 할 일이 없는 것 같아요." },
+    { "speaker": "pet", "mood": "happy", "text": "지도를 톡 해서 다른 곳에 가 볼까요?" }
+  ],
+  "pet-cheer-1": [
+    { "speaker": "pet", "mood": "happy", "text": "공주님이랑 같이 산책하니까 너무 좋아요!" }
+  ],
+  "pet-cheer-2": [
+    { "speaker": "pet", "mood": "excited", "text": "공주님, 오늘 옷이 정말 예뻐요!" }
+  ],
+  "pet-cheer-3": [
+    { "speaker": "pet", "mood": "shy", "text": "헤헤, 공주님이 제일 좋아요!" }
   ]
 }

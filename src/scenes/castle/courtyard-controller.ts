@@ -8,6 +8,7 @@ import { countingWord, getItem } from '../../systems/items';
 import type { DialogueBox } from '../../ui/dialogue-box';
 import type { Hud } from '../../ui/hud';
 import type { RewardPopup } from '../../ui/reward-popup';
+import { petVars, snackCount, type PetNeed } from '../../systems/pet';
 import { buildNavGrid, type CourtyardLayout } from './courtyard-layout';
 import type { CourtyardScene, Interaction } from './courtyard-scene';
 
@@ -20,7 +21,12 @@ interface Deps {
   reward: RewardPopup;
   /** 성 문 앞에 도착하면 그 방으로 들어간다 */
   onEnterRoom(roomId: string): void;
+  /** 펫 돌보기 화면 열기: 밥(간식 count개)·목욕 */
+  onPetCare(mode: 'feed' | 'bath', count: number): void;
 }
+
+/** 펫이 할 일이 없을 때 하는 말 (번갈아) */
+const PET_CHEERS = ['pet-cheer-1', 'pet-cheer-2', 'pet-cheer-3'];
 
 /** 마당에 놓인 물건 id = "부탁id#spawns번호" (다시 켰을 때 같은 꽃을 찾기 위해) */
 const pickupId = (questId: string, index: number) => `${questId}#${index}`;
@@ -38,6 +44,7 @@ function parsePickupId(id: string): { questId: string; index: number } | null {
 export class CourtyardController {
   private scene: CourtyardScene | null = null;
   private grid: NavGrid | null = null;
+  private cheer = Math.floor(Math.random() * PET_CHEERS.length);
 
   constructor(private readonly deps: Deps) {}
 
@@ -95,6 +102,7 @@ export class CourtyardController {
   handle(what: Interaction): void {
     if (what.kind === 'npc') this.talkTo(what.npc.id);
     else if (what.kind === 'door') this.deps.onEnterRoom(what.door.target);
+    else if (what.kind === 'pet') this.talkToPet();
     else this.pickUp(what.id, what.item);
   }
 
@@ -144,6 +152,78 @@ export class CourtyardController {
       default:
         this.deps.dialogue.open(this.lines(result.dialogue, vars));
     }
+  }
+
+  // ── 펫 ──
+
+  /** 펫을 톡: 배고프면 밥, 꼬질꼬질하면 목욕, 아니면 다음 할 일 힌트 (앞장서서 달려감) */
+  private talkToPet(): void {
+    const pet = this.deps.state.pet;
+    if (!pet || this.deps.dialogue.isOpen) return;
+    this.scene?.petCelebrate();
+    const need = pet.need();
+    if (need === 'hungry') {
+      const count = snackCount();
+      this.deps.dialogue.open(this.petLines('pet-hungry', { ...petVars(pet, count) }), () => this.deps.onPetCare('feed', count));
+      return;
+    }
+    if (need === 'dirty') {
+      this.deps.dialogue.open(this.petLines('pet-dirty', petVars(pet)), () => this.deps.onPetCare('bath', 0));
+      return;
+    }
+    this.petHint();
+  }
+
+  private petLines(id: string, vars: QuestVars): DialogueLine[] {
+    return fillLines(getDialogue(id), vars, (c) => getCharacter(c).name);
+  }
+
+  /** 다음 할 일: 지금 부탁의 물건·친구 쪽으로 앞장선다. 다른 장소의 일이면 지도, 할 일이 없으면 칭찬 */
+  private petHint(): void {
+    const { state, layout, dialogue } = this.deps;
+    const base = petVars(state.pet!);
+    const here = new Set(layout.npcs.map((n) => n.character));
+    const go = (id: string, vars: QuestVars, guide: Parameters<CourtyardScene['guidePet']>[0]) =>
+      dialogue.open(this.petLines(id, { ...base, ...vars }), () => this.scene?.guidePet(guide));
+    const cur = this.quests.current();
+    if (cur) {
+      const g = cur.def.goal;
+      const qv = this.quests.varsOf(cur.id) ?? {};
+      if (g.type === 'collect' && cur.progress.status === 'active') {
+        if (cur.def.location === layout.id) return go('pet-hint-collect', { item: qv.item ?? getItem(g.item).name }, { kind: 'pickup', item: g.item });
+      } else if (g.type === 'deliver') {
+        if (here.has(g.to)) return go('pet-hint-deliver', { item: qv.item ?? getItem(g.item).name, to: g.to }, { kind: 'npc', character: g.to });
+      } else if (here.has(cur.def.giver)) {
+        return go('pet-hint-friend', { to: cur.def.giver }, { kind: 'npc', character: cur.def.giver });
+      }
+      return dialogue.open(this.petLines('pet-hint-elsewhere', base));
+    }
+    const waiting = layout.npcs.find((n) => this.quests.characterWantsAttention(n.character));
+    if (waiting) return go('pet-hint-friend', { to: waiting.character }, { kind: 'npc', character: waiting.character });
+    this.cheer = (this.cheer + 1) % PET_CHEERS.length;
+    dialogue.open(this.petLines(PET_CHEERS[this.cheer], base));
+  }
+
+  /** 돌보기를 다 했다 → 펫이 폴짝 + 하트, 필요했으면 별사탕 */
+  finishPetCare(mode: 'feed' | 'bath'): number {
+    const { state, hud } = this.deps;
+    const pet = state.pet;
+    if (!pet) return 0;
+    const candy = mode === 'feed' ? pet.feed() : pet.bathe();
+    state.wallet.candy += candy;
+    state.change();
+    this.scene?.petCelebrate();
+    this.refreshPet();
+    hud.setCandy(state.wallet.candy, candy > 0);
+    return candy;
+  }
+
+  /** 펫 모습과 머리 위 그림을 지금 상태에 맞춘다 */
+  refreshPet(): void {
+    const pet = this.deps.state.pet;
+    this.scene?.setPet(pet?.kind ?? null);
+    const need: PetNeed = pet ? pet.need() : null;
+    this.scene?.setPetNeed(need);
   }
 
   private spawnCountOf(questId: string): number {
@@ -207,6 +287,7 @@ export class CourtyardController {
   refreshHud(): void {
     const { hud, state } = this.deps;
     this.refreshMarkers();
+    this.refreshPet();
     hud.setCandy(state.wallet.candy);
     hud.setWardrobeNew(state.newOutfits.length > 0);
     const cur = this.quests.current();

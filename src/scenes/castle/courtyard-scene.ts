@@ -21,6 +21,10 @@ import { createPrincessModel } from './princess-model';
 import { createEnv } from './env-models';
 import { AmbientFx } from '../../core/ambient-fx';
 import type { PrincessAnimator } from './princess-animator';
+import { createPetModel } from './pet-glb';
+import type { PetAnimator } from './pet-animator';
+import type { PetNeed } from '../../systems/pet';
+import { bowlIcon, bubblesIcon } from '../../ui/icons';
 import {
   COLORS,
   createCharacterMesh,
@@ -35,7 +39,11 @@ import {
 export type Interaction =
   | { kind: 'npc'; npc: NpcPlacement }
   | { kind: 'pickup'; id: string; item: string }
-  | { kind: 'door'; door: DoorPlacement };
+  | { kind: 'door'; door: DoorPlacement }
+  | { kind: 'pet' };
+
+/** 펫이 앞장서서 데려갈 곳 (힌트) */
+export type PetGuide = { kind: 'pickup'; item: string } | { kind: 'npc'; character: string };
 
 export interface CourtyardScene {
   scene: THREE.Scene;
@@ -61,6 +69,14 @@ export interface CourtyardScene {
   setMirror(on: boolean): void;
   /** 대화 중: 카메라가 공주와 친구 사이로 살짝 다가간다 */
   setTalking(on: boolean): void;
+  /** 펫 데려오기·바꾸기 (null = 없음). 모델은 미리 preloadPet 으로 불러 둔다 */
+  setPet(kind: string | null): void;
+  /** 펫 머리 위 그림: 배고파요(밥그릇)·씻겨 주세요(거품) */
+  setPetNeed(need: PetNeed): void;
+  /** 펫이 기뻐서 폴짝 + 하트 */
+  petCelebrate(): void;
+  /** 펫이 앞장서서 물건·친구 쪽으로 달려가 기다린다. 갈 곳이 없으면 false */
+  guidePet(to: PetGuide): boolean;
 }
 
 export interface CourtyardOptions {
@@ -115,7 +131,35 @@ interface Pickup {
   stand: number | null;
 }
 
-type Target = { kind: 'npc'; npc: Npc } | { kind: 'pickup'; pickup: Pickup } | { kind: 'door'; door: DoorPlacement };
+type Target = { kind: 'npc'; npc: Npc } | { kind: 'pickup'; pickup: Pickup } | { kind: 'door'; door: DoorPlacement } | { kind: 'pet' };
+
+/** 펫: 공주 뒤 옆에서 졸졸 따라다니고, 힌트를 줄 때는 앞장서서 달려가 기다린다 */
+interface PetState {
+  kind: string;
+  object: THREE.Group;
+  animator: PetAnimator | null;
+  walker: Walker;
+  mode: 'follow' | 'guide';
+  /** 앞장서서 기다리는 곳 (공주가 오면 다시 따라다님) */
+  guideTo: Point | null;
+  guideT: number;
+  replan: number;
+  /** 공주의 어느 옆에 있는지 (+1/-1) — 따라갈 때 공주 앞을 가로지르지 않게 */
+  side: number;
+  prevHeading: number;
+  bubble: THREE.Sprite;
+  /** 톡한 뒤 잠깐 멈춰서 공주를 봄 */
+  hold: number;
+  hopIn: number;
+}
+
+/** 펫이 따라다니는 자리: 공주 뒤로 PET_BACK, 옆으로 PET_SIDE (m) */
+const PET_BACK = 0.35;
+const PET_SIDE = 1.2;
+/** 펫 크기 (모델은 머리 꼭대기 약 1m) */
+const PET_SCALE = 1.2;
+/** 펫이 공주를 기다리는 시간(초) — 지나면 다시 따라다님 */
+const PET_GUIDE_WAIT = 14;
 
 /** 문 앞에 서는 거리 */
 const DOOR_DISTANCE = 1.4;
@@ -246,7 +290,7 @@ export function createCourtyardScene(aspect: number, opts: CourtyardOptions = {}
   let prevSpeed = 0;
   let accelSmooth = 0;
   /** 공주가 바라볼 곳 (말하는 친구·거울 속 자기) */
-  let lookAtNpc: Npc | null = null;
+  let lookAtNpc: { walker: Walker } | null = null;
   let lookHold = 0;
   const lookPoint = new THREE.Vector3();
   scene.add(princess);
@@ -254,6 +298,12 @@ export function createCourtyardScene(aspect: number, opts: CourtyardOptions = {}
   let mirrorSpin = 0;
   /** 옷을 바꿨을 때 빙글+폴짝 (0→1) */
   let celebrateT = 1;
+
+  // 펫
+  let pet: PetState | null = null;
+  const petHearts: Array<{ sprite: THREE.Sprite; t: number; vx: number }> = [];
+  const petLook = new THREE.Vector3();
+  const petBubbles: Record<'hungry' | 'dirty', THREE.Texture> = { hungry: bubbleTexture(bowlIcon()), dirty: bubbleTexture(bubblesIcon()) };
 
   const marker = new TapMarker();
   scene.add(marker.object);
@@ -300,6 +350,7 @@ export function createCourtyardScene(aspect: number, opts: CourtyardOptions = {}
         const door = layout.doors.find((d) => d.id === doorId);
         return door ? { kind: 'door', door } : null;
       }
+      if (o.userData.isPet) return pet ? { kind: 'pet' } : null;
       const pickupId = o.userData.pickupId as string | undefined;
       if (pickupId) {
         const pickup = pickups.get(pickupId);
@@ -310,7 +361,9 @@ export function createCourtyardScene(aspect: number, opts: CourtyardOptions = {}
   };
 
   const targetPos = (t: Target): Point =>
-    t.kind === 'npc'
+    t.kind === 'pet'
+      ? { x: pet?.walker.x ?? walker.x, z: pet?.walker.z ?? walker.z }
+      : t.kind === 'npc'
       ? { x: t.npc.walker.x, z: t.npc.walker.z }
       : t.kind === 'door'
         ? { x: t.door.x, z: t.door.z + 0.6 }
@@ -331,6 +384,18 @@ export function createCourtyardScene(aspect: number, opts: CourtyardOptions = {}
       lookHold = 6;
       animator?.play('wave');
       opts.onInteract?.({ kind: 'npc', npc: t.npc.data });
+    } else if (t.kind === 'pet') {
+      if (pet) {
+        // 펫이 멈춰서 공주를 보고, 공주도 펫을 본다
+        pet.walker.stop();
+        pet.walker.faceTowards(walker.x, walker.z);
+        pet.mode = 'follow';
+        pet.guideTo = null;
+        pet.hold = 3;
+        lookAtNpc = pet;
+        lookHold = 4;
+      }
+      opts.onInteract?.({ kind: 'pet' });
     } else if (t.kind === 'door') {
       walker.faceTowards(t.door.x, t.door.z - 1);
       opts.onInteract?.({ kind: 'door', door: t.door });
@@ -384,20 +449,195 @@ export function createCourtyardScene(aspect: number, opts: CourtyardOptions = {}
     }
   };
 
+  /** 공주 뒤 옆 자리 (펫이 따라다니는 곳) */
+  const petSpot = (side: number): Point => {
+    const h = walker.heading;
+    const fx = Math.sin(h);
+    const fz = Math.cos(h);
+    // 옆 = 앞 방향을 90° 돌린 것
+    return { x: walker.x - fx * PET_BACK + fz * PET_SIDE * side, z: walker.z - fz * PET_BACK - fx * PET_SIDE * side };
+  };
+
+  const placePet = (p: PetState) => {
+    const at = petSpot(p.side);
+    const cell = grid.findPath(at, at);
+    const spot = cell && cell.length ? cell[cell.length - 1] : { x: walker.x, z: walker.z };
+    p.walker.stop();
+    p.walker.x = spot.x;
+    p.walker.z = spot.z;
+    p.walker.heading = walker.heading;
+    p.mode = 'follow';
+    p.guideTo = null;
+    p.object.position.set(spot.x, 0, spot.z);
+  };
+
+  const updatePet = (dt: number) => {
+    if (!pet) return;
+    const p = pet;
+    const toPrincess = Math.hypot(walker.x - p.walker.x, walker.z - p.walker.z);
+    p.hold = Math.max(0, p.hold - dt);
+    p.replan -= dt;
+    let excited = 0;
+    if (p.mode === 'guide' && p.guideTo) {
+      p.guideT += dt;
+      const princessThere = Math.hypot(walker.x - p.guideTo.x, walker.z - p.guideTo.z) < 1.6;
+      if (princessThere || p.guideT > PET_GUIDE_WAIT) {
+        p.mode = 'follow';
+        p.guideTo = null;
+      } else if (!p.walker.moving) {
+        // 도착해서 기다리기: 공주를 보며 가끔 폴짝 "이쪽이에요!"
+        p.walker.faceTowards(walker.x, walker.z);
+        excited = 1;
+        p.hopIn -= dt;
+        if (p.hopIn <= 0) {
+          p.hopIn = 1.6;
+          p.animator?.hop();
+        }
+      }
+    }
+    if (p.mode === 'follow') {
+      if (toPrincess > 10) placePet(p); // 너무 멀어지면 옆으로 톡
+      // 지금 있는 쪽 옆에 머문다 (공주 앞을 가로지르지 않게)
+      const sx = p.walker.x - walker.x;
+      const sz = p.walker.z - walker.z;
+      const sideNow = Math.cos(walker.heading) * sx - Math.sin(walker.heading) * sz;
+      if (Math.abs(sideNow) > 0.3) p.side = Math.sign(sideNow);
+      const spot = petSpot(p.side);
+      const d = Math.hypot(spot.x - p.walker.x, spot.z - p.walker.z);
+      if (p.hold > 0) {
+        if (p.walker.moving) p.walker.stop();
+      } else if (d > 0.9 && p.replan <= 0) {
+        p.replan = 0.45;
+        const path = grid.findPath({ x: p.walker.x, z: p.walker.z }, spot);
+        if (path && path.length) p.walker.setPath(path);
+      } else if (!p.walker.moving && toPrincess < 2.5 && !walker.moving) {
+        p.walker.faceTowards(walker.x, walker.z);
+      }
+    }
+    p.walker.update(dt);
+    p.object.position.set(p.walker.x, 0, p.walker.z);
+    p.object.rotation.y = p.walker.heading;
+    if (p.animator && dt > 0) {
+      let turn = p.walker.heading - p.prevHeading;
+      turn = Math.atan2(Math.sin(turn), Math.cos(turn)) / dt;
+      p.prevHeading = p.walker.heading;
+      const look = toPrincess < 4 && !p.walker.moving ? petLook.set(walker.x, 1.3, walker.z) : null;
+      p.animator.update(dt, { speed: p.walker.currentSpeed, turnRate: turn, lookAt: look, excited });
+    }
+    // 머리 위 그림이 살랑
+    p.bubble.position.y = 1.3 + Math.sin(elapsed * 3) * 0.04;
+    // 하트가 둥실 올라가며 사라짐
+    for (let i = petHearts.length - 1; i >= 0; i--) {
+      const h = petHearts[i];
+      h.t += dt;
+      const k = Math.max(0, h.t) / 1.1;
+      h.sprite.visible = h.t >= 0;
+      h.sprite.position.set(p.walker.x + h.vx * k, 1 + k * 1.1, p.walker.z);
+      h.sprite.material.opacity = 1 - k;
+      h.sprite.scale.setScalar(0.3 + k * 0.15);
+      if (k >= 1) {
+        scene.remove(h.sprite);
+        h.sprite.material.dispose();
+        petHearts.splice(i, 1);
+      }
+    }
+  };
+
   return {
     scene,
     camera,
 
+    setPet(kind) {
+      if (pet && pet.kind === kind) return;
+      if (pet) {
+        scene.remove(pet.object);
+        pet = null;
+      }
+      if (!kind) return;
+      const model = createPetModel(kind);
+      const object = model.group;
+      object.userData.isPet = true;
+      object.scale.setScalar(PET_SCALE);
+      object.add(createHitArea(0.5, 1));
+      const bubble = new THREE.Sprite(new THREE.SpriteMaterial({ map: petBubbles.hungry, depthWrite: false }));
+      bubble.scale.setScalar(0.5);
+      bubble.visible = false;
+      object.add(bubble);
+      scene.add(object);
+      // 공주보다 조금 빠르게 (멀어지면 더 빨리 따라잡음)
+      const pw = new Walker({ x: walker.x, z: walker.z }, 2.8, 10, 9, 3, 1.6);
+      pet = { kind, object, animator: model.animator, walker: pw, mode: 'follow', guideTo: null, guideT: 0, replan: 0, side: 1, prevHeading: 0, bubble, hold: 0, hopIn: 0 };
+      placePet(pet);
+    },
+
+    setPetNeed(need) {
+      if (!pet) return;
+      pet.bubble.visible = need !== null;
+      if (need) pet.bubble.material.map = petBubbles[need];
+      pet.bubble.material.needsUpdate = true;
+    },
+
+    petCelebrate() {
+      if (!pet) return;
+      pet.animator?.hop();
+      for (let i = 0; i < 5; i++) {
+        const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: heartTexture, transparent: true, depthWrite: false }));
+        sprite.visible = false;
+        scene.add(sprite);
+        petHearts.push({ sprite, t: -i * 0.12, vx: (i - 2) * 0.25 });
+      }
+    },
+
+    guidePet(to) {
+      if (!pet) return false;
+      let goal: Point | null = null;
+      if (to.kind === 'pickup') {
+        let best = Infinity;
+        for (const pk of pickups.values()) {
+          if (pk.item !== to.item || pk.vanish !== null || pk.stand !== null) continue;
+          const d = Math.hypot(pk.object.position.x - walker.x, pk.object.position.z - walker.z);
+          if (d < best) {
+            best = d;
+            goal = { x: pk.object.position.x, z: pk.object.position.z };
+          }
+        }
+      } else {
+        const n = npcs.find((m) => m.data.character === to.character);
+        if (n) goal = { x: n.walker.x, z: n.walker.z };
+      }
+      if (!goal) return false;
+      // 물건·친구 바로 옆 (공주 쪽)에서 기다린다
+      const dx = walker.x - goal.x;
+      const dz = walker.z - goal.z;
+      const len = Math.hypot(dx, dz) || 1;
+      const gap = to.kind === 'npc' ? 1.1 : 0.7;
+      const wait = { x: goal.x + (dx / len) * gap, z: goal.z + (dz / len) * gap };
+      const path = grid.findPath({ x: pet.walker.x, z: pet.walker.z }, wait);
+      if (!path || !path.length) return false;
+      pet.walker.setPath(path);
+      pet.mode = 'guide';
+      pet.guideTo = goal;
+      pet.guideT = 0;
+      pet.hold = 0;
+      pet.hopIn = 0.3;
+      return true;
+    },
+
     tap(ndc) {
       if (mirror) return;
       raycaster.setFromCamera(ndc, camera);
-      const hits = raycaster.intersectObjects([...tappables, ...[...pickups.values()].map((p) => p.object)], true);
+      const hits = raycaster.intersectObjects([...tappables, ...[...pickups.values()].map((p) => p.object), ...(pet ? [pet.object] : [])], true);
       if (hits.length === 0) return;
       // 투명 판정 영역이 있는 친구·물건을 먼저 (뒤에 있는 바닥보다 우선)
       const target = hits.map((h) => targetFromHit(h.object)).find((t) => t !== null) ?? null;
       pending = target;
 
       const dest = target ? targetPos(target) : { x: hits[0].point.x, z: hits[0].point.z };
+      if (target?.kind === 'pet') {
+        walker.stop();
+        arrive(target);
+        return;
+      }
       if (target) {
         const reach = target.kind === 'npc' ? TALK_DISTANCE : target.kind === 'door' ? DOOR_DISTANCE : PICKUP_DISTANCE;
         if (Math.hypot(walker.x - dest.x, walker.z - dest.z) <= reach) {
@@ -454,6 +694,7 @@ export function createCourtyardScene(aspect: number, opts: CourtyardOptions = {}
       follow.snap(focus.set(at.x, 0, at.z));
       camPos.copy(camera.position);
       camLook.set(at.x, 0.8, at.z);
+      if (pet) placePet(pet);
     },
 
     setOutfit(outfit, celebrate = false) {
@@ -585,6 +826,8 @@ export function createCourtyardScene(aspect: number, opts: CourtyardOptions = {}
         else if (pending?.kind === 'npc') look = lookPoint.set(pending.npc.walker.x, 1.2, pending.npc.walker.z);
         animator.update(dt, { speed, turnRate: mirror ? 0 : turn, accel: accelSmooth, lookAt: look });
       }
+
+      updatePet(dt);
 
       // 발걸음 먼지 (0.7m마다 왼발·오른발 번갈아), 폴짝 착지 먼지
       if (walker.moving && walker.currentSpeed > 0.6) {
@@ -731,4 +974,34 @@ function createShopSign(doorH: number): THREE.Group {
   g.position.set(0, doorH + 0.95, 0.05);
   g.userData.noOutline = true;
   return g;
+}
+
+/** 펫 머리 위 말풍선 그림: 흰 동그라미 + 아이콘(SVG) */
+function bubbleTexture(iconSvg: string): THREE.CanvasTexture {
+  const size = 128;
+  const c = document.createElement('canvas');
+  c.width = c.height = size;
+  const ctx = c.getContext('2d')!;
+  ctx.fillStyle = '#ffffff';
+  ctx.strokeStyle = '#ffb3d6';
+  ctx.lineWidth = 6;
+  ctx.beginPath();
+  ctx.arc(64, 58, 50, 0, Math.PI * 2);
+  ctx.moveTo(52, 104);
+  ctx.lineTo(64, 124);
+  ctx.lineTo(76, 104);
+  ctx.fill();
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(64, 58, 47, 0, Math.PI * 2);
+  ctx.fill();
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  const img = new Image();
+  img.onload = () => {
+    ctx.drawImage(img, 26, 20, 76, 76);
+    tex.needsUpdate = true;
+  };
+  img.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(iconSvg.replace('<svg ', '<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" '))}`;
+  return tex;
 }

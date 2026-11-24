@@ -209,3 +209,34 @@ export function choiceIcon(name: string): string {
       return flowerIcon('#ffd76a');
   }
 }
+
+// ── 펫 (M8-5) ──
+
+/** 펫 간식 그림: apple(유니콘)·fish(고양이)·bone(강아지) */
+export function petFoodIcon(name: string): string {
+  if (name === 'fish') {
+    return svg(`<path d="M8 32q14-18 34-10l12-10v40l-12-10Q22 50 8 32z" fill="#ffb27a" ${OUTLINE}/>
+      <circle cx="20" cy="29" r="3.5" fill="#5a4a6b"/><path d="M30 24q4 8 0 16" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"/>`);
+  }
+  if (name === 'bone') {
+    return svg(`<path d="M18 22a7 7 0 1 1 6-10l16 16a7 7 0 1 1 10 6 7 7 0 1 1-6 10L28 28a7 7 0 1 1-10-6z" fill="#fff3dc" stroke="#e0c29a" stroke-width="3" stroke-linejoin="round" transform="rotate(10 32 32)"/>`);
+  }
+  // 사과
+  return svg(`<path d="M32 18c-6-6-24-4-24 14 0 14 10 26 18 26 3 0 4-2 6-2s3 2 6 2c8 0 18-12 18-26 0-18-18-20-24-14z" fill="#ff6f8a" ${OUTLINE}/>
+    <path d="M32 18q0-8 6-12" fill="none" stroke="#8a5a3c" stroke-width="4" stroke-linecap="round"/>
+    <path d="M36 12q10-6 14 2-8 4-14-2z" fill="#86d98f"/><ellipse cx="20" cy="30" rx="4" ry="7" fill="#fff" opacity=".6"/>`);
+}
+
+/** 밥그릇 (배고파요 말풍선) */
+export function bowlIcon(): string {
+  return svg(`<circle cx="22" cy="26" r="7" fill="#ffd9a0"/><circle cx="32" cy="22" r="7" fill="#ffc47a"/><circle cx="42" cy="26" r="7" fill="#ffd9a0"/>
+    <path d="M6 30h52q-2 22-26 22T6 30z" fill="#ff9ccf" ${OUTLINE}/><path d="M16 40h32" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity=".8"/>`);
+}
+
+/** 비누 거품 (씻겨 주세요 말풍선) */
+export function bubblesIcon(): string {
+  const b = (x: number, y: number, r: number) =>
+    `<circle cx="${x}" cy="${y}" r="${r}" fill="#bfe6ff" stroke="#fff" stroke-width="3"/><circle cx="${x - r * 0.35}" cy="${y - r * 0.35}" r="${r * 0.25}" fill="#fff"/>`;
+  return svg(`${b(24, 38, 15)}${b(44, 24, 11)}${b(48, 48, 8)}`);
+}
+

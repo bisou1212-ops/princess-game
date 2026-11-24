@@ -52,7 +52,7 @@ docs/GDD.md        # 기획서
   - [x] 친구 모델: `scripts/blender/build_friends.py`(공주 부위 재사용) → `src/assets/models/friends.glb`(물체 이름 = characters.json id: flora·tori·gogo·dochi, 색 고정). 게임은 `friends-glb.ts`, 모델에 없는 친구는 도형으로
   - [x] 화풍 변경 → 부드러운 입체: `src/core/toon.ts`의 `STYLE`(기본 glossy, `?style=toon` 비교) — `toonMaterial(params, role)`이 물리 재질(skin·hair·cloth·gem·plain, 반짝이 가루·머리 그라데이션 셰이더), 외곽선 끔. `src/core/look.ts` 주변 반사 + 빛번짐(`?bloom=0`으로 끔), 그림 눈 `anime-eyes.ts`(characters.json `eyeColor`), 톤 매핑 Neutral
   - [x] 그래픽 고도화 (`docs/GRAPHICS-PLAN.md`, 브랜치 `graphics-pilot`): 공주·친구 뼈대(SkinnedMesh, 같은 뼈 이름) + 동작 클립 idle·walk·hop·wave(`scripts/blender/anim_princess.py`) → `princess-animator.ts`(속도로 섞기, 고개 돌려 보기, 기울기, 뒷머리·치마·귀·꼬리 스프링, 눈 깜빡임). 친구는 `friend-<id>.glb` 파일 하나씩. 이동 가속·감속(`walker.ts`). 배경: `build_castle_env.py`·`build_flower_env.py` → `env-*.glb`(재질별로 합침, 버텍스 컬러 AO, 물 셰이더, 바람 흔들림), 배치 JSON `env` 칸 — 충돌은 그대로 obstacles. 카메라: 가는 방향 앞쪽 보기, 대화 때 옆에서 두 얼굴 보기. 효과 `ambient-fx.ts`(발걸음·착지 먼지, 꽃잎, 구름). 방: 마루 결·징두리·몰딩. 품질 `quality.ts`(basic/high, `?quality=`)
-  - [ ] 남은 B단계: 펫 모델(펫 기능과 함께), 나무·집·가구는 CC0 에셋(Kenney·Quaternius) + `CREDITS.md`. 모델은 `src/assets/models/`에 (public/assets는 1년 캐시라 갱신 안 됨)
+  - [ ] 남은 B단계: 나무·집·가구는 CC0 에셋(Kenney·Quaternius) + `CREDITS.md`. 모델은 `src/assets/models/`에 (public/assets는 1년 캐시라 갱신 안 됨)
 - [ ] M8 콘텐츠 채우기 (작은 단계로)
   - [x] M8-1 부탁 늘리기: 친구별 연속 부탁(quests.json 순서·`requires`), 배달 부탁(`goal.type: deliver`, 받는 친구가 선물). 새 부탁: 토리 노란 꽃 4, 플로라 초대장→고고, 도치 딸기 5(블루베리 힌트), 고고 넘어진 화분 3(`onCollect: stand`). 부탁은 `giver`로 찾음(배치의 quest 칸 없음)
   - [x] 친구 돌아다니기: 배치 npcs의 `wander`(집 둘레 반지름 m, 0·없음=제자리). 쉬기↔산책 반복, 공주가 2.2m 안에 오거나 다가오는 중·말하는 중엔 멈춰서 공주를 봄. 돌아다니는 친구는 길찾기 격자에서 막지 않고 1.75m 안에 오면 말 걸기(`src/systems/navigation/wander.ts`)
@@ -63,7 +63,7 @@ docs/GDD.md        # 기획서
     - [x] 새 가구 11개(소파·화장대·피아노·꽃병·풍선·케이크·인형의 집·어항·별 조명·쿠션·별 러그, 도형 `furniture-meshes.ts`) → 가구 21 + 옷 20 = 41
     - [x] 별사탕 가게: 꽃 왕국 분홍 집 문(target `shop`, 문 위 큰 별 간판) → `src/ui/shop-panel.ts`. 진열대(값=별 그림 n개, 다섯 개씩 한 줄) → 계산대에서 큰 별사탕 버튼을 하나씩 톡해 "하나! 둘!" 세어서 내기. 모자라면 가진 만큼 연한 별 + "n개 더 있으면" (빨간 표시 없음). 값 `src/data/shop.json`(1~10), 로직 `src/systems/shop.ts`. 지갑은 가구를 여러 개 쌓음(`Wallet.add`, 옷은 하나)
     - [x] 새 옷 6벌(단발머리·포니테일·꽃 화관·리본 드레스·토끼 슬리퍼·하트 가방): `build_princess.py`에 추가 → princess.glb(약 0.8MB), 아이콘 `icons.ts`, 도형 공주 `princess-model.ts`. 처음엔 없고 가게에서 삼(값 4~8). 재질 `leaf`(고정 초록) 추가
-  - [ ] M8-5 펫 고르기·돌보기 (+ 펫 모델)
+  - [x] M8-5 펫 고르기·돌보기: 처음 켜면 유니콘·고양이·강아지 카드(한글+영어) → 이름 카드 3개 중 고르기 (`src/data/pets.json`, 로직 `src/systems/pet.ts`, 저장 `pet`). 펫은 공주 옆에서 졸졸 따라다님(마당·꽃 왕국, 길찾기 격자 사용, 막지 않음). 시간이 지나면 머리 위에 밥그릇(배고픔 3시간)·거품(꼬질꼬질 6시간) 그림 → 펫 톡 → 밥(간식 2~5개를 하나씩 톡, "하나! 둘!")·목욕(얼룩을 문지르면 거품이 퐁) 화면 `src/ui/pet-panel.ts`, 필요할 때 해 주면 별사탕 1. 할 일이 없을 때 톡하면 힌트: 지금 부탁의 물건·친구 쪽으로 앞장서 달려가 기다림(`guidePet`), 다른 장소 일이면 지도 안내. 대사 `pet-*`(speaker `pet` = 아이가 붙인 이름, `registerCharacter`). 모델 `scripts/blender/build_pets.py` → `pet-<id>.glb`(한 마리 약 4천 삼각형, 동작 클립 없이 `pet-animator.ts`가 네 발 걷기·꼬리·귀·폴짝), 고른 펫만 불러옴. 펫 그림은 3D 모델을 찍어 만듦(`pet-thumbs.ts`)
 
 ## 나중에 할 일
 - **사람 같은 음성 (보류, 기기 TTS가 로봇 같다는 피드백)**: 대사를 미리 음성 파일로 만들어 넣는다.

@@ -1,6 +1,7 @@
 import type { KeyValueStore } from '../core/storage';
 import { ROOMS, RoomLayout, ownedFurniture, type Placed, type RoomStyle } from './decor';
 import { hasItem } from './items';
+import { Pet, type PetSave } from './pet';
 import { QuestBook } from './quests';
 import { Wallet } from './rewards';
 import { STARTER_ITEMS, defaultOutfit, ownedOutfitItems, sanitizeOutfit, type Outfit } from './wardrobe';
@@ -20,6 +21,8 @@ export interface SaveData {
   rooms: Record<string, Placed[]>;
   /** 방별 벽지·바닥·커튼 색 (M8-3에서 추가, 없으면 처음 색) */
   roomStyles?: Record<string, RoomStyle>;
+  /** 함께 사는 펫 (M8-5에서 추가, 없으면 처음에 고른다) */
+  pet?: PetSave | null;
 }
 
 export const SAVE_KEY = 'save';
@@ -32,6 +35,8 @@ export class GameState {
   readonly quests = new QuestBook();
   readonly wallet = new Wallet();
   outfit: Outfit = defaultOutfit();
+  /** 함께 사는 펫 (아직 안 골랐으면 null) */
+  pet: Pet | null = null;
   /** 처음 가진 옷은 '새 옷'으로 치지 않음 */
   seenOutfits: string[] = [...STARTER_ITEMS];
   /** 성 안 방들 (가구 배치) */
@@ -109,6 +114,7 @@ export class GameState {
       seenOutfits: [...this.seenOutfits],
       rooms: Object.fromEntries(Object.entries(this.rooms).map(([id, room]) => [id, room.toJSON()])),
       roomStyles: Object.fromEntries(Object.entries(this.rooms).map(([id, room]) => [id, { ...room.style }])),
+      pet: this.pet?.toJSON() ?? null,
     };
   }
 
@@ -131,6 +137,7 @@ export class GameState {
     const styles = s.roomStyles && typeof s.roomStyles === 'object' ? (s.roomStyles as Record<string, unknown>) : {};
     for (const [id, room] of Object.entries(this.rooms)) room.loadStyle(styles[id]);
     this.outfit = sanitizeOutfit(s.outfit, this.ownedOutfits);
+    this.pet = Pet.load(s.pet);
     this.seenOutfits = Array.isArray(s.seenOutfits) ? s.seenOutfits.filter((x): x is string => typeof x === 'string') : [...STARTER_ITEMS];
     return true;
   }

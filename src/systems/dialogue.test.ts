@@ -89,8 +89,8 @@ describe('대사·캐릭터 데이터', () => {
     for (const [id, lines] of Object.entries(dialogues)) {
       expect(lines.length, id).toBeGreaterThan(0);
       for (const line of lines) {
-        // guest=초대한 친구, giver·receiver=무작위 부탁의 친구 (실행 중에 바뀜)
-        if (!['guest', 'giver', 'receiver'].includes(line.speaker)) expect(characters[line.speaker], `${id}: ${line.speaker}`).toBeDefined();
+        // guest=초대한 친구, giver·receiver=무작위 부탁의 친구, pet=아이가 이름 붙인 펫 (실행 중에 바뀜)
+        if (!['guest', 'giver', 'receiver', 'pet'].includes(line.speaker)) expect(characters[line.speaker], `${id}: ${line.speaker}`).toBeDefined();
         expect(line.text.trim().length).toBeGreaterThan(0);
         if (line.mood) expect(['normal', 'happy', 'excited', 'curious', 'shy', 'sad']).toContain(line.mood);
       }

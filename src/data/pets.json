@@ -1,0 +1,37 @@
+{
+  "_comment": "펫 (M8-5, GDD 3·4·6 생활습관). kinds = 고를 수 있는 펫(모델 pet-<id>.glb). names = 아이가 고르는 이름 카드 3개. food = 밥 줄 때 하나씩 톡해서 주는 간식(icon: ui/icons의 petFoodIcon, 한글·영어로 읽음). snack = 간식 개수 범위(수 세기). hungryAfterHours·dirtyAfterHours = 돌봐 준 뒤 이만큼 지나면 다시 배고프고 꼬질꼬질 (처음 데려오면 배고픔). candy = 배고플 때 밥·꼬질꼬질할 때 목욕을 해 주면 받는 별사탕. dirtSpots = 목욕 때 문질러 닦을 얼룩 수.",
+  "kinds": {
+    "unicorn": {
+      "name": "유니콘",
+      "en": "Unicorn",
+      "color": "#d9c2ff",
+      "eyeColor": "#a46bff",
+      "voice": { "lang": "ko-KR", "pitch": 1.4, "rate": 1.05 },
+      "names": ["별님", "무지개", "솜사탕"],
+      "food": { "icon": "apple", "name": "사과", "en": "Apple" }
+    },
+    "cat": {
+      "name": "고양이",
+      "en": "Cat",
+      "color": "#ffc48a",
+      "eyeColor": "#3fb08a",
+      "voice": { "lang": "ko-KR", "pitch": 1.45, "rate": 1.0 },
+      "names": ["나비", "치즈", "모모"],
+      "food": { "icon": "fish", "name": "생선 과자", "en": "Fish" }
+    },
+    "puppy": {
+      "name": "강아지",
+      "en": "Puppy",
+      "color": "#e6c3a0",
+      "eyeColor": "#7a4f35",
+      "voice": { "lang": "ko-KR", "pitch": 1.35, "rate": 1.1 },
+      "names": ["콩이", "뭉치", "초코"],
+      "food": { "icon": "bone", "name": "뼈다귀 과자", "en": "Bone" }
+    }
+  },
+  "snack": [2, 5],
+  "hungryAfterHours": 3,
+  "dirtyAfterHours": 6,
+  "candy": 1,
+  "dirtSpots": 6
+}

@@ -56,3 +56,17 @@ describe('Blender 친구 모델 (friend-<id>.glb)', () => {
     }
   });
 });
+
+describe('Blender 펫 모델 (pet-<id>.glb)', () => {
+  it('펫마다 뼈대(이름 = pets.json id)와 코드로 움직일 뼈가 있다', async () => {
+    const { PET_IDS } = await import('../../systems/pet');
+    const need = ['root', 'body', 'head', 'tail', 'ear.L', 'ear.R', 'leg.FL', 'leg.FR', 'leg.BL', 'leg.BR'];
+    for (const id of PET_IDS) {
+      const gltf = readGlbJson(fileURLToPath(new URL(`../../assets/models/pet-${id}.glb`, import.meta.url))) as ReturnType<typeof readGlbJson> & { skins?: unknown[] };
+      const names = new Set((gltf.nodes ?? []).map((n) => n.name));
+      expect(names.has(id), id).toBe(true);
+      expect(gltf.skins?.length, id).toBe(1);
+      for (const b of need) expect(names.has(b), `${id}: ${b}`).toBe(true);
+    }
+  });
+});

@@ -63,6 +63,11 @@ export function getCharacter(id: string): Character {
   return c;
 }
 
+/** 게임 중에 정해지는 캐릭터 (아이가 이름 붙인 펫 = "pet") */
+export function registerCharacter(id: string, c: Character): void {
+  characters[id] = c;
+}
+
 export function getDialogue(id: string): DialogueLine[] {
   const d = dialogues[id];
   if (!d) throw new Error(`dialogues.json에 없는 대사: ${id}`);
