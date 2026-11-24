@@ -2,6 +2,8 @@ import * as THREE from 'three';
 import { createRenderer, bindResize, setMaxPixelRatio } from './core/renderer';
 import { PerfGovernor, perfSettings } from './core/quality';
 import { CheckOverlay } from './ui/check-overlay';
+import { ParentPanel } from './ui/parent-panel';
+import { loadSettings, SPEECH_RATE } from './core/settings';
 import { createLook } from './core/look';
 import { registerServiceWorker } from './core/pwa';
 import { attachGestures } from './core/gestures';
@@ -11,7 +13,9 @@ import { getCharacter, getDialogue, registerCharacter } from './systems/dialogue
 import { PET_IDS, Pet, petCharacter, petVars } from './systems/pet';
 import { fillLines } from './systems/random-quests';
 import { PetPanel } from './ui/pet-panel';
-import { petThumb } from './ui/pet-thumbs';
+import { petThumb, sleepingPrincess } from './ui/pet-thumbs';
+import { BedtimeScreen } from './ui/bedtime';
+import { PlayTimer, SLEEP_HOLD_MS } from './systems/playtime';
 import { preloadPet } from './scenes/castle/pet-glb';
 import { GameState } from './systems/game-state';
 import { allItems } from './systems/items';
@@ -67,12 +71,14 @@ async function start() {
 
   const speaker = new Speaker();
   speaker.installUnlock(window);
+  speaker.rateScale = SPEECH_RATE[loadSettings().speech];
   const princessVoice = getCharacter('princess').voice;
 
   const hud = new Hud(document.body, {
     onWardrobe: () => openWardrobe(),
     onExit: () => void goTo('town'),
     onMap: () => openMap(),
+    onParent: () => openParent(),
   });
   const dialogue = new DialogueBox(document.body, speaker);
   const reward = new RewardPopup(document.body, speaker, princessVoice);
@@ -415,6 +421,94 @@ async function start() {
     if (mode === 'town' && !dialogue.isOpen) town.controller.refreshPet();
   }, 30_000);
 
+  // ── 부모 설정 (어른용 잠금 뒤) ──
+  const parentPanel = new ParentPanel(document.body, {
+    speaker,
+    onSettings: (s) => {
+      speaker.rateScale = SPEECH_RATE[s.speech];
+      playTimer.setLimit(s.playMinutes);
+    },
+    onReset: () => state.reset(),
+    playedMinutes: () => Math.floor(playTimer.used / 60),
+    onContinue: (min) => {
+      parentPanel.close();
+      if (min <= 0) return; // 오늘은 그만: 계속 잠
+      playTimer.extend(min);
+      bedtime.hide();
+      try {
+        localStorage.removeItem(SLEEP_KEY);
+      } catch {
+        /* 무시 */
+      }
+      hud.setButtonsVisible(true);
+    },
+    onClose: () => {
+      parentPanel.close();
+      speaker.stop();
+      hud.setButtonsVisible(!bedtime.isOpen);
+    },
+  });
+  function openParent() {
+    if (dialogue.isOpen || switching || parentPanel.isOpen) return;
+    speaker.stop();
+    hud.setButtonsVisible(false);
+    parentPanel.open();
+  }
+
+  // ── 플레이 시간 (M9-2): 2분 전 예고 → 시간이 되면 잠자리 장면 ──
+  const SLEEP_KEY = 'sleepUntil';
+  const playTimer = new PlayTimer(loadSettings().playMinutes);
+  const bedtime = new BedtimeScreen(document.body, { speaker, onAdult: () => parentPanel.open('continue') });
+  /** 하던 대화·장면 바꾸기가 끝날 때까지 기다렸다가 (너무 오래면 그냥) */
+  const whenIdle = (fn: () => void, maxWait = 45_000) => {
+    const start = performance.now();
+    const check = () => {
+      const busy = dialogue.isOpen || switching || mode === 'travel';
+      if (!busy || performance.now() - start > maxWait) fn();
+      else window.setTimeout(check, 1000);
+    };
+    check();
+  };
+  const petLinesFor = (id: string) => {
+    const lines = getDialogue(id).filter((l) => l.speaker !== 'pet' || state.pet);
+    return state.pet ? fillLines(lines, petVars(state.pet), (c) => getCharacter(c).name) : lines;
+  };
+  function warnBedtime() {
+    whenIdle(() => {
+      if (bedtime.isOpen || dialogue.isOpen) return; // 바쁘면 예고는 건너뜀 (잠자리 장면은 그대로 옴)
+      dialogue.open(petLinesFor(state.pet ? 'bedtime-soon-pet' : 'bedtime-soon'));
+    }, 60_000);
+  }
+  function startBedtime(quiet = false) {
+    const show = () => {
+      speaker.stop();
+      if (dialogue.isOpen) dialogue.close();
+      hud.setButtonsVisible(false);
+      const pics = {
+        princess: sleepingPrincess(renderer, state.outfit),
+        pet: state.pet ? petThumb(renderer, state.pet.kind, true) : null,
+      };
+      bedtime.show(pics, petLinesFor(quiet ? 'bedtime-still' : 'bedtime'));
+      try {
+        if (!quiet) localStorage.setItem(SLEEP_KEY, String(Date.now() + SLEEP_HOLD_MS));
+      } catch {
+        /* 무시 */
+      }
+      void state.saveNow();
+    };
+    if (quiet) show();
+    else whenIdle(show);
+  }
+  // 다시 켰는데 잠든 지 얼마 안 됐으면 계속 자는 화면
+  try {
+    if (Number(localStorage.getItem(SLEEP_KEY)) > Date.now()) {
+      playTimer.sleepNow();
+      startBedtime(true);
+    }
+  } catch {
+    /* 무시 */
+  }
+
   // 앱을 내리거나 닫을 때 바로 저장
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'hidden') void state.saveNow();
@@ -424,7 +518,7 @@ async function start() {
   // 개발 중 브라우저 콘솔에서 상태 확인용 (배포 빌드에는 없음)
   if (import.meta.env.DEV) {
     Object.assign(window, {
-      __game: { state, goTo, travelTo, town: () => town, room: () => room, mode: () => mode, towns, petPanel },
+      __game: { state, goTo, travelTo, town: () => town, room: () => room, mode: () => mode, towns, petPanel, playTimer, startBedtime, warnBedtime },
     });
   }
 
@@ -455,6 +549,11 @@ async function start() {
     const raw = timer.getDelta();
     perf.tick(raw, document.visibilityState === 'hidden' || switching);
     check?.update(raw);
+    // 놀이 시간은 화면이 보이고 부모 설정이 닫혀 있을 때만 센다
+    const play = playTimer.tick(raw, document.visibilityState === 'visible' && !parentPanel.isOpen && !bedtime.isOpen);
+    if (play === 'warn') warnBedtime();
+    else if (play === 'bedtime') startBedtime();
+    if (bedtime.isOpen) return; // 자는 동안은 3D 를 그리지 않음 (배터리·열)
     // 탭 전환 후 돌아올 때 큰 점프 방지
     const dt = Math.min(raw, 0.1);
     if (mode === 'room' && room) {

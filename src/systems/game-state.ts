@@ -44,6 +44,8 @@ export class GameState {
     Object.entries(ROOMS).map(([id, def]) => [id, new RoomLayout(def)]),
   );
   private saveTimer: ReturnType<typeof setTimeout> | null = null;
+  /** 저장 초기화 뒤에는 더 저장하지 않는다 (다시 켜는 동안 옛 상태가 다시 저장되지 않게) */
+  private stopped = false;
   private readonly listeners = new Set<() => void>();
 
   constructor(private readonly store: KeyValueStore | null = null) {
@@ -76,7 +78,7 @@ export class GameState {
   change(): void {
     this.refreshFurniture();
     this.listeners.forEach((fn) => fn());
-    if (!this.store) return;
+    if (!this.store || this.stopped) return;
     if (this.saveTimer) clearTimeout(this.saveTimer);
     this.saveTimer = setTimeout(() => void this.saveNow(), 500);
   }
@@ -84,12 +86,20 @@ export class GameState {
   async saveNow(): Promise<void> {
     if (this.saveTimer) clearTimeout(this.saveTimer);
     this.saveTimer = null;
-    if (!this.store) return;
+    if (!this.store || this.stopped) return;
     try {
       await this.store.set(SAVE_KEY, this.toSave());
     } catch (err) {
       console.warn('저장 실패', err);
     }
+  }
+
+  /** 저장 초기화 (부모 설정): 저장을 지우고 더는 저장하지 않는다. 그다음 다시 켜면 처음부터 */
+  async reset(): Promise<void> {
+    this.stopped = true;
+    if (this.saveTimer) clearTimeout(this.saveTimer);
+    this.saveTimer = null;
+    await this.store?.delete(SAVE_KEY);
   }
 
   async load(): Promise<boolean> {

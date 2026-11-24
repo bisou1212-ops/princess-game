@@ -33,6 +33,8 @@ export class Speaker {
   private voices: SpeechSynthesisVoice[] = [];
   private timers: number[] = [];
   private token = 0;
+  /** 말 빠르기 (부모 설정): 모든 대사의 속도에 곱한다 */
+  rateScale = 1;
 
   constructor() {
     if (!this.synth) return;
@@ -69,6 +71,7 @@ export class Speaker {
 
   speak(text: string, opts: SpeakOptions): void {
     this.stop();
+    if (this.rateScale !== 1) opts = { ...opts, rate: opts.rate * this.rateScale };
     const my = this.token;
     const alive = () => my === this.token;
     const tokens = tokenize(text);

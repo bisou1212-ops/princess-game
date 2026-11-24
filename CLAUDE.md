@@ -53,7 +53,7 @@ docs/GDD.md        # 기획서
   - [x] 화풍 변경 → 부드러운 입체: `src/core/toon.ts`의 `STYLE`(기본 glossy, `?style=toon` 비교) — `toonMaterial(params, role)`이 물리 재질(skin·hair·cloth·gem·plain, 반짝이 가루·머리 그라데이션 셰이더), 외곽선 끔. `src/core/look.ts` 주변 반사 + 빛번짐(`?bloom=0`으로 끔), 그림 눈 `anime-eyes.ts`(characters.json `eyeColor`), 톤 매핑 Neutral
   - [x] 그래픽 고도화 (`docs/GRAPHICS-PLAN.md`, 브랜치 `graphics-pilot`): 공주·친구 뼈대(SkinnedMesh, 같은 뼈 이름) + 동작 클립 idle·walk·hop·wave(`scripts/blender/anim_princess.py`) → `princess-animator.ts`(속도로 섞기, 고개 돌려 보기, 기울기, 뒷머리·치마·귀·꼬리 스프링, 눈 깜빡임). 친구는 `friend-<id>.glb` 파일 하나씩. 이동 가속·감속(`walker.ts`). 배경: `build_castle_env.py`·`build_flower_env.py` → `env-*.glb`(재질별로 합침, 버텍스 컬러 AO, 물 셰이더, 바람 흔들림), 배치 JSON `env` 칸 — 충돌은 그대로 obstacles. 카메라: 가는 방향 앞쪽 보기, 대화 때 옆에서 두 얼굴 보기. 효과 `ambient-fx.ts`(발걸음·착지 먼지, 꽃잎, 구름). 방: 마루 결·징두리·몰딩. 품질 `quality.ts`(basic/high, `?quality=`)
   - [ ] 남은 B단계: 나무·집·가구는 CC0 에셋(Kenney·Quaternius) + `CREDITS.md`. 모델은 `src/assets/models/`에 (public/assets는 1년 캐시라 갱신 안 됨)
-- [ ] M8 콘텐츠 채우기 (작은 단계로)
+- [x] M8 콘텐츠 채우기 (작은 단계로)
   - [x] M8-1 부탁 늘리기: 친구별 연속 부탁(quests.json 순서·`requires`), 배달 부탁(`goal.type: deliver`, 받는 친구가 선물). 새 부탁: 토리 노란 꽃 4, 플로라 초대장→고고, 도치 딸기 5(블루베리 힌트), 고고 넘어진 화분 3(`onCollect: stand`). 부탁은 `giver`로 찾음(배치의 quest 칸 없음)
   - [x] 친구 돌아다니기: 배치 npcs의 `wander`(집 둘레 반지름 m, 0·없음=제자리). 쉬기↔산책 반복, 공주가 2.2m 안에 오거나 다가오는 중·말하는 중엔 멈춰서 공주를 봄. 돌아다니는 친구는 길찾기 격자에서 막지 않고 1.75m 안에 오면 말 걸기(`src/systems/navigation/wander.ts`)
   - [x] M8-2 삐삐(노란 새, 꽃 왕국, Blender 모델) + "우는 삐삐 위로하기": `goal.type: talk`, `giverMood: sad`(해결 전 눈물). 대사 줄에 `choices`(그림 카드 고르기: 틀리면 힌트 후 다시, `reply` 대사) — 기분 4개(기쁨·슬픔·화남·무서움) → 위로 3개. 대화 중엔 장면을 위로 올려 친구 얼굴이 보이게
@@ -65,6 +65,13 @@ docs/GDD.md        # 기획서
     - [x] 새 옷 6벌(단발머리·포니테일·꽃 화관·리본 드레스·토끼 슬리퍼·하트 가방): `build_princess.py`에 추가 → princess.glb(약 0.8MB), 아이콘 `icons.ts`, 도형 공주 `princess-model.ts`. 처음엔 없고 가게에서 삼(값 4~8). 재질 `leaf`(고정 초록) 추가
   - [x] M8-5 펫 고르기·돌보기: 처음 켜면 유니콘·고양이·강아지 카드(한글+영어) → 이름 카드 3개 중 고르기 (`src/data/pets.json`, 로직 `src/systems/pet.ts`, 저장 `pet`). 펫은 공주 옆에서 졸졸 따라다님(마당·꽃 왕국, 길찾기 격자 사용, 막지 않음). 시간이 지나면 머리 위에 밥그릇(배고픔 3시간)·거품(꼬질꼬질 6시간) 그림 → 펫 톡 → 밥(간식 2~5개를 하나씩 톡, "하나! 둘!")·목욕(얼룩을 문지르면 거품이 퐁) 화면 `src/ui/pet-panel.ts`, 필요할 때 해 주면 별사탕 1. 할 일이 없을 때 톡하면 힌트: 지금 부탁의 물건·친구 쪽으로 앞장서 달려가 기다림(`guidePet`), 다른 장소 일이면 지도 안내. 대사 `pet-*`(speaker `pet` = 아이가 붙인 이름, `registerCharacter`). 모델 `scripts/blender/build_pets.py` → `pet-<id>.glb`(한 마리 약 4천 삼각형, 동작 클립 없이 `pet-animator.ts`가 네 발 걷기·꼬리·귀·폴짝), 고른 펫만 불러옴. 펫 그림은 3D 모델을 찍어 만듦(`pet-thumbs.ts`)
 
+- [ ] M9 부모 설정·마감 (작은 단계로)
+  - [x] 태블릿 대응: 한국어 음성을 이름으로 지정(`pickVoiceFrom`), 톡 넉넉하게(28px·1.2초), 느리면 자동으로 빛번짐 끄기→해상도 낮추기(`PerfGovernor`, 단계 저장 `perfLevel`), 점검 화면 `?check=1`(fps·음성 목록·목소리 시험), 배포 직후 게임 파일 404면 한 번 다시 불러오기(index.html·sw.js)
+  - [x] M9-1 부모 설정: 마당 오른쪽 아래 작은 톱니 → 어른 확인(6~9단 곱셈, 숫자판) → 말 빠르기(느리게·보통·빠르게, `Speaker.rateScale`)·그래픽 품질(자동·가볍게·고품질)·목소리 확인·저장 초기화(두 번 확인, `GameState.reset`). 설정은 localStorage `settings` (`src/core/settings.ts`, `src/ui/parent-panel.ts`)
+  - [x] M9-2 플레이 시간: 부모 설정에서 정하지 않음·10·15·20·30분(`settings.playMinutes`, 기본 정하지 않음). 화면이 켜진 동안만 셈(`src/systems/playtime.ts`). 2분 전 펫이 예고(`bedtime-soon-pet`, 예고 뒤 최소 1분), 시간이 되면 하던 대화가 끝나길 기다렸다가 잠자리 장면(`src/ui/bedtime.ts`: 밤하늘·달·침대에서 눈 감은 공주·펫 — 3D 모델을 눈 감겨 찍은 그림, 대사 `bedtime`). 자는 동안 3D는 그리지 않음. 1시간 안에 다시 켜도 자는 화면(`sleepUntil`). 어른만 톱니 → 곱셈 → "10분 더·15분 더·오늘은 그만"
+  - [ ] M9-3 사운드: 효과음·배경음 (CC0)
+  - [ ] M9-4 실기기 테스트 마감
+
 ## 나중에 할 일
 - **사람 같은 음성 (보류, 기기 TTS가 로봇 같다는 피드백)**: 대사를 미리 음성 파일로 만들어 넣는다.
   `npm run voices` 스크립트가 `dialogues.json`을 읽어 `public/assets/voice/`에 mp3 + 단어 타이밍을 생성(바뀐 줄만).
@@ -72,4 +79,3 @@ docs/GDD.md        # 기획서
   **캐릭터마다 다른 목소리**를 `characters.json`에 지정. 음성 파일이 없으면 지금의 기기 TTS로 대체.
   목소리 샘플을 여러 개 만들어 사용자가 직접 듣고 고른다.
 - **거울 사진 찍기** (GDD 5.1): 드레스룸에서 사진을 찍어 앨범에 저장 — 앨범 기능과 함께.
-- **저장 초기화**: 부모 설정(어른용 잠금) 뒤에 — M9.

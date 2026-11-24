@@ -1,0 +1,174 @@
+/* ── 잠자리 장면 (밤하늘, 화면 가득) ── */
+.bedtime {
+  position: fixed;
+  z-index: 35;
+  inset: 0;
+  overflow: hidden;
+  background: radial-gradient(circle at 78% 18%, #4b4a8f 0%, #2e2c66 45%, #1f1d4a 100%);
+  font-family: 'Jua', 'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans KR', sans-serif;
+  color: #fff6e0;
+  animation: bt-in 1.6s ease-out;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.bedtime[hidden] {
+  display: none;
+}
+.bt-star {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #fff7c8;
+  box-shadow: 0 0 8px 2px rgba(255, 240, 180, 0.6);
+  animation: bt-twinkle 2.8s ease-in-out infinite;
+}
+.bt-moon {
+  position: absolute;
+  top: 8%;
+  right: 12%;
+  width: min(16vmin, 130px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: #fff1b8;
+  box-shadow: 0 0 40px 10px rgba(255, 236, 160, 0.35);
+}
+/* 달을 초승달처럼: 밤하늘 색 동그라미로 한쪽을 가림 */
+.bt-moon::after {
+  content: '';
+  position: absolute;
+  inset: -6% -6% 6% 30%;
+  border-radius: 50%;
+  background: #3b3a7a;
+}
+
+/* 침대: 머리판 + 베개 + 공주 얼굴 + 펫 + 이불 */
+.bt-bed {
+  position: absolute;
+  left: 50%;
+  bottom: 14%;
+  width: min(80vmin, 620px);
+  aspect-ratio: 1.6;
+  transform: translateX(-50%);
+}
+.bt-head {
+  position: absolute;
+  left: 4%;
+  right: 4%;
+  top: 0;
+  height: 52%;
+  border-radius: 48% 48% 10% 10% / 70% 70% 10% 10%;
+  background: linear-gradient(#ffc8e2, #f39cc6);
+  box-shadow: inset 0 -10px 0 rgba(0, 0, 0, 0.08);
+}
+.bt-pillow {
+  position: absolute;
+  left: 24%;
+  right: 24%;
+  top: 24%;
+  height: 26%;
+  border-radius: 50%;
+  background: #fffaf5;
+}
+.bt-princess {
+  position: absolute;
+  left: 50%;
+  top: -16%;
+  width: 46%;
+  transform: translateX(-50%);
+  animation: bt-breathe 4s ease-in-out infinite;
+}
+.bt-pet {
+  position: absolute;
+  z-index: 2; /* 이불 위에 웅크리고 잠 */
+  right: -2%;
+  top: 22%;
+  width: 36%;
+  animation: bt-breathe 3.4s ease-in-out infinite;
+}
+.bt-blanket {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 52%;
+  bottom: 0;
+  border-radius: 40% 40% 18px 18px / 26% 26% 18px 18px;
+  background:
+    radial-gradient(circle at 20% 40%, rgba(255, 255, 255, 0.5) 0 6%, transparent 7%),
+    radial-gradient(circle at 55% 60%, rgba(255, 255, 255, 0.5) 0 5%, transparent 6%),
+    radial-gradient(circle at 82% 35%, rgba(255, 255, 255, 0.5) 0 5%, transparent 6%),
+    linear-gradient(#b9a3ff, #9a82ec);
+  box-shadow: 0 10px 0 rgba(0, 0, 0, 0.15);
+}
+.bt-zzz {
+  position: absolute;
+  left: 62%;
+  top: -6%;
+  font-size: clamp(26px, 5vmin, 44px);
+}
+.bt-zzz b {
+  position: absolute;
+  opacity: 0;
+  animation: bt-z 3s ease-out infinite;
+}
+.bt-zzz b:nth-child(2) {
+  animation-delay: 1s;
+  font-size: 0.8em;
+}
+.bt-zzz b:nth-child(3) {
+  animation-delay: 2s;
+  font-size: 0.65em;
+}
+.bt-say {
+  position: absolute;
+  left: 50%;
+  bottom: 3%;
+  width: min(92vw, 720px);
+  margin: 0;
+  transform: translateX(-50%);
+  text-align: center;
+  font-size: clamp(22px, 3.8vmin, 32px);
+  line-height: 1.4;
+}
+.bt-adult {
+  position: absolute;
+  right: max(12px, env(safe-area-inset-right));
+  bottom: max(12px, env(safe-area-inset-bottom));
+  width: 44px;
+  height: 44px;
+  padding: 8px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+}
+.bt-adult svg {
+  width: 100%;
+  height: 100%;
+}
+
+@keyframes bt-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes bt-twinkle {
+  0%, 100% { opacity: 0.35; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1.2); }
+}
+@keyframes bt-breathe {
+  0%, 100% { transform: translateX(var(--bt-x, 0)) translateY(0); }
+  50% { transform: translateX(var(--bt-x, 0)) translateY(2%); }
+}
+.bt-princess {
+  --bt-x: -50%;
+}
+@keyframes bt-z {
+  0% { opacity: 0; transform: translate(0, 0) scale(0.6); }
+  25% { opacity: 1; }
+  100% { opacity: 0; transform: translate(60px, -80px) scale(1.2); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bedtime, .bt-star, .bt-princess, .bt-pet, .bt-zzz b { animation: none; }
+  .bt-zzz b { opacity: 1; }
+}

@@ -741,5 +741,21 @@
   ],
   "pet-cheer-3": [
     { "speaker": "pet", "mood": "shy", "text": "헤헤, 공주님이 제일 좋아요!" }
+  ],
+  "bedtime-soon-pet": [
+    { "speaker": "pet", "mood": "curious", "text": "공주님, 하아암~ 곧 자러 갈 시간이에요." },
+    { "speaker": "pet", "mood": "happy", "text": "하던 걸 마무리해요!" }
+  ],
+  "bedtime-soon": [
+    { "speaker": "princess", "mood": "curious", "text": "하아암~ 곧 자러 갈 시간이야." },
+    { "speaker": "princess", "mood": "happy", "text": "하던 걸 마무리하자!" }
+  ],
+  "bedtime": [
+    { "speaker": "princess", "mood": "happy", "text": "하아암~ 오늘도 정말 재미있었어!" },
+    { "speaker": "pet", "mood": "shy", "text": "{name}도 졸려요… 공주님, 잘 자요~" },
+    { "speaker": "princess", "mood": "shy", "text": "내일 또 만나! 잘 자!" }
+  ],
+  "bedtime-still": [
+    { "speaker": "princess", "mood": "shy", "text": "쉿, 지금은 코 자는 시간이에요. 내일 또 만나요!" }
   ]
 }

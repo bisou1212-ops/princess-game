@@ -1,0 +1,162 @@
+/* ── 부모 설정 (어른용) ── */
+.parent-panel {
+  position: fixed;
+  z-index: 40;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  box-sizing: border-box;
+  background: rgba(60, 50, 80, 0.45);
+  font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans KR', sans-serif;
+  color: #3d3550;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.parent-panel[hidden] {
+  display: none;
+}
+.parent-panel button {
+  font: inherit;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+.pa-card {
+  width: min(560px, 100%);
+  max-height: 100%;
+  overflow-y: auto;
+  box-sizing: border-box;
+  padding: 18px 22px 22px;
+  background: #fff;
+  border-radius: 24px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+.pa-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.pa-head h2 {
+  margin: 0;
+  font-size: 24px;
+}
+.pa-close {
+  width: 48px;
+  height: 48px;
+  border: none;
+  border-radius: 50%;
+  background: #eee9f5;
+  font-size: 22px;
+}
+.parent-panel section {
+  margin-top: 16px;
+}
+.parent-panel h3 {
+  margin: 0 0 8px;
+  font-size: 17px;
+}
+.pa-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.pa-btn {
+  min-width: 96px;
+  height: 48px;
+  padding: 0 16px;
+  border: 2px solid #d8cfe8;
+  border-radius: 14px;
+  background: #fff;
+  font-size: 17px;
+}
+.pa-btn.is-on {
+  border-color: #9b7be0;
+  background: #f1eaff;
+  font-weight: 700;
+}
+.pa-btn.is-soft {
+  border-color: #e7b9cf;
+  color: #a04070;
+}
+.pa-btn[disabled] {
+  opacity: 0.5;
+}
+.pa-note {
+  margin: 8px 0 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #6d6480;
+}
+.pa-link {
+  border: none;
+  background: none;
+  padding: 0 4px;
+  color: #7a5bd0;
+  text-decoration: underline;
+  font-size: 14px !important;
+}
+.pa-warn {
+  margin: 16px 0 0;
+  font-size: 18px;
+  font-weight: 700;
+}
+.pa-hint {
+  margin: 10px 0 0;
+  font-size: 15px;
+  color: #6d6480;
+}
+.pa-q {
+  margin: 16px 0;
+  text-align: center;
+  font-size: 40px;
+  font-weight: 700;
+}
+.pa-typed {
+  display: inline-block;
+  min-width: 2.2em;
+  border-bottom: 3px solid #9b7be0;
+}
+.pa-keys {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.pa-key {
+  height: 56px;
+  border: 2px solid #e3dcef;
+  border-radius: 14px;
+  background: #faf8fd;
+  font-size: 24px !important;
+}
+.pa-key.is-fn {
+  background: #f1eaff;
+  font-size: 18px !important;
+}
+.pa-lock {
+  width: min(380px, 100%);
+}
+
+/* HUD 의 부모 설정 버튼: 작고 흐리게 (아이 눈에 덜 띄게) */
+.hud-parent {
+  position: absolute;
+  right: max(12px, env(safe-area-inset-right));
+  bottom: max(12px, env(safe-area-inset-bottom));
+  width: 44px;
+  height: 44px;
+  padding: 8px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.55);
+  color: #9a8fb0;
+  pointer-events: auto;
+  cursor: pointer;
+  opacity: 0.7;
+}
+.hud-parent svg {
+  width: 100%;
+  height: 100%;
+}
+.hud-parent[hidden] {
+  display: none;
+}

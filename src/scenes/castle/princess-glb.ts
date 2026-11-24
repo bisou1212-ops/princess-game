@@ -130,6 +130,7 @@ export function createGlbPrincess(outfit: Outfit): { group: THREE.Group; setOutf
   };
   setOutfit(outfit);
   const animator = clips.length > 0 ? new PrincessAnimator(root, clips, eyes) : null;
+  group.userData.eyes = eyes; // 잠자리 그림에서 눈 감기
   return { group, setOutfit, animator };
 }
 

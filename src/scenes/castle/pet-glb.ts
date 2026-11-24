@@ -83,6 +83,7 @@ export function createPetModel(kind: string): PetModel {
     if (/^(shine|cheek|eye)/.test(name)) mesh.userData.noOutline = true;
   }
   addOutline(g, 0.01);
+  g.userData.eyes = eyes; // 잠자리 그림에서 눈 감기
   return { group: g, animator: new PetAnimator(root, eyes) };
 }
 
