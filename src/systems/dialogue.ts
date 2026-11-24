@@ -11,6 +11,8 @@ export interface Character {
   name: string;
   /** CSS 색 (#rrggbb) */
   color: string;
+  /** 반짝이는 눈동자 색 (부드러운 입체 화풍) */
+  eyeColor?: string;
   /** M7 아트 교체 전까지 쓰는 도형 모양 */
   model: 'princess' | 'rabbit' | 'bear' | 'hedgehog' | 'bird' | 'plain';
   voice: Voice;

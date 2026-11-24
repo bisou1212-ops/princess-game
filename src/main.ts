@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { createRenderer, bindResize } from './core/renderer';
+import { createLook } from './core/look';
 import { registerServiceWorker } from './core/pwa';
 import { attachGestures } from './core/gestures';
 import { openStore } from './core/storage';
@@ -38,6 +39,8 @@ const TRAVEL_MIN_MS = 3000;
 async function start() {
   const container = document.getElementById('app')!;
   const renderer = createRenderer(container);
+  // 부드러운 입체 화풍: 주변 반사 + 빛번짐
+  const look = createLook(renderer, container);
 
   // Blender로 만든 공주 모델 (실패하면 도형 공주로 대신)
   await Promise.all([preloadPrincessGlb(), preloadFriendsGlb()]);
@@ -93,6 +96,7 @@ async function start() {
     });
     controller.attach(scene);
     bindResize(renderer, scene.camera, container);
+    look.prepare(scene.scene);
     const t = { id, layout, scene, controller };
     towns.set(id, t);
     return t;
@@ -122,6 +126,7 @@ async function start() {
       const layout = state.rooms[id];
       const scene = createBedroomScene(aspect(), layout);
       bindResize(renderer, scene.camera, container);
+      look.prepare(scene.scene);
       const ctl = new BedroomController({
         roomId: id,
         layout,
@@ -141,6 +146,7 @@ async function start() {
 
   // ── 왕국 사이 이동 ──
   const travel = createTravelScene(aspect());
+  look.prepare(travel.scene);
   bindResize(renderer, travel.camera, container);
 
   let mode: 'town' | 'room' | 'travel' = 'town';
@@ -325,13 +331,13 @@ async function start() {
     const dt = Math.min(timer.getDelta(), 0.1);
     if (mode === 'room' && room) {
       room.scene.update(dt);
-      renderer.render(room.scene.scene, room.scene.camera);
+      look.render(room.scene.scene, room.scene.camera);
     } else if (mode === 'travel') {
       travel.update(dt);
-      renderer.render(travel.scene, travel.camera);
+      look.render(travel.scene, travel.camera);
     } else {
       town.scene.update(dt);
-      renderer.render(town.scene.scene, town.scene.camera);
+      look.render(town.scene.scene, town.scene.camera);
     }
   });
 }

@@ -50,6 +50,7 @@ docs/GDD.md        # 기획서
   - [x] B단계 준비: uv(winget) 설치, 애드온 `blender_mcp.py`(커뮤니티 mcp-for-blender, MIT) → `%APPDATA%\Blender Foundation\Blender\5.3\scripts\addons`, `.mcp.json`(이 PC 전용, git 제외)에 `blender` 서버(텔레메트리 끔). Blender에서 애드온 켜고 N패널 "MCP for Blender" → Start MCP Server(포트 9876) 후 사용. Blender MCP는 Blender 안에서 파이썬을 실행하므로 작업 전 .blend 저장
   - [x] 공주 모델: `scripts/blender/build_princess.py`(다시 만들 수 있는 스크립트) → `art-source/princess.blend` → `src/assets/models/princess.glb`(배포 때 해시 붙음, 약 0.5MB). 물체 이름 = 옷 id, 재질 tint·tint_light·tint_wing만 색 변경. 게임은 `princess-glb.ts`로 불러오고 실패하면 도형 공주
   - [x] 친구 모델: `scripts/blender/build_friends.py`(공주 부위 재사용) → `src/assets/models/friends.glb`(물체 이름 = characters.json id: flora·tori·gogo·dochi, 색 고정). 게임은 `friends-glb.ts`, 모델에 없는 친구는 도형으로
+  - [x] 화풍 변경 → 부드러운 입체: `src/core/toon.ts`의 `STYLE`(기본 glossy, `?style=toon` 비교) — `toonMaterial(params, role)`이 물리 재질(skin·hair·cloth·gem·plain, 반짝이 가루·머리 그라데이션 셰이더), 외곽선 끔. `src/core/look.ts` 주변 반사 + 빛번짐(`?bloom=0`으로 끔), 그림 눈 `anime-eyes.ts`(characters.json `eyeColor`), 톤 매핑 Neutral
   - [ ] 남은 B단계: 펫 모델(펫 기능과 함께), 나무·집·가구는 CC0 에셋(Kenney·Quaternius) + `CREDITS.md`. 모델은 `src/assets/models/`에 (public/assets는 1년 캐시라 갱신 안 됨)
 - [ ] M8 콘텐츠 채우기 (작은 단계로)
   - [x] M8-1 부탁 늘리기: 친구별 연속 부탁(quests.json 순서·`requires`), 배달 부탁(`goal.type: deliver`, 받는 친구가 선물). 새 부탁: 토리 노란 꽃 4, 플로라 초대장→고고, 도치 딸기 5(블루베리 힌트), 고고 넘어진 화분 3(`onCollect: stand`). 부탁은 `giver`로 찾음(배치의 quest 칸 없음)

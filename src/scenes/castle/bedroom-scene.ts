@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { addOutline, toonMaterial } from '../../core/toon';
+import { addOutline, toonMaterial, type Surface } from '../../core/toon';
 import { footprint, getFurniture, type RoomLayout } from '../../systems/decor';
 import { getColor } from '../../systems/wardrobe';
 import { createFurnitureMesh, disposeObject, recolorFurniture } from './furniture-meshes';
@@ -175,7 +175,7 @@ export function createBedroomScene(aspect: number, layout: RoomLayout): BedroomS
           const mesh = m as THREE.Mesh;
           if (!mesh.isMesh) return;
           mesh.castShadow = false;
-          const mat = (mesh.material as THREE.MeshToonMaterial).clone();
+          const mat = (mesh.material as Surface).clone();
           mat.transparent = true;
           mat.userData.baseColor = mat.color.clone();
           if (mesh.userData.isOutline) mesh.visible = false; // 미리보기는 외곽선 없이
@@ -188,7 +188,7 @@ export function createBedroomScene(aspect: number, layout: RoomLayout): BedroomS
       ghost.obj.position.y = 0.06;
       ghost.obj.visible = true;
       ghost.obj.traverse((m) => {
-        const mat = (m as THREE.Mesh).material as THREE.MeshToonMaterial | undefined;
+        const mat = (m as THREE.Mesh).material as Surface | undefined;
         if (!mat?.userData?.baseColor) return;
         mat.opacity = valid ? 0.85 : 0.35;
         mat.color.copy(valid ? mat.userData.baseColor : new THREE.Color(0xbbb6c4));

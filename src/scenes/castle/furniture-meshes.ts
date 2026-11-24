@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { toonMaterial } from '../../core/toon';
+import { toonMaterial, type Surface } from '../../core/toon';
 
 /**
  * 임시 가구 모델 (도형). 크기는 차지하는 칸(가로 sx × 세로 sz, m)에 맞춘다. 앞 = +z.
@@ -67,7 +67,7 @@ export function createFurnitureMesh(shape: string, colorHex: string, sx: number,
       cyl(0.16, 0.18, 0.05, wood, 0, 0.025);
       cyl(0.025, 0.025, 1.1, wood, 0, 0.6, 0, 8);
       const shade = cyl(0.12, 0.22, 0.26, main, 0, 1.2);
-      (shade.material as THREE.MeshToonMaterial).emissive = new THREE.Color(0x332200);
+      (shade.material as Surface).emissive = new THREE.Color(0x332200);
       break;
     }
     case 'plant': {
@@ -123,7 +123,7 @@ export function createFurnitureMesh(shape: string, colorHex: string, sx: number,
 }
 
 /** 색을 바꿀 수 있는 재질 */
-function tint(hex: string, lighten = 0): THREE.MeshToonMaterial {
+function tint(hex: string, lighten = 0): Surface {
   const c = new THREE.Color(hex);
   if (lighten) c.lerp(new THREE.Color(0xffffff), lighten);
   const m = toonMaterial({ color: c, roughness: 0.7 });
@@ -131,7 +131,7 @@ function tint(hex: string, lighten = 0): THREE.MeshToonMaterial {
   return m;
 }
 
-function plain(color: number): THREE.MeshToonMaterial {
+function plain(color: number): Surface {
   return toonMaterial({ color, roughness: 0.7 });
 }
 
@@ -140,7 +140,7 @@ export function recolorFurniture(obj: THREE.Object3D, hex: string): void {
   const main = new THREE.Color(hex);
   const light = main.clone().lerp(new THREE.Color(0xffffff), 0.5);
   obj.traverse((m) => {
-    const mat = (m as THREE.Mesh).material as THREE.MeshToonMaterial | undefined;
+    const mat = (m as THREE.Mesh).material as Surface | undefined;
     if (!mat || !mat.userData?.tint) return;
     mat.color.copy(mat.userData.tint === 'light' ? light : main);
   });

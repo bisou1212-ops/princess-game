@@ -1,7 +1,9 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import friendsUrl from '../../assets/models/friends.glb?url';
-import { addOutline, toonMaterial } from '../../core/toon';
+import { STYLE, addOutline, toonMaterial } from '../../core/toon';
+import { getCharacter } from '../../systems/dialogue';
+import { decorateEyes } from './anime-eyes';
 
 /**
  * Blender로 만든 친구 모델 (scripts/blender/build_friends.py → friends.glb).
@@ -34,14 +36,31 @@ export function createFriendFromGlb(id: string): THREE.Group {
   node.position.set(0, 0, 0);
   node.traverse((o) => {
     const mesh = o as THREE.Mesh;
-    if (!mesh.isMesh) return;
+    if (!mesh.isMesh || mesh.userData.eyeDecal) return;
     const src = mesh.material as THREE.MeshStandardMaterial;
     const name = src.name || '';
-    mesh.material = toonMaterial({
-      color: src.color.clone(),
-      emissive: name.startsWith('shine') ? 0xffffff : 0x000000,
-      emissiveIntensity: name.startsWith('shine') ? 0.5 : 0,
-    });
+    const role = /^(skin|f_.*fur|f_.*body|f_dochi_face)/.test(name)
+      ? 'skin'
+      : /hair/.test(name)
+        ? 'hair'
+        : /(dress|light|apron|overall|scarf|chef|wing)/.test(name)
+          ? 'cloth'
+          : /(gem|gold)/.test(name)
+            ? 'gem'
+            : 'plain';
+    const mat = toonMaterial(
+      {
+        color: src.color.clone(),
+        emissive: name.startsWith('shine') ? 0xffffff : 0x000000,
+        emissiveIntensity: name.startsWith('shine') ? 0.5 : 0,
+      },
+      role,
+    );
+    mesh.material = mat;
+    if (STYLE === 'glossy') {
+      if (name.startsWith('eye')) decorateEyes(mesh, getCharacter(id).eyeColor ?? '#6b5a8a');
+      if (name.startsWith('shine')) mat.visible = false;
+    }
     mesh.castShadow = true;
     if (/^(shine|mouth|cheek|eye)/.test(name)) mesh.userData.noOutline = true;
   });

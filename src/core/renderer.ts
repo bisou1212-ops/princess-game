@@ -8,6 +8,9 @@ export function createRenderer(container: HTMLElement): THREE.WebGLRenderer {
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, MAX_PIXEL_RATIO));
   renderer.setSize(container.clientWidth, container.clientHeight);
   renderer.outputColorSpace = THREE.SRGBColorSpace;
+  // 파스텔 색이 바래지 않으면서 밝은 반사광은 부드럽게 눌러 주는 톤 매핑
+  renderer.toneMapping = THREE.NeutralToneMapping;
+  renderer.toneMappingExposure = 1.05;
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFShadowMap;
   container.appendChild(renderer.domElement);

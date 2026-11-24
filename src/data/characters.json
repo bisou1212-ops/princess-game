@@ -1,39 +1,45 @@
 {
-  "_comment": "캐릭터별 이름·색·목소리·임시 모양. voice.pitch(0~2)·rate(0.1~2)로 목소리를 구분한다 (GDD 8.2). model: princess(왕관)·rabbit(토끼 귀)·bear(곰 귀)·hedgehog(가시)·bird(부리·날개)·plain — M7 아트 교체 전까지 쓰는 도형 모양.",
+  "_comment": "캐릭터별 이름·색·목소리·임시 모양. voice.pitch(0~2)·rate(0.1~2)로 목소리를 구분한다 (GDD 8.2). model: princess(왕관)·rabbit(토끼 귀)·bear(곰 귀)·hedgehog(가시)·bird(부리·날개)·plain — M7 아트 교체 전까지 쓰는 도형 모양. eyeColor=반짝이는 눈동자 색.",
   "princess": {
     "name": "공주",
     "color": "#ffa6d2",
     "model": "princess",
-    "voice": { "lang": "ko-KR", "pitch": 1.15, "rate": 1.0 }
+    "voice": { "lang": "ko-KR", "pitch": 1.15, "rate": 1.0 },
+    "eyeColor": "#c45bd8"
   },
   "flora": {
     "name": "플로라 공주",
     "color": "#c9b3ff",
     "model": "princess",
-    "voice": { "lang": "ko-KR", "pitch": 1.2, "rate": 0.95 }
+    "voice": { "lang": "ko-KR", "pitch": 1.2, "rate": 0.95 },
+    "eyeColor": "#8a6cff"
   },
   "tori": {
     "name": "토리",
     "color": "#fff1e0",
     "model": "rabbit",
-    "voice": { "lang": "ko-KR", "pitch": 1.3, "rate": 1.05 }
+    "voice": { "lang": "ko-KR", "pitch": 1.3, "rate": 1.05 },
+    "eyeColor": "#ff6fa8"
   },
   "gogo": {
     "name": "고고",
     "color": "#c69c6d",
     "model": "bear",
-    "voice": { "lang": "ko-KR", "pitch": 0.9, "rate": 0.9 }
+    "voice": { "lang": "ko-KR", "pitch": 0.9, "rate": 0.9 },
+    "eyeColor": "#8a5a3c"
   },
   "dochi": {
     "name": "도치",
     "color": "#e6c9a0",
     "model": "hedgehog",
-    "voice": { "lang": "ko-KR", "pitch": 1.25, "rate": 1.05 }
+    "voice": { "lang": "ko-KR", "pitch": 1.25, "rate": 1.05 },
+    "eyeColor": "#3fa0d8"
   },
   "pippi": {
     "name": "삐삐",
     "color": "#ffe38a",
     "model": "bird",
-    "voice": { "lang": "ko-KR", "pitch": 1.4, "rate": 0.9 }
+    "voice": { "lang": "ko-KR", "pitch": 1.4, "rate": 0.9 },
+    "eyeColor": "#ff9a3a"
   }
 }

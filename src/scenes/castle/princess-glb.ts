@@ -1,7 +1,9 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import princessUrl from '../../assets/models/princess.glb?url';
-import { addOutline, toonMaterial } from '../../core/toon';
+import { STYLE, addOutline, toonMaterial, type Surface } from '../../core/toon';
+import { getCharacter } from '../../systems/dialogue';
+import { decorateEyes } from './anime-eyes';
 import { getColor, getOutfitItem, SLOTS, type Outfit } from '../../systems/wardrobe';
 
 /**
@@ -40,20 +42,21 @@ export function createGlbPrincess(outfit: Outfit): { group: THREE.Group; setOutf
   group.add(root);
 
   /** 부위 id → 그 부위의 색 바뀌는 재질들 */
-  const tints = new Map<string, Array<{ kind: TintKind; mat: THREE.MeshToonMaterial }>>();
+  const tints = new Map<string, Array<{ kind: TintKind; mat: Surface }>>();
   const parts = new Map<string, THREE.Object3D>();
 
   for (const node of root.children) {
     parts.set(node.name, node);
-    const list: Array<{ kind: TintKind; mat: THREE.MeshToonMaterial }> = [];
+    const list: Array<{ kind: TintKind; mat: Surface }> = [];
     node.traverse((o) => {
       const mesh = o as THREE.Mesh;
-      if (!mesh.isMesh) return;
+      if (!mesh.isMesh || mesh.userData.eyeDecal) return;
       const src = mesh.material as THREE.MeshStandardMaterial;
       const name = (src.name || '').split('.')[0] as TintKind | string;
-      let mat: THREE.MeshToonMaterial;
+      let mat: Surface;
       if (name === 'tint' || name === 'tint_light' || name === 'tint_wing') {
-        mat = toonMaterial({ color: src.color.clone() });
+        const role = node.name.startsWith('hair') ? 'hair' : /^(crown|tiara|necklace|wand)/.test(node.name) ? 'gem' : 'cloth';
+        mat = toonMaterial({ color: src.color.clone() }, role);
         if (name === 'tint_wing') {
           mat.transparent = true;
           mat.opacity = 0.75;
@@ -63,10 +66,15 @@ export function createGlbPrincess(outfit: Outfit): { group: THREE.Group; setOutf
         }
         list.push({ kind: name, mat });
       } else {
-        mat = toonMaterial({ color: src.color.clone(), emissive: name === 'shine' ? 0xffffff : 0x000000, emissiveIntensity: name === 'shine' ? 0.5 : 0 });
+        const role = name === 'skin' ? 'skin' : name === 'gem' ? 'gem' : 'plain';
+        mat = toonMaterial({ color: src.color.clone(), emissive: name === 'shine' ? 0xffffff : 0x000000, emissiveIntensity: name === 'shine' ? 0.5 : 0 }, role);
       }
       mesh.material = mat;
       mesh.castShadow = !mesh.userData.noShadow;
+      if (STYLE === 'glossy') {
+        if (name === 'eye') decorateEyes(mesh, getCharacter('princess').eyeColor ?? '#b45fd8');
+        if (name === 'shine') mat.visible = false; // 그림 눈에 반짝임이 들어 있음
+      }
       // 아주 작은 얼굴 조각(눈 반짝·입)은 외곽선 없이
       if (name === 'shine' || name === 'mouth' || name === 'cheek' || name === 'eye') mesh.userData.noOutline = true;
     });

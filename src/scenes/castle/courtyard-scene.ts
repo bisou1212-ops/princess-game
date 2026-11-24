@@ -525,6 +525,10 @@ function addLights(scene: THREE.Scene, layout: CourtyardLayout): void {
   sun.shadow.radius = 3;
   sun.shadow.bias = -0.0005;
   scene.add(sun);
+  // 뒤쪽 위에서 비추는 분홍빛 테두리 조명 (말랑한 피규어처럼 윤곽이 반짝)
+  const rim = new THREE.DirectionalLight(0xffc9e8, 0.9);
+  rim.position.set(-6, 10, -12);
+  scene.add(rim);
 }
 
 function easeOut(t: number): number {
