@@ -1,6 +1,7 @@
 import { doorIcon } from './decor-ui';
 import { mapIcon } from '../scenes/map/map-screen';
-import { candyIcon, flowerIcon, wardrobeIcon } from './icons';
+import { candyIcon, itemIcon, wardrobeIcon } from './icons';
+import { getItem } from '../systems/items';
 import './hud.css';
 
 /**
@@ -73,14 +74,14 @@ export class Hud {
   }
 
   /** 모으기 진행 표시. target=0이면 숨김 */
-  setTracker(color: string, count: number, target: number, celebrate = false): void {
+  setTracker(itemId: string, count: number, target: number, celebrate = false): void {
     if (target <= 0) {
       this.tracker.hidden = true;
       return;
     }
     this.tracker.hidden = false;
     const slots = Array.from({ length: target }, (_, i) =>
-      `<span class="slot ${i < count ? 'is-filled' : ''}">${flowerIcon(i < count ? color : '#d9d4e2')}</span>`,
+      `<span class="slot ${i < count ? 'is-filled' : ''}">${slotIcon(itemId, i < count)}</span>`,
     ).join('');
     this.tracker.innerHTML = `${slots}<b class="tracker-count">${count}<small>/${target}</small></b>`;
     if (celebrate) {
@@ -94,4 +95,10 @@ function bounce(el: HTMLElement): void {
   el.classList.remove('is-bouncing');
   void el.offsetWidth; // 애니메이션 다시 시작
   el.classList.add('is-bouncing');
+}
+
+/** 진행 칸 그림: 채운 칸은 아이템 색, 빈 칸은 연회색 */
+function slotIcon(itemId: string, filled: boolean): string {
+  const it = getItem(itemId);
+  return itemIcon(filled ? it : { ...it, color: '#d9d4e2' });
 }

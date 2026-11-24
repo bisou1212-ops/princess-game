@@ -286,3 +286,84 @@ export function createFlowerPatch(patch: FlowerPatch): THREE.Group {
   }
   return g;
 }
+
+/**
+ * 부탁으로 줍는 물건 (꽃 말고). 돌아가는 부분은 'bloom', 바닥 반짝 고리는 'glow' 이름으로 둔다.
+ * shape: strawberry · blueberry · pot(넘어진 화분 — 'bloom'이 옆으로 누워 있다)
+ */
+export function createPickupMesh(shape: string, color: string): THREE.Group {
+  if (shape === 'flower') return createFlowerMesh(color);
+  const g = new THREE.Group();
+  const bloom = new THREE.Group();
+  bloom.name = 'bloom';
+  g.add(bloom);
+  if (shape === 'strawberry') {
+    const berry = new THREE.Mesh(new THREE.SphereGeometry(0.17, 16, 12), toonMaterial({ color }));
+    berry.scale.set(1, 1.15, 1);
+    const tip = new THREE.Mesh(new THREE.ConeGeometry(0.15, 0.18, 16), toonMaterial({ color }));
+    tip.rotation.x = Math.PI;
+    tip.position.y = -0.14;
+    const seedMat = toonMaterial({ color: 0xfff3b0 });
+    for (let i = 0; i < 10; i++) {
+      const a = i * 2.4;
+      const y = -0.08 + (i % 4) * 0.06;
+      const seed = new THREE.Mesh(new THREE.SphereGeometry(0.014, 6, 4), seedMat);
+      seed.position.set(Math.cos(a) * 0.16, y, Math.sin(a) * 0.16);
+      seed.userData.noOutline = true;
+      bloom.add(seed);
+    }
+    const leafMat = toonMaterial({ color: 0x7fc47a });
+    for (let i = 0; i < 5; i++) {
+      const leaf = new THREE.Mesh(new THREE.ConeGeometry(0.05, 0.14, 6), leafMat);
+      const a = (i / 5) * Math.PI * 2;
+      leaf.position.set(Math.cos(a) * 0.07, 0.17, Math.sin(a) * 0.07);
+      leaf.rotation.set(Math.sin(a) * 1.2, 0, -Math.cos(a) * 1.2);
+      bloom.add(leaf);
+    }
+    bloom.add(berry, tip);
+    bloom.position.y = 0.32;
+  } else if (shape === 'blueberry') {
+    const mat = toonMaterial({ color });
+    for (const [x, y, z] of [[-0.09, 0, 0.02], [0.09, 0, -0.02], [0, 0.13, 0]]) {
+      const b = new THREE.Mesh(new THREE.SphereGeometry(0.1, 14, 10), mat);
+      b.position.set(x, y, z);
+      bloom.add(b);
+    }
+    const leaf = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 6), toonMaterial({ color: 0x7fc47a }));
+    leaf.scale.set(1.6, 0.3, 0.8);
+    leaf.position.set(0.05, 0.24, 0);
+    bloom.add(leaf);
+    bloom.position.y = 0.2;
+  } else {
+    // 화분: 테라코타 몸통 + 흙 + 작은 새싹. 처음엔 옆으로 넘어져 있다
+    const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.15, 0.32, 18), toonMaterial({ color }));
+    const rim = new THREE.Mesh(new THREE.TorusGeometry(0.2, 0.035, 8, 18), toonMaterial({ color }));
+    rim.rotation.x = Math.PI / 2;
+    rim.position.y = 0.16;
+    const soil = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.03, 18), toonMaterial({ color: 0x8a5a3c }));
+    soil.position.y = 0.14;
+    const sprout = new THREE.Mesh(new THREE.SphereGeometry(0.12, 12, 8), toonMaterial({ color: 0x86d98f }));
+    sprout.position.y = 0.26;
+    sprout.scale.y = 0.8;
+    const body = new THREE.Group();
+    body.add(pot, rim, soil, sprout);
+    body.position.y = 0.22;
+    body.scale.setScalar(1.4); // 아이 눈에 잘 띄게 크게
+    bloom.add(body);
+    bloom.userData.noSpin = true;
+    bloom.rotation.z = Math.PI / 2; // 넘어짐
+    bloom.position.y = 0.28;
+  }
+  const glow = new THREE.Mesh(
+    new THREE.RingGeometry(0.3, 0.42, 28),
+    new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.6, depthWrite: false }),
+  );
+  glow.rotation.x = -Math.PI / 2;
+  glow.position.y = 0.02;
+  glow.name = 'glow';
+  g.add(glow);
+  g.traverse((m) => {
+    if (m !== glow) m.castShadow = true;
+  });
+  return g;
+}

@@ -26,8 +26,8 @@
     { "id": "bench-right", "shape": "box", "x": 8.5, "z": 1, "w": 0.8, "d": 2.2, "h": 0.5, "color": "#e8bf98" }
   ],
   "npcs": [
-    { "id": "flora", "character": "flora", "x": -3, "z": 6, "facing": 0.8, "dialogue": "flora-hello" },
-    { "id": "tori", "character": "tori", "x": 5.5, "z": 6.5, "facing": -0.8, "quest": "tori-red-flowers" }
+    { "id": "flora", "character": "flora", "x": -3, "z": 6, "facing": 0.8, "wander": 3, "dialogue": "flora-hello" },
+    { "id": "tori", "character": "tori", "x": 5.5, "z": 6.5, "facing": -0.8, "wander": 2.5 }
   ],
   "doors": [
     { "id": "castle-door", "x": 0, "z": -6.5, "w": 1.6, "h": 2.4, "target": "bedroom" }

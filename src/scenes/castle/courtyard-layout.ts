@@ -55,6 +55,8 @@ export interface NpcPlacement {
   z: number;
   /** 처음 바라보는 방향(라디안) */
   facing: number;
+  /** 집(x, z) 둘레 이 반지름(m) 안을 돌아다닌다. 없거나 0이면 제자리 */
+  wander?: number;
   /** 그냥 말을 걸면 나오는 대사 (dialogues.json) */
   dialogue?: string;
   /** 이 친구가 주는 부탁 (quests.json) — 있으면 부탁 진행에 맞는 대사가 나옴 */
@@ -99,6 +101,7 @@ export function buildNavGrid(layout: CourtyardLayout, agentRadius = AGENT_RADIUS
     if (o.shape === 'box' || o.shape === 'house') grid.blockRect(o.x, o.z, o.w, o.d, agentRadius);
     else grid.blockCircle(o.x, o.z, o.r, agentRadius);
   }
-  for (const n of layout.npcs) grid.blockCircle(n.x, n.z, NPC_RADIUS, agentRadius);
+  // 제자리 친구만 막는다 (돌아다니는 친구는 길을 막지 않음 — 공주가 다가가면 멈춘다)
+  for (const n of layout.npcs) if (!n.wander) grid.blockCircle(n.x, n.z, NPC_RADIUS, agentRadius);
   return grid;
 }

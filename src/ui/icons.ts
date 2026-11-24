@@ -106,5 +106,38 @@ export function slotIcon(slot: string): string {
 
 export function itemIcon(item: { kind: string; color: string; slot?: string; shape?: string }): string {
   if (item.kind === 'outfit' && item.slot) return outfitIcon(item.slot, item.shape ?? '', item.color);
+  if (item.kind === 'pickup') {
+    if (item.shape === 'strawberry') return strawberryIcon(item.color);
+    if (item.shape === 'blueberry') return blueberryIcon(item.color);
+    if (item.shape === 'pot') return potIcon(item.color);
+  }
+  if (item.kind === 'letter') return letterIcon(item.color);
+  if (item.kind === 'furniture') return giftIcon(item.color);
   return flowerIcon(item.color);
+}
+
+export function strawberryIcon(color: string): string {
+  return svg(`<path d="M32 58C18 48 10 34 14 24c3-7 11-9 18-6 7-3 15-1 18 6 4 10-4 24-18 34z" fill="${color}" ${OUTLINE}/>
+    <path d="M20 14l12 6 12-6-4 10H24z" fill="#7fc47a"/>
+    <g fill="#fff3b0"><circle cx="24" cy="30" r="2"/><circle cx="36" cy="28" r="2"/><circle cx="30" cy="38" r="2"/><circle cx="40" cy="38" r="2"/><circle cx="24" cy="42" r="2"/><circle cx="32" cy="48" r="2"/></g>`);
+}
+
+export function blueberryIcon(color: string): string {
+  return svg(`<circle cx="22" cy="40" r="13" fill="${color}" ${OUTLINE}/><circle cx="42" cy="40" r="13" fill="${color}" ${OUTLINE}/>
+    <circle cx="32" cy="24" r="13" fill="${color}" ${OUTLINE}/><path d="M36 8q10 0 12 8-10 2-12-8z" fill="#7fc47a"/>`);
+}
+
+export function potIcon(color: string): string {
+  return svg(`<path d="M16 30h32l-5 26H21z" fill="${color}" ${OUTLINE}/><rect x="12" y="24" width="40" height="9" rx="4" fill="${color}" ${OUTLINE}/>
+    <circle cx="32" cy="15" r="9" fill="#86d98f"/><path d="M32 24V14" stroke="#7fc47a" stroke-width="3"/>`);
+}
+
+export function letterIcon(color: string): string {
+  return svg(`<rect x="8" y="16" width="48" height="34" rx="5" fill="#fffaf3" ${OUTLINE}/><path d="M10 19l22 17 22-17" fill="none" stroke="${color}" stroke-width="4" stroke-linejoin="round"/>
+    <path d="M32 44c-6-4-9-7-9-10a4 4 0 0 1 9-2 4 4 0 0 1 9 2c0 3-3 6-9 10z" fill="#ff8fc4"/>`);
+}
+
+export function giftIcon(color: string): string {
+  return svg(`<rect x="10" y="26" width="44" height="30" rx="4" fill="${color}" ${OUTLINE}/><rect x="8" y="18" width="48" height="12" rx="4" fill="${color}" ${OUTLINE}/>
+    <rect x="28" y="18" width="8" height="38" fill="#fff"/><path d="M32 18c-8-10-18-6-12 0zM32 18c8-10 18-6 12 0z" fill="#ff8fc4" ${OUTLINE}/>`);
 }

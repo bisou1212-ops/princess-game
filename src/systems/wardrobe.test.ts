@@ -14,6 +14,7 @@ import {
 import { GameState, SAVE_KEY } from './game-state';
 import { MemoryStore } from '../core/storage';
 import { allQuestDefs } from './quests';
+import { getFurniture } from './decor';
 
 describe('옷 입기·색 바꾸기', () => {
   it('옷을 바꾸면 그 옷의 기본 색, 같은 옷을 다시 누르면 색 유지', () => {
@@ -79,9 +80,9 @@ describe('옷 데이터 (wardrobe.json, items.json)', () => {
     }
   });
 
-  it('부탁 선물로 주는 옷은 옷 데이터에 있다', () => {
+  it('부탁 선물은 옷이나 가구 데이터에 있다', () => {
     for (const q of Object.values(allQuestDefs())) {
-      for (const id of q.rewards.items) expect(getOutfitItem(id), id).not.toBeNull();
+      for (const id of q.rewards.items) expect(getOutfitItem(id) !== null || getFurniture(id) !== null, id).toBe(true);
     }
   });
 });

@@ -1,6 +1,7 @@
 import type { Speaker } from '../../core/tts';
 import { getCharacter, getDialogue } from '../../systems/dialogue';
 import type { GameState } from '../../systems/game-state';
+import { goalCount } from '../../systems/quests';
 import { countingWord, getItem } from '../../systems/items';
 import type { DialogueBox } from '../../ui/dialogue-box';
 import type { Hud } from '../../ui/hud';
@@ -53,7 +54,8 @@ export class CourtyardController {
   private spawnHere(questId: string): void {
     if (!this.scene || this.quests.def(questId).location !== this.deps.layout.id) return;
     for (const s of this.quests.remainingSpawns(questId)) {
-      this.scene.addPickup(pickupId(questId, s.index), s.item, getItem(s.item).color, s);
+      const it = getItem(s.item);
+      this.scene.addPickup(pickupId(questId, s.index), s.item, it.color, s, it.shape ?? 'flower');
     }
   }
 
@@ -67,29 +69,31 @@ export class CourtyardController {
     const npc = this.deps.layout.npcs.find((n) => n.id === npcId);
     if (!npc) return;
 
-    if (!npc.quest) {
+    // 이 친구의 부탁(또는 이 친구에게 전할 물건)이 있으면 그것, 없으면 그냥 인사
+    const result = this.quests.talkToCharacter(npc.character);
+    if (!result) {
       if (npc.dialogue) this.deps.dialogue.open(getDialogue(npc.dialogue));
       return;
     }
-
-    const questId = npc.quest;
-    const result = this.quests.talk(questId);
+    const questId = result.questId;
     this.refreshMarkers();
+    const gotReward = result.event === 'completed' || result.event === 'delivered';
     // 선물은 바로 지갑에 넣고 저장 (대화 도중 앱을 꺼도 선물을 잃지 않게). 보여 주는 건 대화 뒤에
-    if (result.event === 'completed') this.deps.state.wallet.grant(result.rewards);
-    if (result.event === 'offered' || result.event === 'completed') this.deps.state.change();
+    if (gotReward) this.deps.state.wallet.grant(result.rewards);
+    if (result.event === 'offered' || gotReward) this.deps.state.change();
 
     switch (result.event) {
       case 'offered':
         this.deps.dialogue.open(getDialogue(result.dialogue), () => {
-          // 대화가 끝나면 꽃이 톡톡 나타난다
+          // 대화가 끝나면 물건이 톡톡 나타난다 (배달 부탁은 물건을 들고 출발)
           this.spawnHere(questId);
           this.refreshHud();
         });
         break;
       case 'completed':
+      case 'delivered':
         this.deps.dialogue.open(getDialogue(result.dialogue), () => {
-          // 남은 꽃(오답 포함)은 정리
+          // 남은 물건(오답 포함)은 정리. 세워 둔 화분은 그대로
           this.quests.def(questId).spawns.forEach((_, i) => this.scene?.removePickup(pickupId(questId, i)));
           this.refreshHud();
           this.deps.hud.setCandy(this.deps.state.wallet.candy, true);
@@ -105,9 +109,11 @@ export class CourtyardController {
     const where = parsePickupId(id);
     const collected = this.quests.collect(itemId, where?.index);
     if (collected) {
-      this.scene?.removePickup(id);
+      // 넘어진 화분은 그 자리에 세우고, 나머지는 쏙 줍기
+      if (getItem(itemId).onCollect === 'stand') this.scene?.standPickup(id);
+      else this.scene?.removePickup(id);
       this.deps.state.change();
-      this.deps.hud.setTracker(getItem(itemId).color, collected.count, collected.target, true);
+      this.deps.hud.setTracker(itemId, collected.count, collected.target, true);
       // 수 세기: "하나!" "둘!" "셋!" (GDD 6)
       const voice = getCharacter('princess').voice;
       this.deps.speaker.speak(`${countingWord(collected.count)}!`, {
@@ -119,10 +125,12 @@ export class CourtyardController {
       if (collected.nowReady) {
         this.refreshMarkers();
         // "셋!"을 다 듣고 나서 친구가 "다 모았구나!" (다른 대화가 열려 있으면 생략)
-        const def = this.quests.def(collected.questId);
-        window.setTimeout(() => {
-          if (!this.deps.dialogue.isOpen) this.deps.dialogue.open(getDialogue(def.dialogue.ready));
-        }, 900);
+        const ready = this.quests.def(collected.questId).dialogue.ready;
+        if (ready) {
+          window.setTimeout(() => {
+            if (!this.deps.dialogue.isOpen) this.deps.dialogue.open(getDialogue(ready));
+          }, 900);
+        }
       }
       return;
     }
@@ -132,19 +140,23 @@ export class CourtyardController {
     if (hint) this.deps.dialogue.open(getDialogue(hint));
   }
 
+  /** ♥: 부탁이 없는 친구는 늘(인사), 부탁이 있는 친구는 받을 차례·가져다줄 때·배달받을 때만 */
   private refreshMarkers(): void {
     for (const npc of this.deps.layout.npcs) {
-      const on = npc.quest ? this.quests.wantsAttention(npc.quest) : true;
+      const hasQuests = this.quests.questsOf(npc.character).length > 0;
+      const on = this.quests.characterWantsAttention(npc.character) || (!hasQuests && !!npc.dialogue);
       this.scene?.setNpcAttention(npc.id, on);
     }
   }
 
+  /** 다른 장소에서 부탁이 바뀌었을 수 있으니 돌아올 때마다 ♥와 진행 표시를 다시 맞춘다 */
   refreshHud(): void {
     const { hud, state } = this.deps;
+    this.refreshMarkers();
     hud.setCandy(state.wallet.candy);
     hud.setWardrobeNew(state.newOutfits.length > 0);
     const cur = this.quests.current();
-    if (cur) hud.setTracker(getItem(cur.def.goal.item).color, cur.progress.count, cur.def.goal.count);
+    if (cur) hud.setTracker(cur.def.goal.item, cur.progress.count, goalCount(cur.def));
     else hud.setTracker('', 0, 0);
   }
 }

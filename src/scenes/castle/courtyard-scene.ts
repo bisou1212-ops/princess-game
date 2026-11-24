@@ -5,6 +5,7 @@ import { addOutline, toonMaterial } from '../../core/toon';
 import { FollowCamera } from '../../core/follow-camera';
 import { TapMarker } from '../../core/tap-marker';
 import { Walker } from '../../systems/navigation/walker';
+import { pickWanderTarget } from '../../systems/navigation/wander';
 import type { Point } from '../../systems/navigation/nav-grid';
 import { getCharacter } from '../../systems/dialogue';
 import { defaultOutfit, type Outfit } from '../../systems/wardrobe';
@@ -19,7 +20,7 @@ import { createPrincessModel } from './princess-model';
 import {
   COLORS,
   createCharacterMesh,
-  createFlowerMesh,
+  createPickupMesh,
   createHeartTexture,
   createHitArea,
   createFlowerPatch,
@@ -39,7 +40,9 @@ export interface CourtyardScene {
   /** 화면 좌표(NDC, -1~1)를 톡했을 때 */
   tap(ndc: THREE.Vector2): void;
   /** 마당에 주울 물건을 놓는다 */
-  addPickup(id: string, item: string, color: string, at: Point): void;
+  addPickup(id: string, item: string, color: string, at: Point, shape?: string): void;
+  /** 넘어진 물건(화분)을 바로 세운다. 그 자리에 남고 더는 톡 대상이 아니다 */
+  standPickup(id: string): void;
   /** 주운 물건을 없앤다 (쏙 작아지며 사라짐) */
   removePickup(id: string): void;
   /** 친구 머리 위 ♥ 표시 켜기/끄기 */
@@ -73,7 +76,19 @@ interface Npc {
   data: NpcPlacement;
   object: THREE.Group;
   heart: THREE.Sprite;
+  /** 친구도 공주처럼 걷는다 (돌아다니기) */
+  walker: Walker;
+  /** 다음 산책까지 쉬는 시간(초) */
+  idle: number;
+  /** 말을 건 뒤 잠깐 가만히 있는 시간(초) */
+  hold: number;
+  walkTime: number;
 }
+
+/** 공주가 이만큼 가까이 오면 친구가 멈춰서 공주를 본다 */
+const NPC_NOTICE = 2.2;
+/** 돌아다니는 친구에게 다가갈 때 이만큼 가까워지면 말을 건다 */
+const NPC_REACH = 1.3;
 
 interface Pickup {
   id: string;
@@ -83,6 +98,8 @@ interface Pickup {
   phase: number;
   /** 사라지는 중이면 0→1 */
   vanish: number | null;
+  /** 세워지는 중이면 0→1 */
+  stand: number | null;
 }
 
 type Target = { kind: 'npc'; npc: Npc } | { kind: 'pickup'; pickup: Pickup } | { kind: 'door'; door: DoorPlacement };
@@ -134,6 +151,8 @@ export function createCourtyardScene(aspect: number, opts: CourtyardOptions = {}
     const object = hasFriendGlb(data.character) ? createFriendFromGlb(data.character) : createCharacterMesh(getCharacter(data.character));
     object.position.set(data.x, 0, data.z);
     object.rotation.y = data.facing;
+    const npcWalker = new Walker({ x: data.x, z: data.z }, 1.1, 6);
+    npcWalker.heading = data.facing;
     object.userData.npcId = data.id;
     object.add(createHitArea(0.7, 2.6));
     // ♥ 표시: 말을 걸 수 있는 친구 (GDD 4)
@@ -143,7 +162,7 @@ export function createCourtyardScene(aspect: number, opts: CourtyardOptions = {}
     object.add(heart);
     scene.add(object);
     tappables.push(object);
-    return { data, object, heart };
+    return { data, object, heart, walker: npcWalker, idle: 1 + Math.random() * 3, hold: 0, walkTime: 0 };
   });
 
   /** 매 프레임 깜빡이게 할 반짝이들 */
@@ -240,7 +259,7 @@ export function createCourtyardScene(aspect: number, opts: CourtyardOptions = {}
 
   const targetPos = (t: Target): Point =>
     t.kind === 'npc'
-      ? { x: t.npc.data.x, z: t.npc.data.z }
+      ? { x: t.npc.walker.x, z: t.npc.walker.z }
       : t.kind === 'door'
         ? { x: t.door.x, z: t.door.z + 0.6 }
         : { x: t.pickup.object.position.x, z: t.pickup.object.position.z };
@@ -251,13 +270,42 @@ export function createCourtyardScene(aspect: number, opts: CourtyardOptions = {}
     const p = targetPos(t);
     walker.faceTowards(p.x, p.z);
     if (t.kind === 'npc') {
-      t.npc.object.rotation.y = Math.atan2(walker.x - p.x, walker.z - p.z);
+      t.npc.walker.stop();
+      t.npc.walker.faceTowards(walker.x, walker.z);
+      t.npc.hold = 3;
       opts.onInteract?.({ kind: 'npc', npc: t.npc.data });
     } else if (t.kind === 'door') {
       walker.faceTowards(t.door.x, t.door.z - 1);
       opts.onInteract?.({ kind: 'door', door: t.door });
     } else {
       opts.onInteract?.({ kind: 'pickup', id: t.pickup.id, item: t.pickup.item });
+    }
+  };
+
+  /** 친구들 돌아다니기: 쉬기 ↔ 집 둘레 산책. 공주가 오거나(가까이·다가오는 중) 말하는 동안엔 멈춰서 공주를 본다 */
+  const updateNpcs = (dt: number) => {
+    for (const n of npcs) {
+      const radius = n.data.wander ?? 0;
+      const near = Math.hypot(walker.x - n.walker.x, walker.z - n.walker.z) < NPC_NOTICE;
+      const targeted = pending?.kind === 'npc' && pending.npc === n;
+      n.hold = Math.max(0, n.hold - dt);
+      if (near || targeted || n.hold > 0 || mirror) {
+        if (n.walker.moving) n.walker.stop();
+        if (near || targeted) n.walker.faceTowards(walker.x, walker.z);
+      } else if (radius > 0 && !n.walker.moving) {
+        n.idle -= dt;
+        if (n.idle <= 0) {
+          n.idle = 2 + Math.random() * 3;
+          const to = pickWanderTarget(grid, n.data, radius, n.walker, Math.random, walker);
+          const path = to && grid.findPath(n.walker, to);
+          if (path && path.length) n.walker.setPath(path);
+        }
+      }
+      n.walker.update(dt);
+      n.walkTime = n.walker.moving ? n.walkTime + dt : 0;
+      const bob = n.walker.moving ? Math.abs(Math.sin(n.walkTime * 9)) * 0.06 : 0;
+      n.object.position.set(n.walker.x, bob, n.walker.z);
+      n.object.rotation.y = n.walker.heading;
     }
   };
 
@@ -294,8 +342,8 @@ export function createCourtyardScene(aspect: number, opts: CourtyardOptions = {}
       }
     },
 
-    addPickup(id, item, color, at) {
-      const object = createFlowerMesh(color);
+    addPickup(id, item, color, at, shape = 'flower') {
+      const object = createPickupMesh(shape, color);
       object.position.set(at.x, 0, at.z);
       object.userData.pickupId = id;
       const hit = createHitArea(0.6, 1.2);
@@ -306,7 +354,13 @@ export function createCourtyardScene(aspect: number, opts: CourtyardOptions = {}
       object.userData.sparkles = twinkle;
       object.scale.setScalar(0.01); // 톡 나타나는 연출
       scene.add(object);
-      pickups.set(id, { id, item, object, hit, phase: Math.random() * Math.PI * 2, vanish: null });
+      pickups.set(id, { id, item, object, hit, phase: Math.random() * Math.PI * 2, vanish: null, stand: null });
+    },
+
+    standPickup(id) {
+      const p = pickups.get(id);
+      if (p && p.vanish === null && p.stand === null) p.stand = 0;
+      if (pending?.kind === 'pickup' && pending.pickup.id === id) pending = null;
     },
 
     removePickup(id) {
@@ -348,7 +402,12 @@ export function createCourtyardScene(aspect: number, opts: CourtyardOptions = {}
     update(dt) {
       elapsed += dt;
       walker.update(dt);
+      // 돌아다니는 친구에게 가는 중: 충분히 가까워지면 바로 말 걸기 (친구 자리까지 파고들지 않게)
+      if (pending?.kind === 'npc' && Math.hypot(walker.x - pending.npc.walker.x, walker.z - pending.npc.walker.z) <= NPC_REACH) {
+        arrive(pending);
+      }
       if (pending && !walker.moving) arrive(pending);
+      updateNpcs(dt);
       for (const n of npcs) n.heart.position.y = HEART_Y + Math.sin(elapsed * 3) * 0.08;
       for (const g of doorGlows) g.material.opacity = 0.25 + 0.2 * Math.sin(elapsed * 3);
       for (const s of sparkles) s.update(dt);
@@ -356,7 +415,23 @@ export function createCourtyardScene(aspect: number, opts: CourtyardOptions = {}
 
       for (const p of pickups.values()) {
         const bloom = p.object.getObjectByName('bloom')!;
-        bloom.rotation.y += dt * 0.8;
+        if (!bloom.userData.noSpin) bloom.rotation.y += dt * 0.8;
+        if (p.stand !== null) {
+          // 넘어진 화분이 톡 일어선다 → 그 자리에 남고 반짝임·판정은 없앤다
+          p.stand = Math.min(1, p.stand + dt / 0.45);
+          const k = 1 - (1 - p.stand) ** 3;
+          bloom.rotation.z = (Math.PI / 2) * (1 - k);
+          bloom.position.y = 0.28 * (1 - k) + Math.sin(p.stand * Math.PI) * 0.15;
+          if (p.stand >= 1) {
+            p.object.remove(p.hit);
+            const tw = p.object.userData.sparkles as Sparkles | undefined;
+            if (tw) p.object.remove(tw);
+            p.object.getObjectByName('glow')?.removeFromParent();
+            delete p.object.userData.pickupId;
+            pickups.delete(p.id);
+          }
+          continue;
+        }
         const glow = p.object.getObjectByName('glow') as THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial>;
         const pulse = 0.5 + 0.5 * Math.sin(elapsed * 4 + p.phase);
         glow.material.opacity = 0.3 + 0.5 * pulse;

@@ -79,3 +79,47 @@ describe('Walker 이동', () => {
     expect(w.heading).toBeCloseTo(Math.PI / 2, 1);
   });
 });
+
+describe('친구 돌아다니기 목적지', async () => {
+  const { pickWanderTarget } = await import('./wander');
+  let seed = 7;
+  const rand = () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296);
+
+  it('집 둘레 반지름 안의 걸을 수 있는 곳만 고른다', () => {
+    const grid = openGrid();
+    grid.blockCircle(1, 0, 0.8);
+    const home = { x: 0, z: 0 };
+    for (let i = 0; i < 50; i++) {
+      const p = pickWanderTarget(grid, home, 2.5, home, rand)!;
+      expect(p).not.toBeNull();
+      expect(Math.hypot(p.x, p.z)).toBeLessThanOrEqual(2.5 + 1e-9);
+      expect(grid.isWalkableAt(p.x, p.z)).toBe(true);
+    }
+  });
+
+  it('반지름 0이면 제자리, 공주 바로 옆은 피한다', () => {
+    const grid = openGrid();
+    expect(pickWanderTarget(grid, { x: 0, z: 0 }, 0, { x: 0, z: 0 }, rand)).toBeNull();
+    const princess = { x: 0.5, z: 0 };
+    for (let i = 0; i < 50; i++) {
+      const p = pickWanderTarget(grid, { x: 0, z: 0 }, 3, { x: 0, z: 0 }, rand, princess);
+      if (p) expect(Math.hypot(p.x - princess.x, p.z - princess.z)).toBeGreaterThanOrEqual(2);
+    }
+  });
+});
+
+describe('돌아다니는 친구 데이터', async () => {
+  const { LOCATIONS, canTravelTo, loadLocationLayout } = await import('../world');
+  const { buildNavGrid } = await import('../../scenes/castle/courtyard-layout');
+  it('돌아다니는 친구의 집 둘레에 걸을 수 있는 곳이 충분하다', async () => {
+    for (const l of LOCATIONS.filter((x) => canTravelTo(x.id))) {
+      const layout = await loadLocationLayout(l.id);
+      const grid = buildNavGrid(layout);
+      for (const n of layout.npcs.filter((x) => x.wander)) {
+        expect(grid.isWalkableAt(n.x, n.z), `${n.id} 집`).toBe(true);
+        const { pickWanderTarget } = await import('./wander');
+        expect(pickWanderTarget(grid, n, n.wander!, n), `${n.id} 산책 자리`).not.toBeNull();
+      }
+    }
+  });
+});

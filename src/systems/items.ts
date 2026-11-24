@@ -1,7 +1,7 @@
 import itemsJson from '../data/items.json';
 import wordsJson from '../data/words.json';
 
-export type ItemKind = 'flower' | 'outfit' | 'furniture';
+export type ItemKind = 'flower' | 'pickup' | 'letter' | 'outfit' | 'furniture';
 
 export interface Item {
   kind: ItemKind;
@@ -16,6 +16,8 @@ export interface Item {
   d?: number;
   /** 가구 층: object=서로 안 겹침, floor=러그처럼 아래에 깔림 */
   layer?: 'object' | 'floor';
+  /** 줍는 물건: stand면 사라지지 않고 그 자리에 세워진다 (넘어진 화분) */
+  onCollect?: 'stand';
   /** 한글 이름 */
   name: string;
   /** 영어 이름 */

@@ -1,5 +1,5 @@
 {
-  "_comment": "부탁(퀘스트). giver=부탁하는 친구(courtyard.json npcs의 character), location=꽃이 나타나는 장소(world.json id). goal.type=collect: item을 count개 모으기. spawns=부탁을 받으면 마당에 나타나는 물건(정답·오답 섞음). hints=정답이 아닌 물건을 톡했을 때 친구가 해 주는 힌트(실패 없음). dialogue: offer(처음)·progress(모으는 중)·ready(다 모은 순간)·complete(가져다줬을 때)·done(끝난 뒤).",
+  "_comment": "부탁(퀘스트). giver=부탁하는 친구(characters.json id), location=물건이 나타나는 장소(world.json id). 친구마다 이 파일 순서대로 하나씩 (requires=먼저 끝내야 하는 부탁). goal: collect=item을 count개 모으기 / deliver=item을 to 친구에게 전하기. spawns=부탁을 받으면 나타나는 물건(정답·오답 섞음). hints=오답 물건을 톡했을 때 친구의 힌트(실패 없음). dialogue: offer(처음)·progress(하는 중)·ready(다 모은 순간, collect만)·complete(가져다줬을 때 / deliver는 받는 친구의 말)·done(끝난 뒤).",
   "tori-red-flowers": {
     "giver": "tori",
     "location": "castle",
@@ -14,17 +14,93 @@
       { "item": "flower-blue", "x": -9.5, "z": 9 },
       { "item": "flower-blue", "x": 3, "z": -4 }
     ],
-    "hints": {
-      "flower-yellow": "tori-hint-yellow",
-      "flower-blue": "tori-hint-blue"
-    },
-    "dialogue": {
-      "offer": "tori-offer",
-      "progress": "tori-progress",
-      "ready": "tori-ready",
-      "complete": "tori-complete",
-      "done": "tori-done"
-    },
-    "rewards": { "candy": 5, "items": ["dress-flower"] }
+    "hints": { "flower-yellow": "tori-hint-yellow", "flower-blue": "tori-hint-blue" },
+    "dialogue": { "offer": "tori-offer", "progress": "tori-progress", "ready": "tori-ready", "complete": "tori-complete", "done": "tori-done" },
+    "rewards": {
+      "candy": 5,
+      "items": [
+        "dress-flower"
+      ]
+    }
+  },
+  "tori-yellow-flowers": {
+    "giver": "tori",
+    "location": "castle",
+    "requires": "tori-red-flowers",
+    "title": "노란 꽃 네 송이",
+    "goal": { "type": "collect", "item": "flower-yellow", "count": 4 },
+    "spawns": [
+      { "item": "flower-yellow", "x": -7, "z": -1.5 },
+      { "item": "flower-yellow", "x": 7.5, "z": 3.5 },
+      { "item": "flower-yellow", "x": -2.5, "z": 9 },
+      { "item": "flower-yellow", "x": 3.5, "z": -4.5 },
+      { "item": "flower-red", "x": -9.5, "z": 4 },
+      { "item": "flower-blue", "x": 9.5, "z": 9.5 }
+    ],
+    "hints": { "flower-red": "tori-hint-red-for-yellow", "flower-blue": "tori-hint-blue-for-yellow" },
+    "dialogue": { "offer": "tori-yellow-offer", "progress": "tori-yellow-progress", "ready": "tori-yellow-ready", "complete": "tori-yellow-complete", "done": "tori-yellow-done" },
+    "rewards": {
+      "candy": 6,
+      "items": [
+        "plant"
+      ]
+    }
+  },
+  "flora-party-invite": {
+    "giver": "flora",
+    "location": "castle",
+    "title": "파티 초대장 전하기",
+    "goal": { "type": "deliver", "item": "invitation", "to": "gogo" },
+    "spawns": [],
+    "hints": {},
+    "dialogue": { "offer": "flora-invite-offer", "progress": "flora-invite-progress", "complete": "gogo-invite-received", "done": "flora-invite-done" },
+    "rewards": {
+      "candy": 5,
+      "items": [
+        "teddy"
+      ]
+    }
+  },
+  "dochi-strawberries": {
+    "giver": "dochi",
+    "location": "flower-kingdom",
+    "title": "딸기 다섯 개",
+    "goal": { "type": "collect", "item": "strawberry", "count": 5 },
+    "spawns": [
+      { "item": "strawberry", "x": 3.5, "z": -4.5 },
+      { "item": "strawberry", "x": 10, "z": -4 },
+      { "item": "strawberry", "x": 8, "z": 1.5 },
+      { "item": "strawberry", "x": 5.5, "z": 6.5 },
+      { "item": "strawberry", "x": 1.5, "z": 10.5 },
+      { "item": "blueberry", "x": -1.5, "z": -4.5 },
+      { "item": "blueberry", "x": 7, "z": 9 }
+    ],
+    "hints": { "blueberry": "dochi-hint-blueberry" },
+    "dialogue": { "offer": "dochi-berry-offer", "progress": "dochi-berry-progress", "ready": "dochi-berry-ready", "complete": "dochi-berry-complete", "done": "dochi-berry-done" },
+    "rewards": {
+      "candy": 8,
+      "items": [
+        "table"
+      ]
+    }
+  },
+  "gogo-flowerpots": {
+    "giver": "gogo",
+    "location": "flower-kingdom",
+    "title": "넘어진 화분 세 개",
+    "goal": { "type": "collect", "item": "flowerpot", "count": 3 },
+    "spawns": [
+      { "item": "flowerpot", "x": -6, "z": 6.8 },
+      { "item": "flowerpot", "x": -9.5, "z": 8.5 },
+      { "item": "flowerpot", "x": -10.5, "z": 0.5 }
+    ],
+    "hints": {},
+    "dialogue": { "offer": "gogo-pots-offer", "progress": "gogo-pots-progress", "ready": "gogo-pots-ready", "complete": "gogo-pots-complete", "done": "gogo-pots-done" },
+    "rewards": {
+      "candy": 6,
+      "items": [
+        "plant"
+      ]
+    }
   }
 }

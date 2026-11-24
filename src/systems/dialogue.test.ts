@@ -11,6 +11,7 @@ import {
   wordIndexAt,
 } from './dialogue';
 import { courtyardLayout } from '../scenes/castle/courtyard-layout';
+import { allQuestDefs } from './quests';
 
 describe('어절 나누기·강조 위치', () => {
   const text = '안녕! 나는 꽃 왕국의  플로라 공주야.';
@@ -109,7 +110,8 @@ describe('대사·캐릭터 데이터', () => {
     for (const n of courtyardLayout.npcs) {
       expect(characters[n.character], n.id).toBeDefined();
       if (n.dialogue) expect(dialogues[n.dialogue], n.id).toBeDefined();
-      expect(n.dialogue ?? n.quest, `${n.id}: dialogue 또는 quest`).toBeDefined();
+      const gives = Object.values(allQuestDefs()).some((q) => q.giver === n.character);
+      expect(n.dialogue !== undefined || gives, `${n.id}: 인사 대사나 부탁 중 하나는 있어야 함`).toBe(true);
     }
   });
 });

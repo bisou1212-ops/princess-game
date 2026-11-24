@@ -51,6 +51,13 @@ docs/GDD.md        # 기획서
   - [x] 공주 모델: `scripts/blender/build_princess.py`(다시 만들 수 있는 스크립트) → `art-source/princess.blend` → `src/assets/models/princess.glb`(배포 때 해시 붙음, 약 0.5MB). 물체 이름 = 옷 id, 재질 tint·tint_light·tint_wing만 색 변경. 게임은 `princess-glb.ts`로 불러오고 실패하면 도형 공주
   - [x] 친구 모델: `scripts/blender/build_friends.py`(공주 부위 재사용) → `src/assets/models/friends.glb`(물체 이름 = characters.json id: flora·tori·gogo·dochi, 색 고정). 게임은 `friends-glb.ts`, 모델에 없는 친구는 도형으로
   - [ ] 남은 B단계: 펫 모델(펫 기능과 함께), 나무·집·가구는 CC0 에셋(Kenney·Quaternius) + `CREDITS.md`. 모델은 `src/assets/models/`에 (public/assets는 1년 캐시라 갱신 안 됨)
+- [ ] M8 콘텐츠 채우기 (작은 단계로)
+  - [x] M8-1 부탁 늘리기: 친구별 연속 부탁(quests.json 순서·`requires`), 배달 부탁(`goal.type: deliver`, 받는 친구가 선물). 새 부탁: 토리 노란 꽃 4, 플로라 초대장→고고, 도치 딸기 5(블루베리 힌트), 고고 넘어진 화분 3(`onCollect: stand`). 부탁은 `giver`로 찾음(배치의 quest 칸 없음)
+  - [x] 친구 돌아다니기: 배치 npcs의 `wander`(집 둘레 반지름 m, 0·없음=제자리). 쉬기↔산책 반복, 공주가 2.2m 안에 오거나 다가오는 중·말하는 중엔 멈춰서 공주를 봄. 돌아다니는 친구는 길찾기 격자에서 막지 않고 1.3m 안에 오면 말 걸기(`src/systems/navigation/wander.ts`)
+  - [ ] M8-2 삐삐(새 친구) + 감정 고르기 부탁(우는 친구 위로하기)
+  - [ ] M8-3 성 방 2개 추가(드레스룸·파티홀) + 벽지·바닥 색 + 친구 초대 반응
+  - [ ] M8-4 아이템 30개+ (새 가구·옷) + 별사탕 가게
+  - [ ] M8-5 펫 고르기·돌보기 (+ 펫 모델)
 
 ## 나중에 할 일
 - **사람 같은 음성 (보류, 기기 TTS가 로봇 같다는 피드백)**: 대사를 미리 음성 파일로 만들어 넣는다.
