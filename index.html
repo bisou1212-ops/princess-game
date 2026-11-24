@@ -19,6 +19,17 @@
       #app { position: fixed; inset: 0; }
       #app canvas { display: block; width: 100%; height: 100%; }
     </style>
+    <script>
+      // 배포 직후에는 게임 파일(assets/*.js)을 잠깐 못 받을 수 있다(404가 캐시되기도 함).
+      // 그러면 화면이 빈 채로 멈추므로, 한 번만 캐시를 건너뛰고 다시 불러온다.
+      window.addEventListener('error', function (e) {
+        var t = e.target;
+        if (!t || t.tagName !== 'SCRIPT' || sessionStorage.getItem('reloadedForAsset')) return;
+        sessionStorage.setItem('reloadedForAsset', '1');
+        fetch(t.src, { cache: 'reload' }).finally(function () { location.reload(); });
+      }, true);
+      window.addEventListener('load', function () { setTimeout(function () { sessionStorage.removeItem('reloadedForAsset'); }, 5000); });
+    </script>
   </head>
   <body>
     <div id="app"></div>
