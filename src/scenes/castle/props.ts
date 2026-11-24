@@ -92,6 +92,36 @@ export function createObstacleMesh(o: Obstacle, theme?: Theme): THREE.Object3D {
 }
 
 /** 톡하기 쉽게 실제 모양보다 넓은 투명 판정 영역 (7세 손가락 기준) */
+let contactTexture: THREE.CanvasTexture | null = null;
+/**
+ * 발밑의 부드러운 그림자 (그래픽 2차 G1): 실시간 그림자가 흐리거나 꺼진 기기에서도 땅에 서 있는 느낌.
+ * 동그란 그러데이션 판 하나라 아주 가볍다.
+ */
+export function createContactShadow(radius: number): THREE.Mesh {
+  if (!contactTexture) {
+    const c = document.createElement('canvas');
+    c.width = c.height = 64;
+    const ctx = c.getContext('2d')!;
+    const g = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+    g.addColorStop(0, 'rgba(70,45,90,0.55)');
+    g.addColorStop(0.55, 'rgba(70,45,90,0.28)');
+    g.addColorStop(1, 'rgba(70,45,90,0)');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, 64, 64);
+    contactTexture = new THREE.CanvasTexture(c);
+  }
+  const m = new THREE.Mesh(
+    new THREE.PlaneGeometry(radius * 2, radius * 2),
+    new THREE.MeshBasicMaterial({ map: contactTexture, transparent: true, depthWrite: false, fog: false }),
+  );
+  m.rotation.x = -Math.PI / 2;
+  m.position.y = 0.025;
+  m.renderOrder = 1;
+  m.raycast = () => {};
+  m.userData.noOutline = true;
+  return m;
+}
+
 export function createHitArea(radius: number, height: number): THREE.Mesh {
   const hit = new THREE.Mesh(
     new THREE.CylinderGeometry(radius, radius, height, 12),

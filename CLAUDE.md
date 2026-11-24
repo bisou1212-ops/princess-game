@@ -72,6 +72,10 @@ docs/GDD.md        # 기획서
   - [x] M9-3 사운드: 음원 파일 없이 Web Audio 로 직접 만듦(`src/core/sound.ts`, 용량 0). 효과음 `sfx('tap'|'pop'|'sparkle'|'count'|'reward'|'coin'|'whoosh'|'happy'|'nom'|'bubble'|'page'|'dress')` — 밝은 소리만, 셀 때 한 음씩 올라감. 배경 음악: 오르골 소리로 장소마다(성·꽃 왕국·방·가게·자장가) 화음 진행 위 멜로디를 계속 지어 연주(`musicStep`), 대사 읽는 동안 작게. 첫 터치에 켜짐, 화면 내리면 멈춤. 부모 설정에서 효과음·음악 끄기. 나중에 CC0 음원으로 바꿔도 됨
   - [x] M9-4 실기기 테스트 마감: 태블릿 크기 화면 점검(문제 없음), 그림 길게 누르기 메뉴·당겨서 새로고침 막음, 체크리스트 `docs/TABLET-TEST.md`. 실기기 결과 반영: 사람 같은 자연스러운 음성(Natural·Online·Google)을 먼저 고름(`pickVoiceFrom` 점수), 고고는 남자 목소리(`characters.json` voice.gender), 온라인 음성이 실패하면 기기 음성으로, 자연스러운 음성은 높낮이 변화를 절반만. 아이 반응: 부탁 해결을 즐거워함, 그래픽이 아쉬움
 
+- [ ] 그래픽 2차 (`docs/GRAPHICS-V2.md`, 무료 방법)
+  - [x] G1 색감·빛: 셰이더 표면 무늬(`surface-patterns.ts`, 배경 재질 이름으로), 따뜻한 햇빛·약한 하늘빛, 색 보정(CustomToneMapping), 땅·잎 색 진하게(TINT), 발밑 그림자(`createContactShadow`), 풀 덤불(`grass-tufts.ts`), 화면 가장자리 어둡게, 불러오기 별
+  - [ ] G2 표정·연출 / G3 배경 에셋(CC0) / G4 캐릭터 다듬기
+
 ## 나중에 할 일
 - **사람 같은 음성 (보류, 기기 TTS가 로봇 같다는 피드백)**: 대사를 미리 음성 파일로 만들어 넣는다.
   `npm run voices` 스크립트가 `dialogues.json`을 읽어 `public/assets/voice/`에 mp3 + 단어 타이밍을 생성(바뀐 줄만).

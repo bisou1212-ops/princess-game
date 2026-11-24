@@ -60,7 +60,7 @@ export function createLook(renderer: THREE.WebGLRenderer, container: HTMLElement
   return {
     prepare(scene) {
       scene.environment = env;
-      scene.environmentIntensity = 0.6;
+      scene.environmentIntensity = 0.5;
       // 툰용으로 세게 맞춰 둔 조명을 물리 재질에 맞게 줄인다 (안 그러면 하얗게 날아감)
       scene.traverse((o) => {
         if ((o as THREE.HemisphereLight).isHemisphereLight) (o as THREE.Light).intensity *= 0.35;

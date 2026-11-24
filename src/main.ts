@@ -131,6 +131,8 @@ async function start() {
     return t;
   }
   let town = await getTown(START_LOCATION);
+  // 첫 장소가 준비되면 불러오기 별을 치운다 (한 프레임 그린 뒤)
+  requestAnimationFrame(() => document.getElementById('boot')?.remove());
 
   // ── 성 안 방 (처음 들어갈 때 만든다) ──
   let thumbs: Map<string, string> | null = null;
@@ -530,7 +532,7 @@ async function start() {
   // 개발 중 브라우저 콘솔에서 상태 확인용 (배포 빌드에는 없음)
   if (import.meta.env.DEV) {
     Object.assign(window, {
-      __game: { state, goTo, travelTo, town: () => town, room: () => room, mode: () => mode, towns, petPanel, playTimer, startBedtime, warnBedtime, sound },
+      __game: { state, goTo, travelTo, town: () => town, room: () => room, mode: () => mode, towns, petPanel, playTimer, startBedtime, warnBedtime, sound, renderer },
     });
   }
 

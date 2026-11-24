@@ -3,6 +3,8 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import castleEnvUrl from '../../assets/models/env-castle.glb?url';
 import flowerEnvUrl from '../../assets/models/env-flower-kingdom.glb?url';
 import { toonMaterial, type SurfaceRole } from '../../core/toon';
+import { PATTERN_BY_MATERIAL, addSurfacePattern } from '../../core/surface-patterns';
+import { createGrassTufts } from './grass-tufts';
 
 /**
  * Blender로 만든 장소 배경 (scripts/blender/build_castle_env.py → env-*.glb).
@@ -53,6 +55,20 @@ const AO_STRENGTH: Record<string, number> = {
 };
 const AO_DEFAULT = 0.6;
 
+/**
+ * 색 다듬기 (그래픽 2차 G1): 너무 하얗게 바랜 파스텔을 조금 진하게. [채도 더하기, 밝기 더하기] (HSL)
+ * 땅·잎이 또렷해지면 공주·친구가 더 잘 보인다.
+ */
+const TINT: Record<string, [number, number]> = {
+  grass: [0.16, -0.08],
+  meadow: [0.18, -0.09],
+  yard: [0.04, -0.04],
+  hedge: [0.12, -0.05],
+  leaf: [0.1, -0.04],
+  leaf2: [0.1, -0.04],
+  path: [0.05, -0.03],
+};
+
 export function createEnv(id: string | undefined): EnvInstance | null {
   const t = id ? templates.get(id) : undefined;
   if (!t) return null;
@@ -60,6 +76,9 @@ export function createEnv(id: string | undefined): EnvInstance | null {
   const scene = t.clone(true);
   root.add(scene);
   const surfaces: THREE.Object3D[] = [];
+  const grassMeshes: THREE.Mesh[] = [];
+  const avoid: THREE.Mesh[] = [];
+  let grassColor = new THREE.Color(0x9fd88f);
   let water: THREE.ShaderMaterial | THREE.MeshPhysicalMaterial | null = null;
   const waterTime = { value: 0 };
 
@@ -87,13 +106,27 @@ export function createEnv(id: string | undefined): EnvInstance | null {
       mesh.renderOrder = 1;
       return;
     }
-    const mat = toonMaterial({ color: src.color.clone(), vertexColors: !!ao }, ROLE[name] ?? 'plain');
+    if (name === 'grass' || name === 'meadow') {
+      grassMeshes.push(mesh);
+      grassColor = src.color.clone();
+    } else if (name === 'path' || name === 'soil' || name === 'yard') avoid.push(mesh);
+    const color = src.color.clone(); // 원본(템플릿)은 그대로 두고 복사본만 다듬음
+    const tint = TINT[name];
+    if (tint) color.offsetHSL(0, tint[0], tint[1]);
+    const mat = toonMaterial({ color, vertexColors: !!ao }, ROLE[name] ?? 'plain');
     if (SWAY[name]) addWindSway(mat, waterTime, SWAY[name]);
+    // 돌바닥·풀·벽돌·기와·나뭇결 무늬 (그래픽 2차 G1)
+    const pattern = PATTERN_BY_MATERIAL[name];
+    if (pattern) addSurfacePattern(mat, pattern);
     mesh.material = mat;
     mesh.castShadow = !FLAT.has(name);
     mesh.receiveShadow = true;
     surfaces.push(mesh);
   });
+
+  // 풀밭 위 풀 덤불 (바람에 살랑)
+  const tufts = createGrassTufts({ meshes: grassMeshes, avoid, color: grassColor }, waterTime);
+  if (tufts) root.add(tufts);
 
   return {
     root,

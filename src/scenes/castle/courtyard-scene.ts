@@ -31,6 +31,7 @@ import {
   createPickupMesh,
   createHeartTexture,
   createHitArea,
+  createContactShadow,
   createFlowerPatch,
   createObstacleMesh,
 } from './props';
@@ -170,7 +171,7 @@ export function createCourtyardScene(aspect: number, opts: CourtyardOptions = {}
   const scene = new THREE.Scene();
   const theme = layout.theme;
   scene.background = skyGradient(theme.sky);
-  scene.fog = new THREE.Fog(HORIZON, 30, 70);
+  scene.fog = new THREE.Fog(HORIZON, 34, 85);
 
   const camera = new THREE.PerspectiveCamera(45, aspect, 0.1, 120);
 
@@ -211,7 +212,12 @@ export function createCourtyardScene(aspect: number, opts: CourtyardOptions = {}
       tappables.push(mesh);
     }
   }
-  for (const patch of layout.flowerPatches ?? []) scene.add(createFlowerPatch(patch));
+  // 작은 꽃밭은 그림자를 드리우지 않음 (그림자 그리기 횟수 절약, 발밑 그림자로 충분)
+  for (const patch of layout.flowerPatches ?? []) {
+    const fp = createFlowerPatch(patch);
+    fp.traverse((o) => (o.castShadow = false));
+    scene.add(fp);
+  }
 
   // 친구들
   const heartTexture = createHeartTexture();
@@ -224,6 +230,7 @@ export function createCourtyardScene(aspect: number, opts: CourtyardOptions = {}
     npcWalker.heading = data.facing;
     object.userData.npcId = data.id;
     object.add(createHitArea(0.7, 2.6));
+    object.add(createContactShadow(0.6));
     // ♥ 표시: 말을 걸 수 있는 친구 (GDD 4)
     const heart = new THREE.Sprite(new THREE.SpriteMaterial({ map: heartTexture, depthWrite: false }));
     heart.scale.setScalar(0.6);
@@ -294,6 +301,7 @@ export function createCourtyardScene(aspect: number, opts: CourtyardOptions = {}
   let lookAtNpc: { walker: Walker } | null = null;
   let lookHold = 0;
   const lookPoint = new THREE.Vector3();
+  princess.add(createContactShadow(0.62));
   scene.add(princess);
   let mirror = false;
   let mirrorSpin = 0;
@@ -560,6 +568,7 @@ export function createCourtyardScene(aspect: number, opts: CourtyardOptions = {}
       object.userData.isPet = true;
       object.scale.setScalar(PET_SCALE);
       object.add(createHitArea(0.5, 1));
+      object.add(createContactShadow(0.42));
       const bubble = new THREE.Sprite(new THREE.SpriteMaterial({ map: petBubbles.hungry, depthWrite: false }));
       bubble.scale.setScalar(0.5);
       bubble.visible = false;
@@ -669,6 +678,7 @@ export function createCourtyardScene(aspect: number, opts: CourtyardOptions = {}
       const twinkle = new Sparkles({ count: 4, radius: 0.45, height: [0.3, 0.9], size: 0.26 });
       object.add(twinkle);
       object.userData.sparkles = twinkle;
+      object.traverse((o) => (o.castShadow = false)); // 작은 물건은 그림자 없이 (그림자 그리기 횟수 절약)
       object.scale.setScalar(0.01); // 톡 나타나는 연출
       scene.add(object);
       pickups.set(id, { id, item, object, hit, phase: Math.random() * Math.PI * 2, vanish: null, stand: null });
@@ -904,9 +914,10 @@ export function createCourtyardScene(aspect: number, opts: CourtyardOptions = {}
 }
 
 function addLights(scene: THREE.Scene, layout: CourtyardLayout): void {
-  scene.add(new THREE.HemisphereLight(0xffffff, 0xd9c8e8, 1.6));
+  // 하늘빛(푸른 위·따뜻한 아래)은 조금 줄이고 햇빛을 따뜻하고 세게 → 그림자와 입체감이 또렷 (그래픽 2차 G1)
+  scene.add(new THREE.HemisphereLight(0xdfe9ff, 0xead2c0, 1.3));
   // 실시간 그림자는 이 방향광 1개만 (CLAUDE.md 성능 원칙)
-  const sun = new THREE.DirectionalLight(0xffffff, 1.4);
+  const sun = new THREE.DirectionalLight(0xfff0da, 2.1);
   sun.position.set(8, 16, 6);
   sun.castShadow = true;
   sun.shadow.mapSize.set(QUALITY_SETTINGS.shadowMap, QUALITY_SETTINGS.shadowMap);
@@ -917,7 +928,7 @@ function addLights(scene: THREE.Scene, layout: CourtyardLayout): void {
   sun.shadow.bias = -0.0005;
   scene.add(sun);
   // 뒤쪽 위에서 비추는 분홍빛 테두리 조명 (말랑한 피규어처럼 윤곽이 반짝)
-  const rim = new THREE.DirectionalLight(0xffc9e8, 0.9);
+  const rim = new THREE.DirectionalLight(0xffc9e8, 0.75);
   rim.position.set(-6, 10, -12);
   scene.add(rim);
 }

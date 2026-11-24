@@ -21,6 +21,14 @@
       img { pointer-events: none; -webkit-user-drag: none; -webkit-touch-callout: none; }
       #app { position: fixed; inset: 0; }
       #app canvas { display: block; width: 100%; height: 100%; }
+      /* 화면 가장자리를 아주 살짝 어둡게 (시선이 가운데 공주로) — CSS 라서 비용 없음 */
+      #app::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse at 50% 55%, transparent 60%, rgba(70, 45, 95, 0.16) 100%); }
+      /* 처음 불러오는 동안: 별 세 개가 통통 (게임이 뜨면 main.ts 가 지움) */
+      #boot { position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center; gap: 18px; background: linear-gradient(#cfeaff, #ffeaf5); font-size: 56px; color: #ffd76a; text-shadow: 0 4px 0 #fff; }
+      #boot span { animation: boot-hop 0.9s ease-in-out infinite; }
+      #boot span:nth-child(2) { animation-delay: 0.15s; }
+      #boot span:nth-child(3) { animation-delay: 0.3s; }
+      @keyframes boot-hop { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-22px); } }
     </style>
     <script>
       // 배포 직후에는 게임 파일(assets/*.js)을 잠깐 못 받을 수 있다(404가 캐시되기도 함).
@@ -36,6 +44,7 @@
   </head>
   <body>
     <div id="app"></div>
+    <div id="boot" aria-label="불러오는 중"><span>★</span><span>★</span><span>★</span></div>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
