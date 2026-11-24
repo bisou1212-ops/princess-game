@@ -52,6 +52,7 @@ export class Speaker {
   installUnlock(target: EventTarget): void {
     if (!this.synth) return;
     const unlock = () => {
+      this.refreshVoices();
       const u = new SpeechSynthesisUtterance(' ');
       u.volume = 0;
       this.synth!.speak(u);
@@ -164,17 +165,44 @@ export class Speaker {
     this.synth.speak(u);
   }
 
-  /** 해당 언어 음성 중 기기에 설치된(오프라인) 것을 우선 */
-  private pickVoice(lang: string): SpeechSynthesisVoice | undefined {
-    const norm = (l: string) => l.replace('_', '-').toLowerCase();
-    const want = norm(lang);
-    const base = want.split('-')[0];
-    const matches = this.voices.filter((v) => norm(v.lang) === want || norm(v.lang).startsWith(base));
-    return matches.find((v) => v.localService) ?? matches[0];
+  /** 기기 음성 목록 다시 받기 (안드로이드는 목록이 늦게 오고 voiceschanged 가 안 올 때도 있다) */
+  private refreshVoices(): void {
+    const list = this.synth?.getVoices() ?? [];
+    if (list.length) this.voices = list;
+  }
+
+  /**
+   * 해당 언어 음성 고르기: 정확히 같은 언어(ko-KR) → 같은 말(ko) 순서, 그 안에서 기기에 설치된 것 우선.
+   * 음성을 직접 정해 주지 않으면 일부 태블릿은 lang 을 무시하고 기본(영어) 음성으로 한국어를 읽는다.
+   */
+  pickVoice(lang: string): SpeechSynthesisVoice | undefined {
+    if (!this.voices.some((v) => sameLang(v.lang, lang))) this.refreshVoices();
+    return pickVoiceFrom(this.voices, lang);
+  }
+
+  /** 점검 화면용: 기기에 있는 음성 */
+  get voiceList(): readonly SpeechSynthesisVoice[] {
+    this.refreshVoices();
+    return this.voices;
   }
 
   private clearTimers(): void {
     this.timers.forEach((t) => clearTimeout(t));
     this.timers = [];
   }
+}
+
+const normLang = (l: string) => l.replace('_', '-').toLowerCase();
+const sameLang = (a: string, b: string) => normLang(a).split('-')[0] === normLang(b).split('-')[0];
+
+/** 음성 목록에서 고르기 (테스트용으로 밖에 둠) */
+export function pickVoiceFrom<V extends { lang: string; localService: boolean }>(voices: readonly V[], lang: string): V | undefined {
+  const want = normLang(lang);
+  const exact = voices.filter((v) => normLang(v.lang) === want);
+  const same = voices.filter((v) => sameLang(v.lang, lang));
+  for (const list of [exact, same]) {
+    const v = list.find((x) => x.localService) ?? list[0];
+    if (v) return v;
+  }
+  return undefined;
 }

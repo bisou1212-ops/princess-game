@@ -5,7 +5,7 @@ import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { STYLE } from './toon';
-import { QUALITY_SETTINGS } from './quality';
+import { perfSettings, savedPerfLevel } from './quality';
 
 /**
  * 화면 전체의 느낌 (부드러운 입체 화풍).
@@ -17,11 +17,13 @@ export interface Look {
   /** 새로 만든 장면에 주변 반사를 깐다 */
   prepare(scene: THREE.Scene): void;
   render(scene: THREE.Scene, camera: THREE.Camera): void;
+  /** 빛번짐 켜고 끄기 (느린 기기 자동 조절). 끄면 후처리 없이 바로 그려 더 가볍다 */
+  setBloom(on: boolean): void;
 }
 
 export function createLook(renderer: THREE.WebGLRenderer, container: HTMLElement): Look {
   if (STYLE !== 'glossy') {
-    return { prepare() {}, render: (s, c) => renderer.render(s, c) };
+    return { prepare() {}, render: (s, c) => renderer.render(s, c), setBloom() {} };
   }
 
   const pmrem = new THREE.PMREMGenerator(renderer);
@@ -33,9 +35,10 @@ export function createLook(renderer: THREE.WebGLRenderer, container: HTMLElement
   // 빛번짐은 화면 절반 해상도로 (태블릿 성능)
   const bloom = new UnrealBloomPass(new THREE.Vector2(container.clientWidth / 2 || 1, container.clientHeight / 2 || 1), 0.35, 0.4, 1.6);
   composer.addPass(renderPass);
-  // ?bloom=0 으로 빛번짐 끄고 비교 (성능 점검용)
-  if (QUALITY_SETTINGS.bloom && new URLSearchParams(location.search).get('bloom') !== '0') composer.addPass(bloom);
+  composer.addPass(bloom);
   composer.addPass(new OutputPass());
+  // ?bloom=0 으로 빛번짐 끄고 비교 (성능 점검용)
+  let bloomOn = perfSettings(savedPerfLevel()).bloom && new URLSearchParams(location.search).get('bloom') !== '0';
 
   // 캔버스 크기·픽셀 비율이 바뀌면 (화면 회전·창 크기) 매 프레임 확인해서 맞춘다
   const size = new THREE.Vector2();
@@ -64,7 +67,15 @@ export function createLook(renderer: THREE.WebGLRenderer, container: HTMLElement
         else if ((o as THREE.DirectionalLight).isDirectionalLight) (o as THREE.Light).intensity *= 0.75;
       });
     },
+    setBloom(on) {
+      bloomOn = on;
+    },
     render(scene, camera) {
+      // 빛번짐이 없으면 후처리 단계(화면 크기 그림 두 장)를 건너뛰고 바로 그린다
+      if (!bloomOn) {
+        renderer.render(scene, camera);
+        return;
+      }
       syncSize();
       renderPass.scene = scene;
       renderPass.camera = camera;

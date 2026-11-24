@@ -11,7 +11,11 @@ export interface GestureHandlers {
   onDragCancel?(): void;
 }
 
-export function attachGestures(el: HTMLElement, h: GestureHandlers, moveThreshold = 12, tapMaxMs = 500): () => void {
+/**
+ * moveThreshold: 이만큼 움직이면 끌기 시작 (px)
+ * tapSlop·tapMaxMs: 아이 손가락은 누르는 동안 조금 미끄러지고 오래 누르기도 하므로 톡은 넉넉하게 봐준다
+ */
+export function attachGestures(el: HTMLElement, h: GestureHandlers, moveThreshold = 12, tapMaxMs = 1200, tapSlop = 28): () => void {
   const active = new Map<number, { x: number; y: number; t: number }>();
   let multi = false;
   let dragging: number | null = null;
@@ -61,7 +65,8 @@ export function attachGestures(el: HTMLElement, h: GestureHandlers, moveThreshol
     }
     if (wasMulti) return;
     const moved = Math.hypot(e.clientX - s.x, e.clientY - s.y);
-    if (moved <= moveThreshold && performance.now() - s.t <= tapMaxMs) h.onTap?.(e.clientX, e.clientY);
+    // 끌기가 시작되지 않았다면 (마당처럼 끌기를 안 쓰는 곳) 조금 미끄러져도 톡. 누른 자리를 톡한 것으로 본다
+    if (moved <= tapSlop && performance.now() - s.t <= tapMaxMs) h.onTap?.(s.x, s.y);
   };
 
   const cancel = (e: PointerEvent) => {

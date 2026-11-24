@@ -1,5 +1,7 @@
 import * as THREE from 'three';
-import { createRenderer, bindResize } from './core/renderer';
+import { createRenderer, bindResize, setMaxPixelRatio } from './core/renderer';
+import { PerfGovernor, perfSettings } from './core/quality';
+import { CheckOverlay } from './ui/check-overlay';
 import { createLook } from './core/look';
 import { registerServiceWorker } from './core/pwa';
 import { attachGestures } from './core/gestures';
@@ -191,6 +193,7 @@ async function start() {
     fade.classList.add('is-on');
     await wait(260);
     await change();
+    perf.grace(2); // 새 장면 준비로 잠깐 느린 건 재지 않음
     applyViewOffset();
     fade.classList.remove('is-on');
     await wait(260);
@@ -437,11 +440,23 @@ async function start() {
     onDragCancel: () => room?.controller.cancelDrag(),
   });
 
+  // 느린 기기면 빛번짐·해상도를 단계별로 낮춘다 (실제 fps 를 재서)
+  const perf = new PerfGovernor((level) => {
+    const p = perfSettings(level);
+    look.setBloom(p.bloom);
+    setMaxPixelRatio(renderer, p.maxPixelRatio);
+  });
+  // ?check=1: 태블릿 점검 화면 (fps·해상도·음성 목록·목소리 시험)
+  const check = new URLSearchParams(location.search).get('check') ? new CheckOverlay(document.body, { renderer, speaker, perf }) : null;
+
   const timer = new THREE.Timer();
   renderer.setAnimationLoop((time) => {
     timer.update(time);
+    const raw = timer.getDelta();
+    perf.tick(raw, document.visibilityState === 'hidden' || switching);
+    check?.update(raw);
     // 탭 전환 후 돌아올 때 큰 점프 방지
-    const dt = Math.min(timer.getDelta(), 0.1);
+    const dt = Math.min(raw, 0.1);
     if (mode === 'room' && room) {
       room.scene.update(dt);
       look.render(room.scene.scene, room.scene.camera);
