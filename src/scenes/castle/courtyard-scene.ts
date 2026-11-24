@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { Sparkles } from '../../core/sparkles';
+import { createFriendFromGlb, hasFriendGlb } from './friends-glb';
 import { addOutline, toonMaterial } from '../../core/toon';
 import { FollowCamera } from '../../core/follow-camera';
 import { TapMarker } from '../../core/tap-marker';
@@ -129,7 +130,8 @@ export function createCourtyardScene(aspect: number, opts: CourtyardOptions = {}
   // 친구들
   const heartTexture = createHeartTexture();
   const npcs: Npc[] = layout.npcs.map((data) => {
-    const object = createCharacterMesh(getCharacter(data.character));
+    // Blender 친구 모델이 있으면 그것, 없으면 도형 친구
+    const object = hasFriendGlb(data.character) ? createFriendFromGlb(data.character) : createCharacterMesh(getCharacter(data.character));
     object.position.set(data.x, 0, data.z);
     object.rotation.y = data.facing;
     object.userData.npcId = data.id;

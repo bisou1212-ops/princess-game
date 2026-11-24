@@ -185,9 +185,16 @@ def crown_band(mat, r_bottom, r_top, height, spike, loc, points=5, seg=40):
 
 
 # ── 합치기: 부위 하나 = 물체 하나 (재질 여러 개) ──────────────
-def build_item(name, pieces):
-    col = bpy.data.collections.get(COLLECTION)
-    old = bpy.data.objects.get(name)
+# CAPTURE 가 리스트이면 합치지 않고 조각만 모은다 (친구 모델이 공주 부위를 다시 쓸 때)
+CAPTURE = None
+
+
+def build_item(name, pieces, collection=None):
+    if CAPTURE is not None:
+        CAPTURE.extend(pieces)
+        return None
+    col = bpy.data.collections.get(collection or COLLECTION)
+    old = col.objects.get(name) if col else None
     if old:
         me = old.data
         bpy.data.objects.remove(old)
