@@ -7,6 +7,7 @@ import questsJson from '../data/quests.json';
  * 부탁 종류
  * - collect: 물건 n개 모아서 부탁한 친구에게 가져가기 (꽃·딸기·화분 세우기 …)
  * - deliver: 받은 물건을 다른 친구(to)에게 전하기 — 받는 친구가 고마워하며 선물을 준다
+ * - talk: 대화 안의 고르기(기분 알아차리기·위로하기)를 끝내면 바로 해결 — 선물
  * 친구마다 부탁이 여러 개면 quests.json 순서대로 하나씩 (requires 로 앞 부탁을 지정할 수도 있음)
  */
 export type QuestStatus = 'available' | 'active' | 'ready' | 'completed';
@@ -24,7 +25,8 @@ export interface Reward {
 
 export type QuestGoal =
   | { type: 'collect'; item: string; count: number }
-  | { type: 'deliver'; item: string; to: string };
+  | { type: 'deliver'; item: string; to: string }
+  | { type: 'talk' };
 
 export interface QuestDef {
   giver: string;
@@ -33,6 +35,8 @@ export interface QuestDef {
   title: string;
   /** 이 부탁보다 먼저 끝내야 하는 부탁 */
   requires?: string;
+  /** 부탁을 해결하기 전까지 부탁한 친구의 기분 (sad면 눈물) */
+  giverMood?: 'sad';
   goal: QuestGoal;
   spawns: QuestSpawn[];
   hints: Record<string, string>;
@@ -184,6 +188,12 @@ export class QuestBook {
     const p = this.progress.get(id)!;
     switch (p.status) {
       case 'available':
+        if (d.goal.type === 'talk') {
+          // 대화(고르기 포함)가 곧 부탁: 끝나면 바로 선물
+          p.status = 'completed';
+          p.count = 1;
+          return { event: 'completed', dialogue: d.dialogue.offer, rewards: d.rewards };
+        }
         p.status = 'active';
         return { event: 'offered', dialogue: d.dialogue.offer, spawns: d.spawns };
       case 'active':
@@ -234,6 +244,15 @@ export class QuestBook {
     if (this.deliveryFor(character)) return true;
     const next = this.nextQuestOf(character);
     return next !== null && this.wantsAttention(next);
+  }
+
+  /** 친구의 지금 기분 (아직 해결 안 한 부탁의 giverMood) */
+  moodOf(character: string): 'sad' | null {
+    for (const id of this.questsOf(character)) {
+      const d = this.defs[id];
+      if (d.giverMood && this.progress.get(id)!.status !== 'completed') return d.giverMood;
+    }
+    return null;
   }
 
   /** 지금 하는 중인(또는 다 모은) 부탁 하나 — 화면 위 진행 표시용 */

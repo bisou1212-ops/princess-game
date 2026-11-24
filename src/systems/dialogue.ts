@@ -12,18 +12,37 @@ export interface Character {
   /** CSS 색 (#rrggbb) */
   color: string;
   /** M7 아트 교체 전까지 쓰는 도형 모양 */
-  model: 'princess' | 'rabbit' | 'bear' | 'hedgehog' | 'plain';
+  model: 'princess' | 'rabbit' | 'bear' | 'hedgehog' | 'bird' | 'plain';
   voice: Voice;
 }
 
 /** 대사의 기분 — 목소리 높낮이·속도를 살짝 바꿔 말투에 변화를 준다 */
 export type Mood = 'normal' | 'happy' | 'excited' | 'curious' | 'shy' | 'sad';
 
+/**
+ * 고르기 (GDD 6 감정·배려): 그림 카드 중 하나를 톡한다.
+ * correct=false인 카드는 실패가 아니라 힌트(reply)를 듣고 다시 고른다.
+ */
+export interface Choice {
+  id: string;
+  /** 카드 아래 글자·읽어 줄 말 */
+  label: string;
+  en?: string;
+  /** 카드 그림 (ui/icons의 choiceIcon 이름) */
+  icon: string;
+  /** 기본 true. false면 힌트 후 다시 고르기 */
+  correct?: boolean;
+  /** 고른 뒤 이어지는 대사 묶음 (dialogues.json id) */
+  reply?: string;
+}
+
 export interface DialogueLine {
   speaker: string;
   text: string;
   lang?: string;
   mood?: Mood;
+  /** 있으면 이 줄은 질문: 카드를 골라야 넘어간다 */
+  choices?: Choice[];
 }
 
 const characters = stripComment(charactersJson) as Record<string, Character>;
@@ -168,7 +187,11 @@ export function pauseAfter(sentence: string): number {
 export class DialogueSession {
   private index = 0;
 
-  constructor(readonly lines: DialogueLine[]) {}
+  readonly lines: DialogueLine[];
+
+  constructor(lines: DialogueLine[]) {
+    this.lines = [...lines];
+  }
 
   get current(): DialogueLine | null {
     return this.lines[this.index] ?? null;
@@ -176,6 +199,11 @@ export class DialogueSession {
 
   get isLast(): boolean {
     return this.index >= this.lines.length - 1;
+  }
+
+  /** 지금 줄 바로 다음에 대사를 끼워 넣는다 (고른 카드의 대답, 다시 묻기) */
+  insertNext(lines: DialogueLine[]): void {
+    this.lines.splice(this.index + 1, 0, ...lines);
   }
 
   /** 다음 줄로. 끝났으면 null */

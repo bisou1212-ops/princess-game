@@ -32,7 +32,8 @@
   ],
   "npcs": [
     { "id": "gogo", "character": "gogo", "x": -7.5, "z": 1.5, "facing": 0.6, "wander": 3, "dialogue": "gogo-hello" },
-    { "id": "dochi", "character": "dochi", "x": 7, "z": -4.8, "facing": -0.4, "wander": 2.5, "dialogue": "dochi-hello" }
+    { "id": "dochi", "character": "dochi", "x": 7, "z": -4.8, "facing": -0.4, "wander": 2.5, "dialogue": "dochi-hello" },
+    { "id": "pippi", "character": "pippi", "x": 9, "z": 3, "facing": -0.6, "wander": 1.5 }
   ],
   "doors": []
 }

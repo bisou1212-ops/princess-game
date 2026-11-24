@@ -75,7 +75,7 @@ describe('부탁 데이터 (quests.json)', () => {
   it('참조하는 아이템·대사·캐릭터가 모두 있다', () => {
     for (const [id, q] of Object.entries(quests)) {
       expect(characters[q.giver], id).toBeDefined();
-      expect(items[q.goal.item], id).toBeDefined();
+      if ('item' in q.goal) expect(items[q.goal.item], id).toBeDefined();
       for (const d of Object.values(q.dialogue)) if (d) expect(dialogues[d], `${id}: ${d}`).toBeDefined();
       if (q.goal.type === 'collect') expect(q.dialogue.ready, `${id}: ready 대사`).toBeDefined();
       if (q.requires) expect(quests[q.requires], `${id}: requires`).toBeDefined();
@@ -89,13 +89,14 @@ describe('부탁 데이터 (quests.json)', () => {
 
   it('정답 물건이 목표 개수만큼 놓이고, 모두 걸어갈 수 있는 곳에 있다', () => {
     for (const [id, q] of Object.entries(quests)) {
-      const correct = q.spawns.filter((s) => s.item === q.goal.item).length;
+      const goalItem = 'item' in q.goal ? q.goal.item : null;
+      const correct = q.spawns.filter((s) => s.item === goalItem).length;
       if (q.goal.type === 'collect') expect(correct, id).toBeGreaterThanOrEqual(q.goal.count);
       for (const s of q.spawns) {
         expect(items[s.item], `${id}: ${s.item}`).toBeDefined();
         if (q.location === 'castle') expect(grid.isWalkableAt(s.x, s.z), `${id}: (${s.x}, ${s.z})`).toBe(true);
         // 오답 물건에는 힌트가 있어야 아이가 헤매지 않는다
-        if (s.item !== q.goal.item) expect(q.hints[s.item], `${id}: ${s.item} 힌트`).toBeDefined();
+        if (s.item !== goalItem) expect(q.hints[s.item], `${id}: ${s.item} 힌트`).toBeDefined();
       }
     }
   });
@@ -170,5 +171,21 @@ describe('부탁 데이터: 친구·배달 대상', () => {
       const grid = buildNavGrid(await loadLocationLayout(q.location));
       for (const s of q.spawns) expect(grid.isWalkableAt(s.x, s.z), `${id}: (${s.x}, ${s.z})`).toBe(true);
     }
+  });
+});
+
+describe('talk 부탁 (삐삐 위로하기)', () => {
+  it('대화를 하면 바로 해결되고, 해결 전까지 친구는 슬프다', () => {
+    const defs: Record<string, QuestDef> = {
+      t: { giver: 'pippi', location: 'flower-kingdom', title: '위로', giverMood: 'sad', goal: { type: 'talk' }, spawns: [], hints: {},
+        dialogue: { offer: 'o', progress: 'o', complete: 'o', done: 'd' }, rewards: { candy: 1, items: [] } },
+    };
+    const b = new QuestBook(defs);
+    expect(b.moodOf('pippi')).toBe('sad');
+    expect(b.characterWantsAttention('pippi')).toBe(true);
+    expect(b.talkToCharacter('pippi')).toMatchObject({ event: 'completed', dialogue: 'o' });
+    expect(b.moodOf('pippi')).toBeNull();
+    expect(b.talkToCharacter('pippi')).toMatchObject({ event: 'done', dialogue: 'd' });
+    expect(b.current()).toBeNull();
   });
 });

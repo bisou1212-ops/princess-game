@@ -115,3 +115,27 @@ describe('대사·캐릭터 데이터', () => {
     }
   });
 });
+
+describe('고르기 (감정·위로하기)', () => {
+  it('고르기 카드의 대답 대사가 있고, 맞는 카드가 하나 이상 있다', () => {
+    const dialogues = allDialogues();
+    for (const [id, lines] of Object.entries(dialogues)) {
+      for (const line of lines) {
+        if (!line.choices) continue;
+        expect(line.choices.length, id).toBeGreaterThanOrEqual(2);
+        expect(line.choices.some((c) => c.correct !== false), `${id}: 맞는 카드`).toBe(true);
+        for (const c of line.choices) if (c.reply) expect(dialogues[c.reply], `${id}: ${c.reply}`).toBeDefined();
+      }
+    }
+  });
+
+  it('틀린 카드를 고르면 힌트 뒤에 같은 질문이 다시 나온다 (세션 끼워 넣기)', () => {
+    const q = { speaker: 'princess', text: '기분은?', choices: [{ id: 'a', label: 'A', icon: 'happy', correct: false }] };
+    const s = new DialogueSession([{ speaker: 'pippi', text: '흑흑' }, q, { speaker: 'pippi', text: '고마워' }]);
+    s.next();
+    s.insertNext([{ speaker: 'princess', text: '힌트' }, q]);
+    expect(s.next()?.text).toBe('힌트');
+    expect(s.next()).toBe(q);
+    expect(s.next()?.text).toBe('고마워');
+  });
+});

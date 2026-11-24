@@ -136,5 +136,61 @@
   ],
   "gogo-pots-done": [
     { "speaker": "gogo", "mood": "happy", "text": "정원이 깔끔해졌어. 고마워." }
+  ],
+  "pippi-comfort": [
+    { "speaker": "pippi", "mood": "sad", "text": "흑흑… 흐윽…" },
+    { "speaker": "pippi", "mood": "sad", "text": "오늘 친구들 앞에서 노래를 불렀는데… 목소리가 삑 하고 나와 버렸어…" },
+    {
+      "speaker": "princess",
+      "mood": "curious",
+      "text": "삐삐는 지금 어떤 기분일까? 얼굴을 보고 골라 봐!",
+      "choices": [
+        { "id": "happy", "label": "기뻐요", "en": "Happy", "icon": "happy", "correct": false, "reply": "pippi-hint-happy" },
+        { "id": "sad", "label": "슬퍼요", "en": "Sad", "icon": "sad", "reply": "pippi-right-sad" },
+        { "id": "angry", "label": "화나요", "en": "Angry", "icon": "angry", "correct": false, "reply": "pippi-hint-angry" },
+        { "id": "scared", "label": "무서워요", "en": "Scared", "icon": "scared", "correct": false, "reply": "pippi-hint-scared" }
+      ]
+    },
+    {
+      "speaker": "princess",
+      "mood": "curious",
+      "text": "슬픈 삐삐를 어떻게 위로해 줄까?",
+      "choices": [
+        { "id": "hug", "label": "안아 주기", "en": "Hug", "icon": "hug", "reply": "pippi-comfort-hug" },
+        { "id": "flower", "label": "꽃 주기", "en": "Flower", "icon": "give-flower", "reply": "pippi-comfort-flower" },
+        { "id": "sing", "label": "같이 노래하기", "en": "Sing", "icon": "sing", "reply": "pippi-comfort-sing" }
+      ]
+    },
+    { "speaker": "pippi", "mood": "happy", "text": "공주님 덕분에 마음이 따뜻해졌어." },
+    { "speaker": "pippi", "mood": "excited", "text": "이제 다시 노래할 수 있을 것 같아! 고마워서 선물을 줄게!" }
+  ],
+  "pippi-hint-happy": [
+    { "speaker": "princess", "mood": "curious", "text": "음… 삐삐 눈에서 눈물이 똑똑 떨어지고 있어. 기쁠 때도 눈물이 날까? 다시 골라 볼까?" }
+  ],
+  "pippi-hint-angry": [
+    { "speaker": "princess", "mood": "curious", "text": "삐삐는 소리를 지르거나 발을 쿵쿵 구르지 않아. 눈물이 나고 있어. 다시 골라 볼까?" }
+  ],
+  "pippi-hint-scared": [
+    { "speaker": "princess", "mood": "curious", "text": "무서운 일은 없었대. 노래가 잘 안 돼서 눈물이 났대. 다시 골라 볼까?" }
+  ],
+  "pippi-right-sad": [
+    { "speaker": "princess", "mood": "happy", "text": "맞아! 삐삐는 지금 슬퍼." },
+    { "speaker": "princess", "mood": "happy", "text": "슬픔은 영어로…" },
+    { "speaker": "princess", "mood": "excited", "text": "Sad!", "lang": "en-US" }
+  ],
+  "pippi-comfort-hug": [
+    { "speaker": "princess", "mood": "happy", "text": "꼬옥 안아 주었어요." },
+    { "speaker": "pippi", "mood": "shy", "text": "따뜻하다… 고마워." }
+  ],
+  "pippi-comfort-flower": [
+    { "speaker": "princess", "mood": "happy", "text": "예쁜 꽃을 건네주었어요." },
+    { "speaker": "pippi", "mood": "shy", "text": "와… 예쁘다. 기분이 좋아지는 냄새야." }
+  ],
+  "pippi-comfort-sing": [
+    { "speaker": "princess", "mood": "happy", "text": "같이 노래해요! 라라라~" },
+    { "speaker": "pippi", "mood": "excited", "text": "같이 부르니까 하나도 안 떨려! 라라라~" }
+  ],
+  "pippi-done": [
+    { "speaker": "pippi", "mood": "happy", "text": "라라라~ 공주님, 오늘도 내 노래 들어 줄래? 헤헤." }
   ]
 }

@@ -248,7 +248,14 @@ async function start() {
     onClose: () => closeWardrobe(),
   });
 
-  /** 패널·서랍에 가려지지 않게 화면 중심을 옮겨 공주·방이 보이게 */
+  // 말풍선·고르기 카드가 가리는 만큼 장면을 위로 올린다 (친구 표정을 보고 고를 수 있게)
+  let dialogueCover = 0;
+  dialogue.onCover = (px) => {
+    dialogueCover = px;
+    applyViewOffset();
+  };
+
+  /** 패널·서랍·말풍선에 가려지지 않게 화면 중심을 옮겨 공주·친구·방이 보이게 */
   function applyViewOffset() {
     const w = container.clientWidth;
     const h = container.clientHeight;
@@ -257,6 +264,8 @@ async function start() {
         const r = wardrobe.el.getBoundingClientRect();
         const portrait = h > w;
         t.scene.camera.setViewOffset(w, h, portrait ? 0 : r.width / 2, portrait ? r.height / 2 : 0, w, h);
+      } else if (dialogueCover > 0 && t === town) {
+        t.scene.camera.setViewOffset(w, h, 0, Math.min(dialogueCover, h * 0.6) * 0.42, w, h);
       } else {
         t.scene.camera.clearViewOffset();
       }

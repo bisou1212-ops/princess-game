@@ -47,6 +47,8 @@ export interface CourtyardScene {
   removePickup(id: string): void;
   /** 친구 머리 위 ♥ 표시 켜기/끄기 */
   setNpcAttention(npcId: string, on: boolean): void;
+  /** 친구 기분: sad면 눈물이 똑똑 (GDD 6: 표정 보고 기분 알아차리기) */
+  setNpcMood(npcId: string, mood: 'sad' | null): void;
   /** 공주를 다른 곳으로 옮긴다 (열기구에서 내릴 때) */
   teleport(at: Point): void;
   /** 공주 옷 갈아입히기. celebrate면 빙글 돌며 폴짝 */
@@ -83,6 +85,8 @@ interface Npc {
   /** 말을 건 뒤 잠깐 가만히 있는 시간(초) */
   hold: number;
   walkTime: number;
+  /** 슬플 때 흐르는 눈물 */
+  tears: THREE.Group | null;
 }
 
 /** 공주가 이만큼 가까이 오면 친구가 멈춰서 공주를 본다 */
@@ -162,7 +166,7 @@ export function createCourtyardScene(aspect: number, opts: CourtyardOptions = {}
     object.add(heart);
     scene.add(object);
     tappables.push(object);
-    return { data, object, heart, walker: npcWalker, idle: 1 + Math.random() * 3, hold: 0, walkTime: 0 };
+    return { data, object, heart, walker: npcWalker, idle: 1 + Math.random() * 3, hold: 0, walkTime: 0, tears: null };
   });
 
   /** 매 프레임 깜빡이게 할 반짝이들 */
@@ -306,6 +310,15 @@ export function createCourtyardScene(aspect: number, opts: CourtyardOptions = {}
       const bob = n.walker.moving ? Math.abs(Math.sin(n.walkTime * 9)) * 0.06 : 0;
       n.object.position.set(n.walker.x, bob, n.walker.z);
       n.object.rotation.y = n.walker.heading;
+      if (n.tears) {
+        // 눈물 두 방울이 볼을 타고 똑똑 (번갈아)
+        n.tears.children.forEach((drop, i) => {
+          const t = ((elapsed * 0.9 + i * 0.5) % 1);
+          drop.position.y = drop.userData.y0 - t * 0.28;
+          drop.scale.setScalar(t < 0.15 ? t / 0.15 : 1);
+          ((drop as THREE.Mesh).material as THREE.MeshBasicMaterial).opacity = 0.9 * (1 - t);
+        });
+      }
     }
   };
 
@@ -391,6 +404,18 @@ export function createCourtyardScene(aspect: number, opts: CourtyardOptions = {}
         pending = null;
         walker.stop();
         mirrorSpin = 0;
+      }
+    },
+
+    setNpcMood(npcId, mood) {
+      const npc = npcs.find((n) => n.data.id === npcId);
+      if (!npc) return;
+      if (mood === 'sad' && !npc.tears) {
+        npc.tears = createTears();
+        npc.object.add(npc.tears);
+      } else if (mood !== 'sad' && npc.tears) {
+        npc.object.remove(npc.tears);
+        npc.tears = null;
       }
     },
 
@@ -521,4 +546,20 @@ function skyGradient(top: string): THREE.CanvasTexture {
   const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
   return tex;
+}
+
+/** 눈물 두 방울 (친구 얼굴 앞, 양쪽 눈 아래) */
+function createTears(): THREE.Group {
+  const g = new THREE.Group();
+  for (const side of [-1, 1]) {
+    const drop = new THREE.Mesh(
+      new THREE.SphereGeometry(0.06, 10, 8),
+      new THREE.MeshBasicMaterial({ color: 0x74c0ff, transparent: true, opacity: 0.9, depthWrite: false }),
+    );
+    drop.scale.y = 1.3;
+    drop.userData.y0 = 1.22;
+    drop.position.set(side * 0.15, 1.22, 0.42);
+    g.add(drop);
+  }
+  return g;
 }

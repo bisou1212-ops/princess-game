@@ -1,5 +1,5 @@
 {
-  "_comment": "캐릭터별 이름·색·목소리·임시 모양. voice.pitch(0~2)·rate(0.1~2)로 목소리를 구분한다 (GDD 8.2). model: princess(왕관)·rabbit(토끼 귀)·bear(곰 귀)·hedgehog(가시)·plain — M7 아트 교체 전까지 쓰는 도형 모양.",
+  "_comment": "캐릭터별 이름·색·목소리·임시 모양. voice.pitch(0~2)·rate(0.1~2)로 목소리를 구분한다 (GDD 8.2). model: princess(왕관)·rabbit(토끼 귀)·bear(곰 귀)·hedgehog(가시)·bird(부리·날개)·plain — M7 아트 교체 전까지 쓰는 도형 모양.",
   "princess": {
     "name": "공주",
     "color": "#ffa6d2",
@@ -29,5 +29,11 @@
     "color": "#e6c9a0",
     "model": "hedgehog",
     "voice": { "lang": "ko-KR", "pitch": 1.25, "rate": 1.05 }
+  },
+  "pippi": {
+    "name": "삐삐",
+    "color": "#ffe38a",
+    "model": "bird",
+    "voice": { "lang": "ko-KR", "pitch": 1.4, "rate": 0.9 }
   }
 }

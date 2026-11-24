@@ -141,3 +141,38 @@ export function giftIcon(color: string): string {
   return svg(`<rect x="10" y="26" width="44" height="30" rx="4" fill="${color}" ${OUTLINE}/><rect x="8" y="18" width="48" height="12" rx="4" fill="${color}" ${OUTLINE}/>
     <rect x="28" y="18" width="8" height="38" fill="#fff"/><path d="M32 18c-8-10-18-6-12 0zM32 18c8-10 18-6 12 0z" fill="#ff8fc4" ${OUTLINE}/>`);
 }
+
+/** 기분 얼굴 (GDD 6: 기쁨·슬픔·화남·무서움) */
+function face(fill: string, inner: string): string {
+  return svg(`<circle cx="32" cy="32" r="27" fill="${fill}" ${OUTLINE}/>${inner}`);
+}
+
+export function choiceIcon(name: string): string {
+  const eye = (x: number, y = 28) => `<circle cx="${x}" cy="${y}" r="3.5" fill="#5a4a6b"/>`;
+  const blush = '<circle cx="17" cy="38" r="4" fill="#ff9ccf" opacity=".6"/><circle cx="47" cy="38" r="4" fill="#ff9ccf" opacity=".6"/>';
+  switch (name) {
+    case 'happy':
+      return face('#ffe38a', `${eye(23)}${eye(41)}${blush}<path d="M20 38q12 12 24 0" fill="none" stroke="#5a4a6b" stroke-width="3.5" stroke-linecap="round"/>`);
+    case 'sad':
+      return face('#bfe2ff', `${eye(23, 29)}${eye(41, 29)}<path d="M18 22l9 3M46 22l-9 3" stroke="#5a4a6b" stroke-width="3" stroke-linecap="round"/>
+        <path d="M22 46q10-9 20 0" fill="none" stroke="#5a4a6b" stroke-width="3.5" stroke-linecap="round"/>
+        <path d="M44 34q4 7 0 10q-4-3 0-10z" fill="#74c0ff"/>`);
+    case 'angry':
+      return face('#ffb3a8', `${eye(23, 31)}${eye(41, 31)}<path d="M16 22l11 5M48 22l-11 5" stroke="#5a4a6b" stroke-width="3.5" stroke-linecap="round"/>
+        <path d="M22 45h20" stroke="#5a4a6b" stroke-width="3.5" stroke-linecap="round"/>`);
+    case 'scared':
+      return face('#d9ccff', `<circle cx="23" cy="27" r="5" fill="#fff" stroke="#5a4a6b" stroke-width="2.5"/><circle cx="41" cy="27" r="5" fill="#fff" stroke="#5a4a6b" stroke-width="2.5"/>
+        <circle cx="23" cy="27" r="2" fill="#5a4a6b"/><circle cx="41" cy="27" r="2" fill="#5a4a6b"/>
+        <path d="M20 44q3-4 6 0t6 0 6 0 6 0" fill="none" stroke="#5a4a6b" stroke-width="3" stroke-linecap="round"/>`);
+    case 'hug':
+      return svg(`<path d="M32 54C14 42 8 32 12 22c3-8 13-9 20-2 7-7 17-6 20 2 4 10-2 20-20 32z" fill="#ff8fc4" ${OUTLINE}/>
+        <path d="M8 34q8 10 24 10t24-10" fill="none" stroke="#ffd9b8" stroke-width="7" stroke-linecap="round"/>`);
+    case 'give-flower':
+      return flowerIcon('#ff8fc4');
+    case 'sing':
+      return svg(`<path d="M24 46V14l26-6v32" fill="none" stroke="#b99cff" stroke-width="5" stroke-linejoin="round"/>
+        <ellipse cx="18" cy="46" rx="8" ry="6" fill="#b99cff"/><ellipse cx="44" cy="40" rx="8" ry="6" fill="#b99cff"/>`);
+    default:
+      return flowerIcon('#ffd76a');
+  }
+}

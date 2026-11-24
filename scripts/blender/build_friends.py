@@ -1,5 +1,5 @@
 """
-친구 모델 만들기 (M7 B단계) — 플로라 공주·토리(토끼)·고고(곰)·도치(고슴도치).
+친구 모델 만들기 (M7 B단계) — 플로라 공주·토리(토끼)·고고(곰)·도치(고슴도치)·삐삐(새).
 
 Blender MCP로 실행:
     ns = {}
@@ -48,6 +48,11 @@ P["MAT_COLORS"].update({
     "f_dochi_spike": (0.6, 0.42, 0.3, 1.0),
     "f_chef_white": (1.0, 1.0, 1.0, 1.0),
     "f_strawberry": (1.0, 0.42, 0.5, 1.0),
+    # 삐삐 (노란 새, 분홍 스카프)
+    "f_pippi_body": (1.0, 0.89, 0.54, 1.0),
+    "f_pippi_wing": (1.0, 0.8, 0.45, 1.0),
+    "f_beak": (1.0, 0.64, 0.3, 1.0),
+    "f_scarf": (1.0, 0.6, 0.78, 1.0),
 })
 
 sphere, cone, capsule, torus, star = P["sphere"], P["cone"], P["capsule"], P["torus"], P["star"]
@@ -195,6 +200,32 @@ def build_dochi():
     return _join("dochi", pieces)
 
 
+# ── 삐삐: 부끄럼 많은 가수 새 ───────────────────────────
+def build_pippi():
+    pieces = []
+    head_z, head_r = 1.22, 0.36
+    pieces.append(sphere("f_pippi_body", 0.36, (0, 0, 0.52), scale=(1, 0.95, 1.1), seg=28, rings=16))
+    pieces.append(sphere("f_tori_fur", 0.24, (0, -0.17, 0.5), scale=(1, 0.5, 1.1), seg=20, rings=12))  # 밝은 배
+    pieces.append(sphere("f_pippi_body", head_r, (0, 0, head_z), seg=32, rings=20))
+    on = _face(pieces, Vector((0, 0, head_z)), head_r, eye_x=0.13, cheek_x=0.21)
+    # 작은 부리 (앞으로 뾰족)
+    pieces.append(cone("f_beak", 0.075, 0.0, 0.16, on(0, -0.08, 0.03), rot=(math.pi / 2, 0, 0), seg=12))
+    # 머리 깃털 세 가닥
+    for sx, tilt in ((-0.07, 0.35), (0.0, 0.0), (0.07, -0.35)):
+        pieces.append(sphere("f_pippi_wing", 1.0, (sx, 0.02, head_z + 0.4), scale=(0.045, 0.045, 0.13), rot=(0, tilt, 0), seg=10, rings=8))
+    # 날개 (몸 옆, 살짝 들림)
+    for s_ in (-1, 1):
+        pieces.append(sphere("f_pippi_wing", 1.0, (s_ * 0.36, 0.03, 0.6), scale=(0.08, 0.2, 0.26), rot=(0.2, s_ * -0.35, 0), seg=16, rings=10))
+        pieces.append(sphere("f_beak", 0.07, (s_ * 0.13, -0.05, 0.05), scale=(1.1, 1.5, 0.5), seg=12, rings=8))  # 발
+    # 꼬리 깃털
+    for i, a in enumerate((-0.35, 0.0, 0.35)):
+        pieces.append(sphere("f_pippi_wing", 1.0, (math.sin(a) * 0.1, 0.36, 0.42 + abs(a) * 0.1), scale=(0.05, 0.16, 0.05), rot=(-0.6, 0, a), seg=10, rings=8))
+    # 분홍 스카프 + 음표 브로치
+    pieces.append(torus("f_scarf", 0.2, 0.05, (0, 0, 0.88), seg=24, ring=8))
+    pieces.append(sphere("f_scarf", 0.06, (0.08, -0.2, 0.84), scale=(1, 0.6, 1.3), seg=10, rings=6))
+    return _join("pippi", pieces)
+
+
 def build_friends():
     col = bpy.data.collections.get(FRIENDS)
     if col:
@@ -205,15 +236,15 @@ def build_friends():
                 bpy.data.meshes.remove(me)
     _collection()
     out = {}
-    for name, fn in (("flora", build_flora), ("tori", build_tori), ("gogo", build_gogo), ("dochi", build_dochi)):
+    for name, fn in (("flora", build_flora), ("tori", build_tori), ("gogo", build_gogo), ("dochi", build_dochi), ("pippi", build_pippi)):
         ob = fn()
         out[name] = ob
     tmp = bpy.data.collections.get(P["TEMP"])
     if tmp:
         bpy.data.collections.remove(tmp)
     # 나란히 세워 보기 (내보낼 때는 다시 0,0 으로)
-    for i, name in enumerate(("flora", "tori", "gogo", "dochi")):
-        out[name].location.x = (i - 1.5) * 1.3
+    for i, name in enumerate(("flora", "tori", "gogo", "dochi", "pippi")):
+        out[name].location.x = (i - 2) * 1.3
     return out
 
 

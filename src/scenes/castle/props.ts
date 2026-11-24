@@ -170,11 +170,30 @@ export function createCharacterMesh(character: Character): THREE.Group {
       spike.rotation.set(-0.9, 0, -a * 0.8);
     }
   }
+  if (character.model === 'bird') {
+    // 부리 + 머리 깃털 + 작은 날개
+    const beak = add(new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.14, 10), toonMaterial({ color: 0xffa94d })), 0, 1.22, 0.33);
+    beak.rotation.x = Math.PI / 2;
+    for (const s of [-1, 0, 1]) {
+      const tuft = add(new THREE.Mesh(new THREE.SphereGeometry(0.06, 10, 8), toonMaterial({ color: bodyColor })), s * 0.06, 1.66, 0);
+      tuft.scale.set(0.6, 1.4, 0.6);
+      tuft.rotation.z = -s * 0.4;
+    }
+  }
   if (character.model === 'rabbit') {
     const earMat = toonMaterial({ color: bodyColor });
     for (const side of [-1, 1]) {
       const ear = add(new THREE.Mesh(new THREE.CapsuleGeometry(0.08, 0.38, 4, 8), earMat), side * 0.13, 1.72, -0.02);
       ear.rotation.z = side * -0.18;
+    }
+  }
+  if (character.model === 'bird') {
+    for (const side of [-1, 1]) {
+      const wing = new THREE.Mesh(new THREE.SphereGeometry(0.2, 14, 10), toonMaterial({ color: bodyColor.clone().multiplyScalar(0.9) }));
+      wing.scale.set(0.35, 0.9, 0.7);
+      wing.position.set(side * 0.36, 0.62, -0.02);
+      wing.rotation.z = side * 0.3;
+      g.add(wing);
     }
   }
   g.traverse((m) => (m.castShadow = true));

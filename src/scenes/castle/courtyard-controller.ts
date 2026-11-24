@@ -146,6 +146,7 @@ export class CourtyardController {
       const hasQuests = this.quests.questsOf(npc.character).length > 0;
       const on = this.quests.characterWantsAttention(npc.character) || (!hasQuests && !!npc.dialogue);
       this.scene?.setNpcAttention(npc.id, on);
+      this.scene?.setNpcMood(npc.id, this.quests.moodOf(npc.character));
     }
   }
 
@@ -156,7 +157,7 @@ export class CourtyardController {
     hud.setCandy(state.wallet.candy);
     hud.setWardrobeNew(state.newOutfits.length > 0);
     const cur = this.quests.current();
-    if (cur) hud.setTracker(cur.def.goal.item, cur.progress.count, goalCount(cur.def));
+    if (cur && 'item' in cur.def.goal) hud.setTracker(cur.def.goal.item, cur.progress.count, goalCount(cur.def));
     else hud.setTracker('', 0, 0);
   }
 }

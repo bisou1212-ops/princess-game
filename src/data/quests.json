@@ -1,5 +1,5 @@
 {
-  "_comment": "부탁(퀘스트). giver=부탁하는 친구(characters.json id), location=물건이 나타나는 장소(world.json id). 친구마다 이 파일 순서대로 하나씩 (requires=먼저 끝내야 하는 부탁). goal: collect=item을 count개 모으기 / deliver=item을 to 친구에게 전하기. spawns=부탁을 받으면 나타나는 물건(정답·오답 섞음). hints=오답 물건을 톡했을 때 친구의 힌트(실패 없음). dialogue: offer(처음)·progress(하는 중)·ready(다 모은 순간, collect만)·complete(가져다줬을 때 / deliver는 받는 친구의 말)·done(끝난 뒤).",
+  "_comment": "부탁(퀘스트). giver=부탁하는 친구(characters.json id), location=물건이 나타나는 장소(world.json id). 친구마다 이 파일 순서대로 하나씩 (requires=먼저 끝내야 하는 부탁). goal: collect=item을 count개 모으기 / deliver=item을 to 친구에게 전하기 / talk=대화 안의 고르기(choices)를 끝내면 해결(giverMood: sad면 해결 전까지 눈물). spawns=부탁을 받으면 나타나는 물건(정답·오답 섞음). hints=오답 물건을 톡했을 때 친구의 힌트(실패 없음). dialogue: offer(처음)·progress(하는 중)·ready(다 모은 순간, collect만)·complete(가져다줬을 때 / deliver는 받는 친구의 말)·done(끝난 뒤).",
   "tori-red-flowers": {
     "giver": "tori",
     "location": "castle",
@@ -100,6 +100,22 @@
       "candy": 6,
       "items": [
         "plant"
+      ]
+    }
+  },
+  "pippi-comfort": {
+    "giver": "pippi",
+    "location": "flower-kingdom",
+    "title": "우는 삐삐 위로하기",
+    "giverMood": "sad",
+    "goal": { "type": "talk" },
+    "spawns": [],
+    "hints": {},
+    "dialogue": { "offer": "pippi-comfort", "progress": "pippi-comfort", "complete": "pippi-comfort", "done": "pippi-done" },
+    "rewards": {
+      "candy": 7,
+      "items": [
+        "rug"
       ]
     }
   }
