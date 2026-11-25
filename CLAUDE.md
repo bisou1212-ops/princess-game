@@ -74,7 +74,8 @@ docs/GDD.md        # 기획서
 
 - [ ] 그래픽 2차 (`docs/GRAPHICS-V2.md`, 무료 방법)
   - [x] G1 색감·빛: 셰이더 표면 무늬(`surface-patterns.ts`, 배경 재질 이름으로), 따뜻한 햇빛·약한 하늘빛, 색 보정(CustomToneMapping), 땅·잎 색 진하게(TINT), 발밑 그림자(`createContactShadow`), 풀 덤불(`grass-tufts.ts`), 화면 가장자리 어둡게, 불러오기 별
-  - [ ] G2 표정·연출 / G3 배경 에셋(CC0) / G4 캐릭터 다듬기
+  - [x] G2 표정·연출: 그림 눈·입 표정 `face.ts`(대사 mood → 얼굴, 말할 때 입 뻐끔, 볼 발그레, 고개 갸웃·숙임), 몸짓 박수·끄덕·빙글(`playGesture`, 뼈를 코드로), 부탁 완료 때 공주 빙글·친구 폴짝 + 선물 화면 색종이(CSS). 대사 → 얼굴은 `DialogueBox.onSpeak` → `scene.setFace`
+  - [ ] G3 배경 에셋(CC0) / G4 캐릭터 다듬기
 
 ## 나중에 할 일
 - **사람 같은 음성 (보류, 기기 TTS가 로봇 같다는 피드백)**: 대사를 미리 음성 파일로 만들어 넣는다.

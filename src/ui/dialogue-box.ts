@@ -1,5 +1,5 @@
 import type { Speaker } from '../core/tts';
-import { DialogueSession, getCharacter, getDialogue, tokenize, type Choice, type DialogueLine } from '../systems/dialogue';
+import { DialogueSession, getCharacter, getDialogue, tokenize, type Choice, type DialogueLine, type Mood } from '../systems/dialogue';
 import { choiceIcon } from './icons';
 import './dialogue-box.css';
 import { sfx } from '../core/sound';
@@ -26,6 +26,13 @@ export class DialogueBox {
 
   /** 말풍선·카드가 화면 아래를 얼마나 가리는지(px) 알려 준다 → 장면을 위로 올려 친구 얼굴이 보이게 */
   onCover: ((px: number) => void) | null = null;
+  /**
+   * 누가 어떤 기분으로 말하는지 (G2 표정): 읽기 시작(talking true)·끝(false).
+   * 대화가 닫히면 speaker null.
+   */
+  onSpeak: ((speaker: string | null, mood: Mood | undefined, talking: boolean) => void) | null = null;
+  /** 이전 읽기의 늦은 onEnd 가 지금 말하는 입을 닫지 않게 */
+  private speakToken = 0;
 
   constructor(parent: HTMLElement, private readonly speaker: Speaker) {
     this.layer = document.createElement('div');
@@ -77,6 +84,8 @@ export class DialogueBox {
     this.speaker.stop();
     this.session = null;
     this.layer.hidden = true;
+    this.speakToken++;
+    this.onSpeak?.(null, undefined, false);
     this.onCover?.(0);
     const cb = this.onClose;
     this.onClose = null;
@@ -152,13 +161,19 @@ export class DialogueBox {
       if (next) this.show(next);
       else this.close();
     };
+    const token = ++this.speakToken;
+    this.onSpeak?.('princess', 'excited', true);
+    const done = () => {
+      if (token === this.speakToken) this.onSpeak?.('princess', 'excited', false);
+      go();
+    };
     this.speaker.speak(`${choice.label}!`, {
       ...voice,
       mood: 'excited',
       onEnd: () =>
         choice.en
-          ? this.speaker.speak(`${choice.en}!`, { lang: 'en-US', pitch: voice.pitch, rate: voice.rate, mood: 'excited', onEnd: go })
-          : go(),
+          ? this.speaker.speak(`${choice.en}!`, { lang: 'en-US', pitch: voice.pitch, rate: voice.rate, mood: 'excited', onEnd: done })
+          : done(),
     });
   }
 
@@ -167,6 +182,8 @@ export class DialogueBox {
     if (!line) return;
     const voice = getCharacter(line.speaker).voice;
     this.highlight(-1);
+    const token = ++this.speakToken;
+    this.onSpeak?.(line.speaker, line.mood, true);
     this.speaker.speak(line.text, {
       lang: line.lang ?? voice.lang,
       pitch: voice.pitch,
@@ -174,7 +191,10 @@ export class DialogueBox {
       gender: voice.gender,
       mood: line.mood,
       onWord: (i) => this.highlight(i),
-      onEnd: () => this.highlight(-1),
+      onEnd: () => {
+        this.highlight(-1);
+        if (token === this.speakToken) this.onSpeak?.(line.speaker, line.mood, false);
+      },
     });
   }
 

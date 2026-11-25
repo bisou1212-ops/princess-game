@@ -8,7 +8,7 @@ import { TapMarker } from '../../core/tap-marker';
 import { Walker } from '../../systems/navigation/walker';
 import { pickWanderTarget } from '../../systems/navigation/wander';
 import type { Point } from '../../systems/navigation/nav-grid';
-import { getCharacter } from '../../systems/dialogue';
+import { getCharacter, type Mood } from '../../systems/dialogue';
 import { defaultOutfit, type Outfit } from '../../systems/wardrobe';
 import {
   buildNavGrid,
@@ -20,7 +20,7 @@ import {
 import { createPrincessModel } from './princess-model';
 import { createEnv } from './env-models';
 import { AmbientFx } from '../../core/ambient-fx';
-import type { PrincessAnimator } from './princess-animator';
+import type { Gesture, PrincessAnimator } from './princess-animator';
 import { createPetModel } from './pet-glb';
 import type { PetAnimator } from './pet-animator';
 import type { PetNeed } from '../../systems/pet';
@@ -71,6 +71,10 @@ export interface CourtyardScene {
   setMirror(on: boolean): void;
   /** 대화 중: 카메라가 공주와 친구 사이로 살짝 다가간다 */
   setTalking(on: boolean): void;
+  /** 표정 (G2): 말하는 캐릭터가 대사 기분에 맞는 얼굴 + 입 뻐끔. character null = 모두 원래 얼굴로 */
+  setFace(character: string | null, mood?: Mood, talking?: boolean): void;
+  /** 몸짓 (G2): 박수·끄덕·빙글·폴짝·손 흔들기 */
+  gesture(character: string, g: Gesture | 'hop' | 'wave'): void;
   /** 펫 데려오기·바꾸기 (null = 없음). 모델은 미리 preloadPet 으로 불러 둔다 */
   setPet(kind: string | null): void;
   /** 펫 머리 위 그림: 배고파요(밥그릇)·씻겨 주세요(거품) */
@@ -294,6 +298,9 @@ export function createCourtyardScene(aspect: number, opts: CourtyardOptions = {}
   const princessModel = createPrincessModel(opts.outfit ?? defaultOutfit());
   const princess = princessModel.group;
   const animator = princessModel.animator ?? null;
+  /** 캐릭터 id → 움직임 담당 ('princess' 또는 친구의 characters.json id) */
+  const animatorOf = (character: string): PrincessAnimator | null =>
+    character === 'princess' ? animator : (npcs.find((n) => n.data.character === character)?.animator ?? null);
   let prevHeading = walker.heading;
   let prevSpeed = 0;
   let accelSmooth = 0;
@@ -722,6 +729,27 @@ export function createCourtyardScene(aspect: number, opts: CourtyardOptions = {}
       talking = on;
     },
 
+    setFace(character, mood, isTalking = false) {
+      const all = [animator, ...npcs.map((n) => n.animator)];
+      if (character === null) {
+        for (const a of all) a?.face?.reset();
+        return;
+      }
+      const a = animatorOf(character);
+      if (!a?.face) return;
+      a.face.set(mood ?? 'normal');
+      a.face.setTalking(isTalking);
+      // 다른 캐릭터는 입을 다문다
+      for (const o of all) if (o && o !== a) o.face?.setTalking(false);
+    },
+
+    gesture(character, g) {
+      const a = animatorOf(character);
+      if (!a) return;
+      if (g === 'hop' || g === 'wave') a.play(g);
+      else a.playGesture(g);
+    },
+
     setMirror(on) {
       if (mirror === on) return;
       mirror = on;
@@ -735,6 +763,7 @@ export function createCourtyardScene(aspect: number, opts: CourtyardOptions = {}
     setNpcMood(npcId, mood) {
       const npc = npcs.find((n) => n.data.id === npcId);
       if (!npc) return;
+      npc.animator?.face?.setBase(mood === 'sad' ? 'sad' : 'normal');
       if (mood === 'sad' && !npc.tears) {
         npc.tears = createTears();
         npc.object.add(npc.tears);

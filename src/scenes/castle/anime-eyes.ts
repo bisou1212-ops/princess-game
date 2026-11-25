@@ -7,16 +7,85 @@ import * as THREE from 'three';
  * 원래 눈·반짝이 조각은 재질만 숨긴다(자식인 그림 눈은 보이게).
  */
 const textureCache = new Map<string, THREE.CanvasTexture>();
+const W = 256;
+const H = 320;
+const LINE = '#2a2238';
 
-function eyeTexture(iris: string): THREE.CanvasTexture {
-  const cached = textureCache.get(iris);
+/** 눈 모양 (그래픽 2차 G2 표정): 뜬 눈 · 웃는 눈(^ ^) · 슬픈 눈(바깥쪽이 처진 눈꺼풀) */
+export type EyeStyle = 'open' | 'joy' | 'sad';
+/** 'R' = 캐릭터의 오른쪽 눈(화면 왼쪽) — 슬픈 눈은 바깥쪽이 처져서 양쪽 그림이 다르다 */
+export type EyeSide = 'L' | 'R';
+
+export function eyeTexture(iris: string, style: EyeStyle = 'open', side: EyeSide = 'L'): THREE.CanvasTexture {
+  const key = `${iris}|${style}|${style === 'sad' ? side : ''}`;
+  const cached = textureCache.get(key);
   if (cached) return cached;
-  const W = 256;
-  const H = 320;
   const c = document.createElement('canvas');
   c.width = W;
   c.height = H;
   const ctx = c.getContext('2d')!;
+  if (style === 'joy') drawJoyEye(ctx);
+  else {
+    drawOpenEye(ctx, iris);
+    if (style === 'sad') droopLid(ctx, side);
+  }
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = 4;
+  textureCache.set(key, tex);
+  return tex;
+}
+
+/** 웃는 눈: 위로 볼록한 굵은 곡선 + 바깥 속눈썹 */
+function drawJoyEye(ctx: CanvasRenderingContext2D): void {
+  ctx.strokeStyle = LINE;
+  ctx.lineCap = 'round';
+  ctx.lineWidth = W * 0.11;
+  ctx.beginPath();
+  ctx.arc(W / 2, H * 0.62, W * 0.32, Math.PI * 1.12, Math.PI * 1.88);
+  ctx.stroke();
+}
+
+/** 슬픈 눈: 눈꺼풀이 바깥쪽으로 처지게 위를 지우고 선을 긋는다 */
+function droopLid(ctx: CanvasRenderingContext2D, side: EyeSide): void {
+  // 캐릭터 오른쪽 눈(R)은 화면 왼쪽이 바깥
+  const outerLeft = side === 'R';
+  // 안쪽은 거의 그대로, 바깥쪽만 많이 처지게 (팔자 눈썹처럼 보여 슬퍼 보임)
+  const yIn = H * 0.08;
+  const yOut = H * 0.42;
+  const yL = outerLeft ? yOut : yIn;
+  const yR = outerLeft ? yIn : yOut;
+  ctx.save();
+  ctx.globalCompositeOperation = 'destination-out';
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.lineTo(W, 0);
+  ctx.lineTo(W, yR);
+  ctx.lineTo(0, yL);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+  ctx.save();
+  ctx.beginPath();
+  ctx.ellipse(W / 2, H / 2, W * 0.47, H * 0.47, 0, 0, Math.PI * 2);
+  ctx.clip();
+  ctx.strokeStyle = LINE;
+  ctx.lineWidth = W * 0.08;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(0, yL);
+  ctx.lineTo(W, yR);
+  ctx.stroke();
+  // 아래 눈가에 그렁그렁 물기
+  ctx.strokeStyle = 'rgba(200, 235, 255, 0.9)';
+  ctx.lineWidth = W * 0.05;
+  ctx.beginPath();
+  ctx.ellipse(W / 2, H * 0.62, W * 0.3, H * 0.2, 0, Math.PI * 0.2, Math.PI * 0.8);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawOpenEye(ctx: CanvasRenderingContext2D, iris: string): void {
   const cx = W / 2;
   const cy = H / 2;
   const base = new THREE.Color(iris);
@@ -66,12 +135,6 @@ function eyeTexture(iris: string): THREE.CanvasTexture {
   ctx.beginPath();
   ctx.ellipse(cx, cy + 4, W * 0.46, H * 0.46, 0, Math.PI * 1.08, Math.PI * 1.92);
   ctx.stroke();
-
-  const tex = new THREE.CanvasTexture(c);
-  tex.colorSpace = THREE.SRGBColorSpace;
-  tex.anisotropy = 4;
-  textureCache.set(iris, tex);
-  return tex;
 }
 
 function star(ctx: CanvasRenderingContext2D, x: number, y: number, r: number): void {
@@ -99,9 +162,11 @@ export function decorateEyes(eyeMesh: THREE.Mesh, iris: string, attach?: THREE.O
     v.fromBufferAttribute(pos, i);
     sides[v.x < 0 ? 0 : 1].expandByPoint(v);
   }
-  const mat = new THREE.MeshBasicMaterial({ map: eyeTexture(iris), transparent: true, depthWrite: false, toneMapped: false });
   for (const box of sides) {
     if (box.isEmpty()) continue;
+    // 눈마다 재질을 따로 둔다 (표정에 따라 그림을 바꿈)
+    const side: EyeSide = box.max.x <= 0 ? 'R' : 'L';
+    const mat = new THREE.MeshBasicMaterial({ map: eyeTexture(iris, 'open', side), transparent: true, depthWrite: false, toneMapped: false });
     const size = box.getSize(new THREE.Vector3());
     const center = box.getCenter(new THREE.Vector3());
     const plane = new THREE.Mesh(new THREE.PlaneGeometry(size.x * 1.25, size.y * 1.2), mat);
@@ -109,6 +174,8 @@ export function decorateEyes(eyeMesh: THREE.Mesh, iris: string, attach?: THREE.O
     plane.renderOrder = 2;
     plane.userData.noOutline = true;
     plane.userData.eyeDecal = true; // 모델을 훑는 쪽이 이 판의 재질을 바꾸지 않게
+    plane.userData.eyeSide = side;
+    plane.userData.iris = iris;
     if (attach) {
       eyeMesh.updateWorldMatrix(true, false);
       attach.updateWorldMatrix(true, false);

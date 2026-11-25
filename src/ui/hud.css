@@ -102,6 +102,67 @@
   display: none;
 }
 
+/* 축하 색종이 (G2) */
+.confetti {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.cf {
+  position: absolute;
+  top: -40px;
+  display: block;
+  color: var(--c);
+  background: var(--c);
+  font-style: normal;
+  animation-name: confetti-fall;
+  animation-timing-function: cubic-bezier(0.3, 0.1, 0.6, 1);
+  animation-fill-mode: both;
+  animation-iteration-count: 2;
+}
+.cf-strip {
+  width: 12px;
+  height: 22px;
+  border-radius: 4px;
+}
+.cf-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+}
+.cf-star,
+.cf-heart {
+  background: none;
+  font-size: 30px;
+  line-height: 1;
+}
+@keyframes confetti-fall {
+  0% {
+    transform: translate(0, 0) rotate(0deg);
+    opacity: 0;
+  }
+  8% {
+    opacity: 1;
+  }
+  50% {
+    transform: translate(var(--sway), 55vh) rotate(calc(var(--spin) * 0.5));
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(calc(var(--sway) * -0.4), 110vh) rotate(var(--spin));
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cf {
+    animation: none;
+    display: none;
+  }
+}
+
 .reward-card {
   width: min(560px, 100%);
   box-sizing: border-box;

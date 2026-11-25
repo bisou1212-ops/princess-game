@@ -44,6 +44,7 @@ export class RewardPopup {
     ).join('');
 
     this.layer.innerHTML = `
+      <div class="confetti" aria-hidden="true">${confetti()}</div>
       <div class="reward-card" role="dialog" aria-label="선물">
         <div class="reward-title">선물이에요!</div>
         <div class="gifts">${gifts.join('')}</div>
@@ -80,4 +81,22 @@ export class RewardPopup {
       onEnd: () => this.speakAll(lines, i + 1),
     });
   }
+}
+
+/** 축하 색종이 (G2): 파스텔 색 조각·별·하트가 위에서 살랑살랑 떨어진다. CSS 애니메이션이라 3D 비용 없음 */
+const CONFETTI_COLORS = ['#ff9ccf', '#ffd36e', '#9fd8ff', '#b9f0a8', '#d7b4ff', '#ffb38a'];
+function confetti(n = 42): string {
+  let out = '';
+  for (let i = 0; i < n; i++) {
+    const color = CONFETTI_COLORS[i % CONFETTI_COLORS.length];
+    const shape = i % 7 === 0 ? 'star' : i % 9 === 0 ? 'heart' : i % 2 === 0 ? 'strip' : 'dot';
+    const left = Math.random() * 100;
+    const delay = Math.random() * 0.9;
+    const dur = 2.6 + Math.random() * 1.8;
+    const sway = (Math.random() * 2 - 1) * 60;
+    const spin = (Math.random() < 0.5 ? -1 : 1) * (360 + Math.random() * 540);
+    const style = `left:${left.toFixed(1)}%;--c:${color};--sway:${sway.toFixed(0)}px;--spin:${spin.toFixed(0)}deg;animation-duration:${dur.toFixed(2)}s;animation-delay:${delay.toFixed(2)}s`;
+    out += shape === 'star' ? `<i class="cf cf-star" style="${style}">★</i>` : shape === 'heart' ? `<i class="cf cf-heart" style="${style}">♥</i>` : `<i class="cf cf-${shape}" style="${style}"></i>`;
+  }
+  return out;
 }

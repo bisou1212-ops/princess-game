@@ -308,6 +308,16 @@ async function start() {
     onClose: () => closeWardrobe(),
   });
 
+  // 표정·몸짓 (G2): 말하는 친구·공주가 대사 기분에 맞는 얼굴로, 입을 뻐끔뻐끔
+  dialogue.onSpeak = (who, mood, talking) => {
+    if (mode !== 'town') return;
+    town.scene.setFace(who, mood, talking);
+    if (who && talking) {
+      if (mood === 'excited') town.scene.gesture(who, 'clap');
+      else if (mood === 'happy') town.scene.gesture(who, 'nod');
+    }
+  };
+
   // 말풍선·고르기 카드가 가리는 만큼 장면을 위로 올린다 (친구 표정을 보고 고를 수 있게)
   let dialogueCover = 0;
   dialogue.onCover = (px) => {
@@ -532,7 +542,7 @@ async function start() {
   // 개발 중 브라우저 콘솔에서 상태 확인용 (배포 빌드에는 없음)
   if (import.meta.env.DEV) {
     Object.assign(window, {
-      __game: { state, goTo, travelTo, town: () => town, room: () => room, mode: () => mode, towns, petPanel, playTimer, startBedtime, warnBedtime, sound, renderer },
+      __game: { state, goTo, travelTo, town: () => town, room: () => room, mode: () => mode, towns, petPanel, playTimer, startBedtime, warnBedtime, sound, renderer, dialogue },
     });
   }
 

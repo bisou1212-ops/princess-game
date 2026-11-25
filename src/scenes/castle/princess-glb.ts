@@ -6,6 +6,7 @@ import { STYLE, addOutline, toonMaterial, type Surface } from '../../core/toon';
 import { getCharacter } from '../../systems/dialogue';
 import { decorateEyes } from './anime-eyes';
 import { PrincessAnimator } from './princess-animator';
+import { createFace } from './face';
 import { allItems } from '../../systems/items';
 import { getColor, getOutfitItem, SLOTS, type Outfit } from '../../systems/wardrobe';
 
@@ -66,7 +67,9 @@ export function createGlbPrincess(outfit: Outfit): { group: THREE.Group; setOutf
   root.traverse((o) => {
     if ((o as THREE.Bone).isBone && o.name === 'head') head = o;
   });
-  const eyes: THREE.Object3D[] = [];
+  const eyes: THREE.Mesh[] = [];
+  let mouthMesh: THREE.Mesh | undefined;
+  const cheeks: THREE.MeshStandardMaterial[] = [];
 
   for (const node of nodes) {
     parts.set(node.name, node);
@@ -76,6 +79,7 @@ export function createGlbPrincess(outfit: Outfit): { group: THREE.Group; setOutf
       if (!mesh.isMesh || mesh.userData.eyeDecal) return;
       const src = mesh.material as THREE.MeshStandardMaterial;
       const name = (src.name || '').split('.')[0] as TintKind | string;
+      mesh.userData.matName = name;
       let mat: Surface;
       if (name === 'tint' || name === 'tint_light' || name === 'tint_wing') {
         const role = node.name.startsWith('hair') ? 'hair' : /^(crown|tiara|necklace|wand)/.test(node.name) ? 'gem' : 'cloth';
@@ -93,6 +97,8 @@ export function createGlbPrincess(outfit: Outfit): { group: THREE.Group; setOutf
         mat = toonMaterial({ color: src.color.clone(), emissive: name === 'shine' ? 0xffffff : 0x000000, emissiveIntensity: name === 'shine' ? 0.5 : 0 }, role);
       }
       mesh.material = mat;
+      if (name === 'mouth') mouthMesh = mesh;
+      if (name === 'cheek') cheeks.push(mat as THREE.MeshStandardMaterial);
       mesh.castShadow = !mesh.userData.noShadow;
       // 폴짝 뛰면 쉬는 자세의 경계 상자 밖으로 나가므로 화면 밖 판정을 끈다 (부위 수가 적어 부담 없음)
       if ((mesh as THREE.SkinnedMesh).isSkinnedMesh) mesh.frustumCulled = false;
@@ -129,7 +135,9 @@ export function createGlbPrincess(outfit: Outfit): { group: THREE.Group; setOutf
     }
   };
   setOutfit(outfit);
-  const animator = clips.length > 0 ? new PrincessAnimator(root, clips, eyes) : null;
+  const face = STYLE === 'glossy' ? createFace({ root, head, eyes, mouthMesh, withMouth: true, cheeks }) : null;
+  const animator = clips.length > 0 ? new PrincessAnimator(root, clips, eyes, face) : null;
+  group.userData.face = face;
   group.userData.eyes = eyes; // 잠자리 그림에서 눈 감기
   return { group, setOutfit, animator };
 }

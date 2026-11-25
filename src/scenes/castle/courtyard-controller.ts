@@ -147,7 +147,11 @@ export class CourtyardController {
           for (let i = 0; i < spawnCount; i++) this.scene?.removePickup(pickupId(questId, i));
           this.refreshHud();
           this.deps.hud.setCandy(this.deps.state.wallet.candy, true);
-          this.deps.reward.open(result.rewards);
+          // 다 해냈다! 공주는 빙글, 친구는 폴짝 (G2)
+          this.scene?.gesture('princess', 'spin');
+          this.scene?.gesture(npc.character, 'hop');
+          // 빙글 도는 모습을 잠깐 보여 주고 선물 화면
+          window.setTimeout(() => this.deps.reward.open(result.rewards), 700);
         });
         break;
       default:

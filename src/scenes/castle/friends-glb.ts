@@ -10,6 +10,7 @@ import { STYLE, addOutline, toonMaterial } from '../../core/toon';
 import { getCharacter } from '../../systems/dialogue';
 import { decorateEyes } from './anime-eyes';
 import { PrincessAnimator } from './princess-animator';
+import { createFace } from './face';
 
 /**
  * Blender로 만든 친구 모델 (scripts/blender/build_friends.py → friend-<id>.glb, 친구 하나 = 파일 하나).
@@ -54,7 +55,11 @@ export function createFriendFromGlb(id: string): THREE.Group {
   root.traverse((o) => {
     if ((o as THREE.Bone).isBone && o.name === 'head') head = o;
   });
-  const eyes: THREE.Object3D[] = [];
+  const eyes: THREE.Mesh[] = [];
+  let mouthMesh: THREE.Mesh | undefined;
+  let noseMesh: THREE.Mesh | undefined;
+  let beak = false;
+  const cheeks: THREE.MeshStandardMaterial[] = [];
   const meshes: THREE.Mesh[] = [];
   root.traverse((o) => {
     const mesh = o as THREE.Mesh;
@@ -63,6 +68,10 @@ export function createFriendFromGlb(id: string): THREE.Group {
   for (const mesh of meshes) {
     const src = mesh.material as THREE.MeshStandardMaterial;
     const name = src.name || '';
+    mesh.userData.matName = name;
+    if (name.startsWith('mouth')) mouthMesh = mesh;
+    if (name.startsWith('f_nose')) noseMesh = mesh;
+    if (name.startsWith('f_beak')) beak = true;
     const role = /^(skin|f_.*fur|f_.*body|f_dochi_face)/.test(name)
       ? 'skin'
       : /hair/.test(name)
@@ -81,6 +90,7 @@ export function createFriendFromGlb(id: string): THREE.Group {
       role,
     );
     mesh.material = mat;
+    if (name.startsWith('cheek')) cheeks.push(mat as THREE.MeshStandardMaterial);
     mesh.castShadow = true;
     // 폴짝·걷기로 쉬는 자세 경계 밖으로 나갈 수 있어 화면 밖 판정을 끔 (친구 수가 적어 부담 없음)
     if ((mesh as THREE.SkinnedMesh).isSkinnedMesh) mesh.frustumCulled = false;
@@ -91,7 +101,10 @@ export function createFriendFromGlb(id: string): THREE.Group {
     if (/^(shine|mouth|cheek|eye)/.test(name)) mesh.userData.noOutline = true;
   }
   addOutline(g, 0.012);
-  g.userData.animator = t.clips.length > 0 ? new PrincessAnimator(root, t.clips, eyes) : null;
+  // 부리가 있는 새(삐삐)는 그림 입 없이 눈만 바뀐다
+  const face = STYLE === 'glossy' ? createFace({ root, head, eyes, mouthMesh, noseMesh, withMouth: !beak, cheeks }) : null;
+  g.userData.face = face;
+  g.userData.animator = t.clips.length > 0 ? new PrincessAnimator(root, t.clips, eyes, face) : null;
   return g;
 }
 
