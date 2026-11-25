@@ -75,7 +75,10 @@ docs/GDD.md        # 기획서
 - [ ] 그래픽 2차 (`docs/GRAPHICS-V2.md`, 무료 방법)
   - [x] G1 색감·빛: 셰이더 표면 무늬(`surface-patterns.ts`, 배경 재질 이름으로), 따뜻한 햇빛·약한 하늘빛, 색 보정(CustomToneMapping), 땅·잎 색 진하게(TINT), 발밑 그림자(`createContactShadow`), 풀 덤불(`grass-tufts.ts`), 화면 가장자리 어둡게, 불러오기 별
   - [x] G2 표정·연출: 그림 눈·입 표정 `face.ts`(대사 mood → 얼굴, 말할 때 입 뻐끔, 볼 발그레, 고개 갸웃·숙임), 몸짓 박수·끄덕·빙글(`playGesture`, 뼈를 코드로), 부탁 완료 때 공주 빙글·친구 폴짝 + 선물 화면 색종이(CSS). 대사 → 얼굴은 `DialogueBox.onSpeak` → `scene.setFace`
-  - [ ] G3 배경 에셋(CC0) / G4 캐릭터 다듬기
+  - [x] G3 배경 에셋: Kenney Nature Kit(CC0) 나무·꽃·버섯·그루터기·바위·울타리 → `kenney()`(build_castle_env.py)가 파스텔로 다시 칠하고 잎을 동글게 다듬어 배경 glb 에 합침. 원본 `art-source/kenney/`, 출처 `public/assets/CREDITS.md`. Blender 명령줄(`-b`)로도 다시 만들 수 있음
+  - [x] 보기 조절: 돋보기 +/−·두 손가락·휠로 가까이·멀리, 마당 끌기로 둘러보기, 처음 보던 대로 버튼 (`follow-camera.ts`, 마당·꽃 왕국)
+  - [x] 대화창 얼굴 사진: 말하는 캐릭터를 기분 표정으로 찍어 말풍선 앞에 (`src/ui/portraits.ts`)
+  - [ ] G4 캐릭터 다듬기
 
 ## 나중에 할 일
 - **사람 같은 음성 (보류, 기기 TTS가 로봇 같다는 피드백)**: 대사를 미리 음성 파일로 만들어 넣는다.

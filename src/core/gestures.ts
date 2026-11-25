@@ -1,6 +1,6 @@
 /**
  * 톡 + 끌기 (GDD 7: 조작은 "톡"과 "끌기" 두 가지뿐).
- * 손가락 하나로 짧게 누르면 톡, 누른 채 움직이면 끌기. 두 손가락은 무시(나중에 카메라용).
+ * 손가락 하나로 짧게 누르면 톡, 누른 채 움직이면 끌기. 두 손가락을 벌리거나 모으면 onPinch(카메라 가까이·멀리).
  */
 export interface GestureHandlers {
   onTap?(x: number, y: number): void;
@@ -9,6 +9,8 @@ export interface GestureHandlers {
   onDragMove?(x: number, y: number): void;
   onDragEnd?(x: number, y: number): void;
   onDragCancel?(): void;
+  /** 두 손가락 사이가 지난번보다 factor 배 (>1 벌림) */
+  onPinch?(factor: number): void;
 }
 
 /**
@@ -23,8 +25,10 @@ export function attachGestures(el: HTMLElement, h: GestureHandlers, moveThreshol
   const down = (e: PointerEvent) => {
     if (e.pointerType === 'mouse' && e.button !== 0) return;
     active.set(e.pointerId, { x: e.clientX, y: e.clientY, t: performance.now() });
+    cur.set(e.pointerId, { x: e.clientX, y: e.clientY });
     if (active.size > 1) {
       multi = true;
+      pinchDist = twoDist();
       if (dragging !== null) {
         dragging = null;
         h.onDragCancel?.();
@@ -32,8 +36,23 @@ export function attachGestures(el: HTMLElement, h: GestureHandlers, moveThreshol
     }
   };
 
+  /** 지금 손가락 위치 (두 손가락 벌리기용) */
+  const cur = new Map<number, { x: number; y: number }>();
+  let pinchDist = 0;
+  const twoDist = () => {
+    const [a, b] = [...cur.values()];
+    return a && b ? Math.hypot(a.x - b.x, a.y - b.y) : 0;
+  };
+
   const move = (e: PointerEvent) => {
     const s = active.get(e.pointerId);
+    if (s) cur.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (s && multi) {
+      const d = twoDist();
+      if (pinchDist > 0 && d > 0) h.onPinch?.(d / pinchDist);
+      pinchDist = d;
+      return;
+    }
     if (!s || multi) return;
     if (dragging === e.pointerId) {
       h.onDragMove?.(e.clientX, e.clientY);
@@ -55,6 +74,8 @@ export function attachGestures(el: HTMLElement, h: GestureHandlers, moveThreshol
   const up = (e: PointerEvent) => {
     const s = active.get(e.pointerId);
     active.delete(e.pointerId);
+    cur.delete(e.pointerId);
+    pinchDist = 0;
     if (!s) return;
     const wasMulti = multi;
     if (active.size === 0) multi = false;
@@ -71,6 +92,8 @@ export function attachGestures(el: HTMLElement, h: GestureHandlers, moveThreshol
 
   const cancel = (e: PointerEvent) => {
     active.delete(e.pointerId);
+    cur.delete(e.pointerId);
+    pinchDist = 0;
     if (active.size === 0) multi = false;
     if (dragging === e.pointerId) {
       dragging = null;

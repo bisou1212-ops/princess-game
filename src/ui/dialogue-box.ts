@@ -33,6 +33,10 @@ export class DialogueBox {
   onSpeak: ((speaker: string | null, mood: Mood | undefined, talking: boolean) => void) | null = null;
   /** 이전 읽기의 늦은 onEnd 가 지금 말하는 입을 닫지 않게 */
   private speakToken = 0;
+  /** 말하는 캐릭터의 얼굴 사진 (기분 표정). null 이면 사진 없이 */
+  portraitFor: ((speaker: string, mood: Mood | undefined) => string | null) | null = null;
+  private readonly portraitEl: HTMLDivElement;
+  private portraitKey = '';
 
   constructor(parent: HTMLElement, private readonly speaker: Speaker) {
     this.layer = document.createElement('div');
@@ -40,6 +44,8 @@ export class DialogueBox {
     this.layer.hidden = true;
     this.layer.innerHTML = `
       <div class="choices" hidden></div>
+      <div class="dialogue-row">
+      <div class="portrait" hidden><img alt="" /></div>
       <div class="bubble" role="dialog" aria-live="polite">
         <div class="bubble-name"></div>
         <p class="bubble-text"></p>
@@ -47,12 +53,14 @@ export class DialogueBox {
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M16 8.5a4.5 4.5 0 0 1 0 7M18.5 6a8 8 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
         </button>
         <div class="bubble-next" aria-hidden="true">▼</div>
+      </div>
       </div>`;
     parent.appendChild(this.layer);
     this.nameEl = this.layer.querySelector('.bubble-name')!;
     this.textEl = this.layer.querySelector('.bubble-text')!;
     this.nextEl = this.layer.querySelector('.bubble-next')!;
     this.choicesEl = this.layer.querySelector('.choices')!;
+    this.portraitEl = this.layer.querySelector('.portrait')!;
     this.choicesEl.addEventListener('click', (e) => {
       e.stopPropagation();
       const card = (e.target as HTMLElement).closest<HTMLButtonElement>('.choice');
@@ -85,6 +93,8 @@ export class DialogueBox {
     this.session = null;
     this.layer.hidden = true;
     this.speakToken++;
+    this.portraitKey = '';
+    this.portraitEl.classList.remove('is-talking');
     this.onSpeak?.(null, undefined, false);
     this.onCover?.(0);
     const cb = this.onClose;
@@ -106,6 +116,7 @@ export class DialogueBox {
     const who = getCharacter(line.speaker);
     this.nameEl.textContent = who.name;
     this.layer.style.setProperty('--speaker-color', who.color);
+    this.showPortrait(line);
 
     this.textEl.replaceChildren();
     this.words = [];
@@ -134,6 +145,28 @@ export class DialogueBox {
     this.shownAt = performance.now();
     this.reportCover();
     this.speakCurrent();
+  }
+
+  private showPortrait(line: DialogueLine): void {
+    let url: string | null = null;
+    try {
+      url = this.portraitFor?.(line.speaker, line.mood) ?? null;
+    } catch (err) {
+      console.warn('얼굴 사진을 만들지 못했어요', err);
+    }
+    this.portraitEl.hidden = !url;
+    if (!url) return;
+    const key = `${line.speaker}|${url.length}|${line.mood ?? ''}`;
+    if (key === this.portraitKey) return;
+    // 말하는 사람이 바뀌면 사진이 톡 튀어나옴
+    const changed = !this.portraitKey.startsWith(`${line.speaker}|`);
+    this.portraitKey = key;
+    this.portraitEl.querySelector('img')!.src = url;
+    if (changed) {
+      this.portraitEl.classList.remove('is-pop');
+      void this.portraitEl.offsetWidth;
+      this.portraitEl.classList.add('is-pop');
+    }
   }
 
   private reportCover(): void {
@@ -184,6 +217,7 @@ export class DialogueBox {
     this.highlight(-1);
     const token = ++this.speakToken;
     this.onSpeak?.(line.speaker, line.mood, true);
+    this.portraitEl.classList.add('is-talking');
     this.speaker.speak(line.text, {
       lang: line.lang ?? voice.lang,
       pitch: voice.pitch,
@@ -193,7 +227,10 @@ export class DialogueBox {
       onWord: (i) => this.highlight(i),
       onEnd: () => {
         this.highlight(-1);
-        if (token === this.speakToken) this.onSpeak?.(line.speaker, line.mood, false);
+        if (token === this.speakToken) {
+          this.onSpeak?.(line.speaker, line.mood, false);
+          this.portraitEl.classList.remove('is-talking');
+        }
       },
     });
   }

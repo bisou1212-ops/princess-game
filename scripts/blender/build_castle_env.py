@@ -12,6 +12,7 @@
 import bpy
 import bmesh
 import math
+import os
 import random
 from mathutils import Vector, Matrix, noise
 
@@ -35,6 +36,13 @@ MATS = {
     "rock": (0.86, 0.83, 0.9, 1),
     "basin": (0.9, 0.95, 1.0, 1),
     "water": (0.56, 0.82, 1.0, 1),
+    # (그래픽 2차 G3) Kenney CC0 소품을 파스텔로 칠할 색
+    "petal_pink": (1.0, 0.62, 0.78, 1),
+    "petal_lilac": (0.8, 0.68, 1.0, 1),
+    "petal_yellow": (1.0, 0.88, 0.45, 1),
+    "mush_red": (1.0, 0.5, 0.56, 1),
+    "mush_tan": (0.98, 0.82, 0.64, 1),
+    "cream": (1.0, 0.97, 0.92, 1),
 }
 
 
@@ -128,6 +136,96 @@ def disk(mname, r, loc, seg=32):
     bm = bmesh.new()
     bmesh.ops.create_circle(bm, cap_ends=True, cap_tris=False, segments=seg, radius=r)
     return obj_from_bm(bm, "disk", mname, loc=loc)
+
+
+# ── Kenney CC0 소품 (그래픽 2차 G3) ──────────────────────
+# Kenney Nature Kit · Fantasy Town Kit (CC0, kenney.nl) 에서 고른 .glb → art-source/kenney/ (출처: public/assets/CREDITS.md)
+# 각진 로우폴리를 게임의 말랑한 화풍에 맞게: 겹친 점 합치기 + 부드러운 면, 잎은 서브디비전으로 동글게.
+# Kenney 재질 이름 → 우리 배경 재질 (색·표면 무늬·AO·재질별 합치기를 그대로 탄다)
+KENNEY_MATS = {
+    "leafsGreen": "leaf", "leafsDark": "leaf2", "grass": "leaf2",
+    "woodBark": "trunk", "woodInner": "wood", "wood": "wood", "woodDark": "trunk",
+    "dirt": "rock", "stone": "rock", "_defaultMat": "cream", "colormap": "hedge",
+    "colorRed": "petal_pink", "colorPurple": "petal_lilac", "colorYellow": "petal_yellow", "colorTan": "mush_tan",
+}
+# 동글게 다듬을 Kenney 재질 (서브디비전 단계) — 나무 잎만. 꽃줄기·풀은 그대로 (삼각형 16배가 되므로)
+KENNEY_ROUND = {"leafsGreen": 2, "leafsDark": 2}
+
+
+def kenney_dir():
+    d = globals().get("KENNEY_DIR")
+    if d:
+        return d
+    here = os.path.dirname(os.path.abspath(globals().get("__file__", "")))
+    return os.path.normpath(os.path.join(here, "..", "..", "art-source", "kenney"))
+
+
+def kenney(P, name, x, gz, z=0.0, rot=0.0, scale=1.0, remap=None, round_=True, detail=2):
+    """detail: 잎 서브디비전 최대 단계 (멀리 있는 나무는 1)"""
+    """Kenney 모델 하나를 (x, gz) 에 놓는다. 재질마다 따로 나눠 P 에 넣는다 (밑면 = z)"""
+    before = set(bpy.data.objects)
+    bpy.ops.import_scene.gltf(filepath=os.path.join(kenney_dir(), name + ".glb"))
+    new = [o for o in bpy.data.objects if o not in before]
+    bm_all = {}
+    for o in new:
+        if o.type != "MESH":
+            continue
+        me = o.data
+        for poly_mat_i, m in enumerate(me.materials):
+            src = (m.name.split(".")[0] if m else "_defaultMat")
+            key = ((remap or {}).get(src, KENNEY_MATS.get(src, "cream")), KENNEY_ROUND.get(src, 0))
+            bm = bm_all.setdefault(key, bmesh.new())
+            tmp = bmesh.new()
+            tmp.from_mesh(me)
+            bmesh.ops.delete(tmp, geom=[f for f in tmp.faces if f.material_index != poly_mat_i], context="FACES")
+            tmp.transform(o.matrix_world)
+            me2 = bpy.data.meshes.new("_k")
+            tmp.to_mesh(me2)
+            tmp.free()
+            bm.from_mesh(me2)
+            bpy.data.meshes.remove(me2)
+    for o in new:
+        d = o.data
+        bpy.data.objects.remove(o)
+        if isinstance(d, bpy.types.Mesh) and d.users == 0:
+            bpy.data.meshes.remove(d)
+    # 밑면 가운데를 원점으로
+    pts = [v.co.copy() for bm in bm_all.values() for v in bm.verts]
+    if not pts:
+        return
+    min_z = min(p.z for p in pts)
+    cx = (min(p.x for p in pts) + max(p.x for p in pts)) / 2
+    cy = (min(p.y for p in pts) + max(p.y for p in pts)) / 2
+    xf = Matrix.Rotation(rot, 4, "Z") @ Matrix.Scale(scale, 4) @ Matrix.Translation((-cx, -cy, -min_z))
+    for (mname, lv), bm in bm_all.items():
+        bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=1e-4)
+        bm.transform(xf)
+        ob = obj_from_bm(bm, "kenney_" + name, mname, smooth=True, loc=G(x, gz, z))
+        lv = min(lv, detail) if round_ else 0
+        if lv:
+            mod = ob.modifiers.new("round", "SUBSURF")
+            mod.levels = lv
+            mod.render_levels = lv
+        P.append(ob)
+
+
+# 나무 종류: (파일, 원래 높이 → 이 배율이면 약 3.3m)
+KENNEY_TREES = [("tree_oak", 2.7), ("tree_default", 2.0), ("tree_fat", 2.8), ("tree_tall", 1.9), ("tree_simple", 2.1)]
+FLOWERS = ["flower_redA", "flower_redB", "flower_purpleA", "flower_purpleB", "flower_yellowA", "flower_yellowB"]
+
+
+def k_tree(P, x, gz, kind=0, size=1.0, z=0.0, seed=0, detail=2):
+    name, sc = KENNEY_TREES[kind % len(KENNEY_TREES)]
+    kenney(P, name, x, gz, z=z, rot=random.Random(seed).uniform(0, math.tau), scale=sc * size, detail=detail)
+
+
+def flower_clump(P, x, gz, seed=0, n=5, r=0.55, z=0.0):
+    """작은 꽃 무더기 (Kenney 꽃, 파스텔 색)"""
+    rnd = random.Random(seed)
+    for i in range(n):
+        a = rnd.uniform(0, math.tau)
+        d = rnd.uniform(0, r)
+        kenney(P, rnd.choice(FLOWERS), x + math.cos(a) * d, gz + math.sin(a) * d, z=z, rot=rnd.uniform(0, math.tau), scale=rnd.uniform(2.1, 2.7))
 
 
 # ── 부품 ──────────────────────────────────────────────
@@ -367,10 +465,10 @@ def build_outside(P):
             for o in P[-3:]:
                 o.location.z += z
         else:
-            k = len(P)
-            build_tree(P, x, gz, h=rnd.uniform(3.2, 4.6), seed=i, detail=1)
-            for o in P[k:]:
-                o.location.z += z
+            # 멀리 있는 나무는 동글게 다듬는 단계를 낮춤 (삼각형 아끼기)
+            k_tree(P, x, gz, kind=i, size=rnd.uniform(1.0, 1.4), z=z, seed=i, detail=0)  # 성 밖은 성벽에 가려 멀리만 보임
+        if i % 5 == 1:
+            kenney(P, "stump_round" if i % 2 else "log", x + 1.6, gz + 0.8, z=z, rot=i, scale=2.4)
 
 
 def build_all():
@@ -382,10 +480,14 @@ def build_all():
     build_tower(P, 5.5, -9)
     build_walls(P)
     build_fountain(P, W)
+    # 마당 나무 4그루 (Kenney CC0, 동글게 다듬음) + 발치의 버섯
     for i, (x, gz) in enumerate(((-8, -4), (8, -4), (-8.5, 6), (8.5, 6))):
-        build_tree(P, x, gz, h=3.2, seed=i + 1)
+        k_tree(P, x, gz, kind=i % 2, seed=i + 1)
+        kenney(P, "mushroom_redGroup" if i % 2 == 0 else "mushroom_tanGroup", x + (0.75 if x < 0 else -0.75), gz + 0.45, rot=i, scale=2.6)
     for i, (x, gz) in enumerate(((-10.3, -8), (-10.3, -2), (10.3, -8), (10.3, -2), (-10.3, 9.6), (10.3, 9.6), (-8.5, 10.4), (8.5, 10.4), (-3.2, -10.4), (3.2, -10.4))):
         bush(P, x, gz, r=0.55, seed=i)
+        # 덤불 앞(마당 쪽) 작은 꽃 무더기
+        flower_clump(P, x + (0.75 if x < 0 else -0.75), gz + (0.6 if gz < 0 else -0.6), seed=i + 50, n=3, r=0.3)
     flowerbed(P, -5, 2)
     flowerbed(P, 5, 2)
     bench(P, -8.5, 1)
@@ -393,7 +495,7 @@ def build_all():
     for x, gz in ((-2.4, 9.2), (2.4, 9.2), (-2.4, -5.6), (2.4, -5.6)):
         lamp(P, x, gz)
     for i, (x, gz, r) in enumerate(((-10.2, 4.2, 0.35), (10.4, -5.2, 0.3), (-6.8, -6.3, 0.28), (7.2, 9.8, 0.32))):
-        P.append(blob("rock", r, G(x, gz, r * 0.4), scale=(1.3, 1, 0.75), subdiv=2, wobble=0.2, seed=i + 20))
+        kenney(P, "rock_smallA" if i % 2 == 0 else "rock_smallC", x, gz, rot=i * 1.7, scale=r * 6.5)
     path_stones(P)
     build_outside(P)
     join_by_material(P, "static")

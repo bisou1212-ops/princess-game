@@ -179,13 +179,17 @@ def flower_outside(P):
         t = max(0.0, min(1.0, (d - 14) / 10))
         t = t * t * (3 - 2 * t)
         z = t * ((noise.noise(Vector((x * 0.06, gz * 0.06, 2.3))) * 0.5 + 0.5) * 5.0) - 0.1
-        k = len(P)
         if i % 3 == 0:
+            k = len(P)
             bush(P, x, gz, r=1.0, seed=i, detail=1)
+            for o in P[k:]:
+                o.location.z += z
         else:
-            build_tree(P, x, gz, h=rnd.uniform(3.4, 5.0), seed=i + 40, detail=1)
-        for o in P[k:]:
-            o.location.z += z
+            k_tree(P, x, gz, kind=i + 1, size=rnd.uniform(1.05, 1.5), z=z, seed=i + 40, detail=1 if math.hypot(x, gz) < 23 else 0)
+        if i % 4 == 1:
+            kenney(P, "stump_round" if i % 2 else "log", x + 1.5, gz - 0.9, z=z, rot=i, scale=2.4)
+        if i % 3 == 2:
+            flower_clump(P, x - 1.3, gz + 0.7, seed=i + 7, n=5, z=z)
     windmill(P, -21, -24, 2.6)
 
 
@@ -198,7 +202,16 @@ def build_flower():
     cottage(P, -9.5, 4, 3.5, 3, 2.2, "wall_mint", "roof_green", chimney=False)  # 정원 창고
     well(P, W, 0, -1)
     for i, (x, gz, h) in enumerate(((-11, -3, 3.0), (11, -2, 3.0), (10.5, 6, 3.4), (-3, -11, 3.0), (3, -11.5, 2.8))):
-        build_tree(P, x, gz, h=h, seed=i + 30)
+        k_tree(P, x, gz, kind=(i * 2) % 5, size=h / 3.2, seed=i + 30)
+        kenney(P, "mushroom_redGroup" if i % 2 else "mushroom_tanGroup", x + (0.8 if x < 0 else -0.8), gz + 0.5, rot=i, scale=2.6)
+    # 꽃 무더기: 집 앞 화단·울타리 안쪽
+    for i, (x, gz) in enumerate(((-9.6, -5.4), (-4.4, -5.6), (4.4, -5.6), (9.6, -5.4), (-11.6, 1.0), (11.6, 2.4), (-7.4, 2.4), (11.4, 10.6), (-11.4, 10.8), (-4.8, 11.4), (4.8, 11.4))):
+        flower_clump(P, x, gz, seed=i + 200, n=5, r=0.5)
+    # 고고의 텃밭 둘레 나무 울타리 (남쪽·동쪽, 북쪽은 열어 둠)
+    for i in range(3):
+        kenney(P, "fence_simple", -10.7 + i * 1.2, 8.0, scale=1.2, round_=False)
+    for i in range(2):
+        kenney(P, "fence_simple", -7.9, 7.2 - i * 1.2, rot=math.pi / 2, scale=1.2, round_=False)
     # 산울타리 (flower-kingdom.json 의 hedge-* 자리)
     hedge_row(P, -12.6, -12.6, 12.6, -12.6, seed=1)
     hedge_row(P, -12.6, -12.2, -12.6, 12.6, seed=40)

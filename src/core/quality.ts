@@ -26,7 +26,7 @@ export const QUALITY: Quality = detect();
 
 export const QUALITY_SETTINGS = {
   basic: { bloom: false, maxPixelRatio: 1.25, shadowMap: 1024, petals: 14, clouds: 4, grassTufts: 400 },
-  high: { bloom: true, maxPixelRatio: 2, shadowMap: 2048, petals: 36, clouds: 7, grassTufts: 1000 },
+  high: { bloom: true, maxPixelRatio: 2, shadowMap: 2048, petals: 36, clouds: 7, grassTufts: 800 },
 }[QUALITY];
 
 /** 다음에 켤 때부터 적용 (부모 설정용) */

@@ -9,7 +9,7 @@ import type { Outfit } from '../systems/wardrobe';
  */
 const cache = new Map<string, string>();
 
-interface ShotOptions {
+export interface ShotOptions {
   size?: number;
   /** 몸을 살짝 돌린 각도 */
   yaw?: number;
@@ -17,9 +17,11 @@ interface ShotOptions {
   sleeping?: boolean;
   /** 0~1: 모델 아래에서부터 이 높이 이상만 화면에 (0.55 = 머리·어깨) */
   cropFrom?: number;
+  /** 얼굴 사진: 머리 뼈 둘레만 [위로 얼마나, 반지름] (m) */
+  head?: [number, number];
 }
 
-function snapshot(renderer: THREE.WebGLRenderer, object: THREE.Object3D, o: ShotOptions = {}): string {
+export function snapshot(renderer: THREE.WebGLRenderer, object: THREE.Object3D, o: ShotOptions = {}): string {
   const size = o.size ?? 320;
   const rt = new THREE.WebGLRenderTarget(size, size, { samples: 4 });
   rt.texture.colorSpace = THREE.SRGBColorSpace;
@@ -36,8 +38,14 @@ function snapshot(renderer: THREE.WebGLRenderer, object: THREE.Object3D, o: Shot
   object.updateMatrixWorld(true);
   const box = new THREE.Box3().setFromObject(object);
   if (o.cropFrom) box.min.y = box.min.y + (box.max.y - box.min.y) * o.cropFrom;
-  const center = box.getCenter(new THREE.Vector3());
-  const radius = box.getBoundingSphere(new THREE.Sphere()).radius;
+  let center = box.getCenter(new THREE.Vector3());
+  let radius = box.getBoundingSphere(new THREE.Sphere()).radius;
+  const headBone = o.head ? object.getObjectByName('head') : undefined;
+  if (o.head && headBone) {
+    center = headBone.getWorldPosition(new THREE.Vector3());
+    center.y += o.head[0];
+    radius = o.head[1];
+  }
   const dist = (radius / Math.sin(THREE.MathUtils.degToRad(camera.fov / 2))) * 0.95;
   camera.position.copy(center).add(new THREE.Vector3(0, 0.25, 1).normalize().multiplyScalar(dist));
   camera.lookAt(center);

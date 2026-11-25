@@ -15,6 +15,7 @@ import { PET_IDS, Pet, petCharacter, petVars } from './systems/pet';
 import { fillLines } from './systems/random-quests';
 import { PetPanel } from './ui/pet-panel';
 import { petThumb, sleepingPrincess } from './ui/pet-thumbs';
+import { createPortraits } from './ui/portraits';
 import { BedtimeScreen } from './ui/bedtime';
 import { PlayTimer, SLEEP_HOLD_MS } from './systems/playtime';
 import { preloadPet } from './scenes/castle/pet-glb';
@@ -83,8 +84,12 @@ async function start() {
     onExit: () => void goTo('town'),
     onMap: () => openMap(),
     onParent: () => openParent(),
+    onZoom: (f) => mode === 'town' && town.scene.zoomBy(f),
+    onResetView: () => mode === 'town' && town.scene.resetView(),
   });
   const dialogue = new DialogueBox(document.body, speaker);
+  // 말풍선 앞 얼굴 사진 (3D 모델을 기분 표정으로 찍음)
+  dialogue.portraitFor = createPortraits({ renderer, outfit: () => state.outfit, petKind: () => state.pet?.kind ?? null });
   const reward = new RewardPopup(document.body, speaker, princessVoice);
   const fade = document.createElement('div');
   fade.className = 'scene-fade';
@@ -547,17 +552,60 @@ async function start() {
   }
 
   // 톡·끌기: 지금 장면으로 보낸다
+  const tapAt = (x: number, y: number) => {
+    sfx('tap');
+    if (mode === 'town') town.scene.tap(toNdc(x, y));
+    else if (mode === 'room') room?.controller.onTap(x, y);
+  };
+  /**
+   * 마당에서 끌기 = 둘러보기 (가로: 빙 돌기, 세로: 높낮이).
+   * 아이 톡은 조금 미끄러지므로 28px 안에서 떼면 그냥 톡으로 본다.
+   */
+  let lookDrag: { sx: number; sy: number; lx: number; ly: number; t: number; on: boolean } | null = null;
+  const canLook = () => mode === 'town' && !switching && !wardrobe.isOpen;
   attachGestures(renderer.domElement, {
-    onTap: (x, y) => {
-      sfx('tap');
-      if (mode === 'town') town.scene.tap(toNdc(x, y));
-      else if (mode === 'room') room?.controller.onTap(x, y);
+    onTap: tapAt,
+    onDragStart: (x, y) => {
+      if (mode === 'room' && room) return room.controller.onDragStart(x, y);
+      if (!canLook()) return false;
+      lookDrag = { sx: x, sy: y, lx: x, ly: y, t: performance.now(), on: false };
+      return true;
     },
-    onDragStart: (x, y) => (mode === 'room' && room ? room.controller.onDragStart(x, y) : false),
-    onDragMove: (x, y) => room?.controller.onDragMove(x, y),
-    onDragEnd: (x, y) => room?.controller.onDragEnd(x, y),
-    onDragCancel: () => room?.controller.cancelDrag(),
+    onDragMove: (x, y) => {
+      if (!lookDrag) return room?.controller.onDragMove(x, y);
+      if (!lookDrag.on && Math.hypot(x - lookDrag.sx, y - lookDrag.sy) > 28) {
+        lookDrag.on = true;
+        lookDrag.lx = x;
+        lookDrag.ly = y;
+      }
+      if (!lookDrag.on) return;
+      const h = container.clientHeight || 1;
+      town.scene.orbit(-((x - lookDrag.lx) / h) * 2.6, ((y - lookDrag.ly) / h) * 1.6);
+      lookDrag.lx = x;
+      lookDrag.ly = y;
+    },
+    onDragEnd: (x, y) => {
+      if (!lookDrag) return room?.controller.onDragEnd(x, y);
+      const l = lookDrag;
+      lookDrag = null;
+      if (!l.on && performance.now() - l.t <= 1200) tapAt(l.sx, l.sy);
+    },
+    onDragCancel: () => {
+      if (lookDrag) lookDrag = null;
+      else room?.controller.cancelDrag();
+    },
+    // 두 손가락 벌리기 = 가까이
+    onPinch: (f) => canLook() && town.scene.zoomBy(1 / f),
   });
+  // 컴퓨터: 마우스 휠로 가까이·멀리
+  renderer.domElement.addEventListener(
+    'wheel',
+    (e) => {
+      e.preventDefault();
+      if (canLook()) town.scene.zoomBy(Math.exp(e.deltaY * 0.0012));
+    },
+    { passive: false },
+  );
 
   // 느린 기기면 빛번짐·해상도를 단계별로 낮춘다 (실제 fps 를 재서)
   const perf = new PerfGovernor((level) => {

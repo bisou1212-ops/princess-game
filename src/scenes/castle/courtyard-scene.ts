@@ -73,6 +73,12 @@ export interface CourtyardScene {
   setTalking(on: boolean): void;
   /** 표정 (G2): 말하는 캐릭터가 대사 기분에 맞는 얼굴 + 입 뻐끔. character null = 모두 원래 얼굴로 */
   setFace(character: string | null, mood?: Mood, talking?: boolean): void;
+  /** 카메라 가까이(<1)·멀리(>1) */
+  zoomBy(factor: number): void;
+  /** 끌어서 둘러보기 (라디안: 가로 돌기, 세로 높낮이) */
+  orbit(dYaw: number, dPitch: number): void;
+  /** 처음 보던 각도·거리로 */
+  resetView(): void;
   /** 몸짓 (G2): 박수·끄덕·빙글·폴짝·손 흔들기 */
   gesture(character: string, g: Gesture | 'hop' | 'wave'): void;
   /** 펫 데려오기·바꾸기 (null = 없음). 모델은 미리 preloadPet 으로 불러 둔다 */
@@ -346,6 +352,7 @@ export function createCourtyardScene(aspect: number, opts: CourtyardOptions = {}
   const mirrorCam = new THREE.Vector3();
   const mirrorLook = new THREE.Vector3(walker.x, 0.8, walker.z);
   const lookTarget = new THREE.Vector3();
+  const camSide = new THREE.Vector3();
   let walkTime = 0;
   let elapsed = 0;
   /** 걸어가는 중인 목적지(친구·물건) */
@@ -743,6 +750,18 @@ export function createCourtyardScene(aspect: number, opts: CourtyardOptions = {}
       for (const o of all) if (o && o !== a) o.face?.setTalking(false);
     },
 
+    zoomBy(f) {
+      follow.zoomBy(f);
+    },
+
+    orbit(dYaw, dPitch) {
+      follow.orbit(dYaw, dPitch);
+    },
+
+    resetView() {
+      follow.reset();
+    },
+
     gesture(character, g) {
       const a = animatorOf(character);
       if (!a) return;
@@ -919,13 +938,15 @@ export function createCourtyardScene(aspect: number, opts: CourtyardOptions = {}
           const len = Math.hypot(nx, nz) || 1;
           nx /= len;
           nz /= len;
-          if (nz < 0) {
+          // 지금 카메라가 있는 쪽에서 보게 (아이가 돌려 놓은 각도 존중)
+          const side = follow.sideDir(camSide);
+          if (nx * side.x + nz * side.z < 0) {
             nx = -nx;
             nz = -nz;
           }
-          // 너무 옆이면 카메라 쪽(+z)으로 섞어 화면 방향이 크게 뒤집히지 않게
-          const dx = nx;
-          const dz = nz + 0.35;
+          // 너무 옆이면 카메라 쪽으로 섞어 화면 방향이 크게 뒤집히지 않게
+          const dx = nx + side.x * 0.35;
+          const dz = nz + side.z * 0.35;
           const dl = Math.hypot(dx, dz);
           wantPos.set(mx + (dx / dl) * 5.2, 2.6, mz + (dz / dl) * 5.2);
           wantLook.set(mx, 0.95, mz);
