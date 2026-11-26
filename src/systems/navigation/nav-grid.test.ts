@@ -109,10 +109,10 @@ describe('친구 돌아다니기 목적지', async () => {
 });
 
 describe('돌아다니는 친구 데이터', async () => {
-  const { LOCATIONS, canTravelTo, loadLocationLayout } = await import('../world');
+  const { LOCATIONS, hasLayout, loadLocationLayout } = await import('../world');
   const { buildNavGrid } = await import('../../scenes/castle/courtyard-layout');
   it('돌아다니는 친구의 집 둘레에 걸을 수 있는 곳이 충분하다', async () => {
-    for (const l of LOCATIONS.filter((x) => canTravelTo(x.id))) {
+    for (const l of LOCATIONS.filter((x) => hasLayout(x.id))) {
       const layout = await loadLocationLayout(l.id);
       const grid = buildNavGrid(layout);
       for (const n of layout.npcs.filter((x) => x.wander)) {

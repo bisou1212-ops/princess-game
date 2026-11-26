@@ -212,11 +212,36 @@
         "tori",
         "pippi",
         "gogo",
-        "dochi"
+        "dochi",
+        "pado"
       ],
       "items": [],
       "dialogue": "rq-seek",
       "reasons": []
+    },
+    {
+      "id": "shells",
+      "type": "collect",
+      "givers": [
+        "pado"
+      ],
+      "items": [
+        "shell-pink",
+        "shell-blue",
+        "shell-yellow",
+        "shell-purple"
+      ],
+      "count": [
+        3,
+        6
+      ],
+      "decoys": 2,
+      "dialogue": "rq-shells",
+      "reasons": [
+        "조개로 목걸이를 만들고 싶어.",
+        "모래성을 예쁘게 꾸밀 거야.",
+        "친구들한테 조개 선물을 할 거야."
+      ]
     }
   ],
   "candy": [

@@ -365,7 +365,7 @@ function mergeByMaterial(g: THREE.Group): THREE.Group {
 
 /**
  * 부탁으로 줍는 물건 (꽃 말고). 돌아가는 부분은 'bloom', 바닥 반짝 고리는 'glow' 이름으로 둔다.
- * shape: strawberry · blueberry · pot(넘어진 화분 — 'bloom'이 옆으로 누워 있다)
+ * shape: strawberry · blueberry · shell(부채꼴 조개) · pot(넘어진 화분 — 'bloom'이 옆으로 누워 있다)
  */
 export function createPickupMesh(shape: string, color: string): THREE.Group {
   if (shape === 'flower') return createFlowerMesh(color);
@@ -398,6 +398,32 @@ export function createPickupMesh(shape: string, color: string): THREE.Group {
     }
     bloom.add(berry, tip);
     bloom.position.y = 0.32;
+  } else if (shape === 'shell') {
+    // 부채꼴 조개: 납작한 반원 껍데기에 골이 진 줄무늬, 아래에 작은 귀 두 개
+    const mat = toonMaterial({ color });
+    const shellGeo = new THREE.SphereGeometry(0.22, 20, 10, 0, Math.PI, 0, Math.PI / 2);
+    const pos = shellGeo.getAttribute('position') as THREE.BufferAttribute;
+    for (let i = 0; i < pos.count; i++) {
+      const x = pos.getX(i);
+      const z = pos.getZ(i);
+      const a = Math.atan2(z, x);
+      const rib = 1 + 0.07 * Math.cos(a * 14) * Math.min(1, Math.hypot(x, z) / 0.22);
+      pos.setXYZ(i, x * rib, pos.getY(i) * 0.45, z * rib);
+    }
+    shellGeo.computeVertexNormals();
+    // 볼록한 면이 위, 부채가 카메라(남쪽) 쪽으로 펼쳐지게 눕혀 놓는다 (돌리면 옆에서 얇게 보여서 돌리지 않음)
+    const shell = new THREE.Mesh(shellGeo, mat);
+    const hinge = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.05, 0.06), mat);
+    hinge.position.set(0, 0.0, -0.01);
+    const pearl = new THREE.Mesh(new THREE.SphereGeometry(0.045, 10, 8), toonMaterial({ color: 0xfff6fb }, 'gem'));
+    pearl.position.set(0, 0.1, 0.08);
+    const fan = new THREE.Group();
+    fan.add(shell, hinge, pearl);
+    fan.rotation.x = -0.35; // 부채 앞쪽을 살짝 들어 카메라에서 잘 보이게
+    fan.scale.setScalar(1.35);
+    bloom.add(fan);
+    bloom.userData.noSpin = true;
+    bloom.position.y = 0.12;
   } else if (shape === 'blueberry') {
     const mat = toonMaterial({ color });
     for (const [x, y, z] of [[-0.09, 0, 0.02], [0.09, 0, -0.02], [0, 0.13, 0]]) {

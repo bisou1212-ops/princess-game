@@ -1,4 +1,4 @@
-import { bowlIcon, bubblesIcon, candyIcon, choiceIcon, dressIcon, flowerIcon, giftIcon, letterIcon, potIcon, strawberryIcon } from './icons';
+import { bowlIcon, bubblesIcon, candyIcon, choiceIcon, dressIcon, flowerIcon, giftIcon, letterIcon, potIcon, shellIcon, strawberryIcon } from './icons';
 import { mapIcon } from '../scenes/map/map-screen';
 
 /**
@@ -15,6 +15,7 @@ const ICONS: Record<string, () => string> = {
   flower: () => flowerIcon('#ff8fc4'),
   strawberry: () => strawberryIcon('#ff6f8a'),
   pot: () => potIcon('#ffb38a'),
+  shell: () => shellIcon('#ff9cc8'),
   letter: () => letterIcon('#c9a8ff'),
   smile: () => choiceIcon('happy'),
   cake: () => svg(`<ellipse cx="32" cy="52" rx="26" ry="6" fill="#e9e2f5"/><path d="M12 30v18q0 6 20 6t20-6V30z" fill="#ffb8d6" ${W}/><ellipse cx="32" cy="30" rx="20" ry="7" fill="#fff6fa" ${W}/>

@@ -132,6 +132,7 @@ export function itemIcon(item: { kind: string; color: string; slot?: string; sha
   if (item.kind === 'outfit' && item.slot) return outfitIcon(item.slot, item.shape ?? '', item.color);
   if (item.kind === 'pickup') {
     if (item.shape === 'strawberry') return strawberryIcon(item.color);
+    if (item.shape === 'shell') return shellIcon(item.color);
     if (item.shape === 'blueberry') return blueberryIcon(item.color);
     if (item.shape === 'pot') return potIcon(item.color);
   }
@@ -148,6 +149,12 @@ export function strawberryIcon(color: string): string {
   return svg(`<path d="M32 58C18 48 10 34 14 24c3-7 11-9 18-6 7-3 15-1 18 6 4 10-4 24-18 34z" fill="${color}" ${OUTLINE}/>
     <path d="M20 14l12 6 12-6-4 10H24z" fill="#7fc47a"/>
     <g fill="#fff3b0"><circle cx="24" cy="30" r="2"/><circle cx="36" cy="28" r="2"/><circle cx="30" cy="38" r="2"/><circle cx="40" cy="38" r="2"/><circle cx="24" cy="42" r="2"/><circle cx="32" cy="48" r="2"/></g>`);
+}
+
+export function shellIcon(color: string): string {
+  return svg(`<path d="M32 54L10 30a24 24 0 0 1 44 0z" fill="${color}" ${OUTLINE}/>
+    <path d="M32 52L18 22M32 52L26 16M32 52V14M32 52l6-36M32 52l14-30" stroke="#fff" stroke-width="2.5" stroke-linecap="round" opacity=".8"/>
+    <rect x="26" y="50" width="12" height="8" rx="3" fill="${color}" ${OUTLINE}/>`);
 }
 
 export function blueberryIcon(color: string): string {

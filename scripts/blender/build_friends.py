@@ -56,6 +56,12 @@ P["MAT_COLORS"].update({
     "f_pippi_wing": (1.0, 0.8, 0.45, 1.0),
     "f_beak": (1.0, 0.64, 0.3, 1.0),
     "f_scarf": (1.0, 0.6, 0.78, 1.0),
+    # 파도 (바다 왕국의 민트색 거북이, 복숭아빛 등껍질, 하얀 선원 모자)
+    "f_pado_skin": (0.62, 0.88, 0.74, 1.0),
+    "f_pado_shell": (1.0, 0.7, 0.52, 1.0),
+    "f_pado_spot": (1.0, 0.85, 0.66, 1.0),
+    "f_pado_belly": (1.0, 0.95, 0.78, 1.0),
+    "f_sailor_blue": (0.45, 0.7, 1.0, 1.0),
 })
 
 sphere, cone, capsule, torus, star = P["sphere"], P["cone"], P["capsule"], P["torus"], P["star"]
@@ -376,6 +382,36 @@ def build_pippi():
     return join_skinned("pippi", pieces, rig, animal_assign(head_z, head_r, 0.3, tail=True))
 
 
+# ── 파도: 바다 왕국 거북이 ─────────────────────────────
+def build_pado():
+    pieces = []
+    head_z, head_r = 1.2, 0.38
+    body_r = 0.36
+    _animal_body(pieces, "f_pado_skin", "f_pado_belly", head_z, head_r, body_r=body_r)
+    on = _face(pieces, Vector((0, 0, head_z)), head_r, eye_x=0.14, cheek_x=0.22)
+    # 콧구멍 두 개 (그림 입은 이 아래에 붙는다)
+    for s in (-1, 1):
+        pieces.append(sphere("f_nose_dark", 0.016, on(s * 0.035, -0.075, 0.004), scale=(1, 0.6, 0.8), seg=8, rings=5))
+    # 등껍질: 등 뒤의 큰 반구 + 육각 무늬 점 + 테두리
+    shell_c = Vector((0, 0.14, 0.55))
+    pieces.append(sphere("f_pado_shell", 0.44, shell_c, scale=(1.0, 0.62, 1.05), seg=32, rings=18))
+    pieces.append(torus("f_pado_spot", 0.43, 0.045, shell_c + Vector((0, -0.02, 0)), rot=(math.pi / 2, 0, 0), seg=32, ring=8))
+    for i, (ax, az) in enumerate(((0, 0.2), (-0.2, 0.05), (0.2, 0.05), (0, -0.18), (-0.18, -0.15), (0.18, -0.15), (0, 0.0))):
+        # 등껍질(타원체) 겉면 위에 살짝 묻히게
+        k = max(0.0, 1 - (ax / 0.44) ** 2 - (az / 0.462) ** 2)
+        y = 0.44 * 0.62 * math.sqrt(k) - 0.012
+        pieces.append(sphere("f_pado_spot", 0.085 if i < 6 else 0.1, shell_c + Vector((ax, y, az)), scale=(1, 0.3, 1), seg=12, rings=6))
+    # 짧은 꼬리
+    pieces.append(cone("f_pado_skin", 0.06, 0.0, 0.14, (0, 0.36, 0.22), rot=(-1.9, 0, 0), seg=10))
+    # 하얀 선원 모자 + 파란 띠
+    hat_z = head_z + head_r - 0.05
+    pieces.append(cone("f_chef_white", 0.21, 0.18, 0.13, (0, 0.03, hat_z + 0.06), rot=(-0.12, 0, 0.1), seg=24))
+    pieces.append(torus("f_sailor_blue", 0.2, 0.03, (0, 0.03, hat_z + 0.03), rot=(-0.12, 0, 0.1), seg=24, ring=6))
+    pieces.append(cone("f_chef_white", 0.27, 0.25, 0.03, (0, 0.03, hat_z), rot=(-0.12, 0, 0.1), seg=28))
+    rig = make_rig("pado", animal_bones(head_z, head_r, body_r))
+    return join_skinned("pado", pieces, rig, animal_assign(head_z, head_r, body_r))
+
+
 def build_friends():
     col = bpy.data.collections.get(FRIENDS)
     if col:
@@ -389,15 +425,15 @@ def build_friends():
                     bpy.data.armatures.remove(data)
     _collection()
     out = {}
-    for name, fn in (("flora", build_flora), ("tori", build_tori), ("gogo", build_gogo), ("dochi", build_dochi), ("pippi", build_pippi)):
+    for name, fn in (("flora", build_flora), ("tori", build_tori), ("gogo", build_gogo), ("dochi", build_dochi), ("pippi", build_pippi), ("pado", build_pado)):
         ob = fn()
         out[name] = ob
     tmp = bpy.data.collections.get(P["TEMP"])
     if tmp:
         bpy.data.collections.remove(tmp)
     # 나란히 세워 보기 — 몸이 아니라 뼈대를 옮긴다 (몸만 옮기면 뼈와 어긋남). 내보낼 때는 다시 0,0 으로
-    for i, name in enumerate(("flora", "tori", "gogo", "dochi", "pippi")):
-        bpy.data.objects[name].location.x = (i - 2) * 1.3
+    for i, name in enumerate(("flora", "tori", "gogo", "dochi", "pippi", "pado")):
+        bpy.data.objects[name].location.x = (i - 2.5) * 1.3
     return out
 
 
@@ -427,7 +463,7 @@ def export_friends(path):
         o.location = saved[o.name]
 
 
-IDS = ("flora", "tori", "gogo", "dochi", "pippi")
+IDS = ("flora", "tori", "gogo", "dochi", "pippi", "pado")
 
 
 def export_all(folder, anim_ns):

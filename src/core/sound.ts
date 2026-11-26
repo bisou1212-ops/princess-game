@@ -20,12 +20,14 @@ export type Sfx =
   | 'page'
   | 'dress';
 
-export type Tune = 'castle' | 'flower-kingdom' | 'room' | 'shop' | 'lullaby' | null;
+export type Tune = 'castle' | 'flower-kingdom' | 'sea-kingdom' | 'room' | 'shop' | 'lullaby' | null;
 
 /** 곡마다: 음계(으뜸음 MIDI 번호 + 장음계 단계), 빠르기, 화음 진행 */
 const TUNES: Record<Exclude<Tune, null>, { root: number; bpm: number; chords: number[][]; volume: number; density: number }> = {
   castle: { root: 72, bpm: 76, chords: [[0, 2, 4], [5, 0, 2], [3, 5, 0], [4, 6, 1]], volume: 0.5, density: 0.7 },
   'flower-kingdom': { root: 77, bpm: 88, chords: [[0, 2, 4], [3, 5, 0], [4, 6, 1], [0, 2, 4]], volume: 0.5, density: 0.8 },
+  // 바다: 느긋하게 출렁이는 화음 (파도처럼 IV-I 반복)
+  'sea-kingdom': { root: 74, bpm: 72, chords: [[0, 2, 4], [3, 5, 0], [0, 2, 4], [5, 0, 2]], volume: 0.46, density: 0.6 },
   room: { root: 74, bpm: 70, chords: [[0, 2, 4], [5, 0, 2], [1, 3, 5], [4, 6, 1]], volume: 0.42, density: 0.6 },
   shop: { root: 79, bpm: 96, chords: [[0, 2, 4], [4, 6, 1], [5, 0, 2], [3, 5, 0]], volume: 0.45, density: 0.85 },
   lullaby: { root: 67, bpm: 54, chords: [[0, 2, 4], [3, 5, 0], [0, 2, 4], [4, 6, 1]], volume: 0.38, density: 0.45 },

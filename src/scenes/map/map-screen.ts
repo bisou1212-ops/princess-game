@@ -1,5 +1,6 @@
 import type { Speaker } from '../../core/tts';
-import { LOCATIONS, SLEEP_LINE, canTravelTo, type Location } from '../../systems/world';
+import { LOCATIONS, SLEEP_LINE, WAKE_LINE, canTravelTo, stickersToWake, type Location } from '../../systems/world';
+import { stickerIcon } from '../../ui/sticker-icons';
 import './map.css';
 
 export interface MapScreenOptions {
@@ -57,7 +58,8 @@ export class MapScreen {
     const loc = LOCATIONS.find((l) => l.id === id);
     if (!loc) return;
     if (!canTravelTo(id)) {
-      this.say(`${loc.name}!`, loc.en, SLEEP_LINE);
+      const n = stickersToWake(id);
+      this.say(`${loc.name}!`, loc.en, n ? WAKE_LINE.replace('{n}', String(n)).replace('{name}', loc.name) : SLEEP_LINE);
       this.el.querySelector(`[data-id="${id}"]`)?.classList.add('is-wobble');
       setTimeout(() => this.el.querySelector(`[data-id="${id}"]`)?.classList.remove('is-wobble'), 600);
       return;
@@ -107,6 +109,7 @@ export class MapScreen {
         style="left:${l.x}%;top:${l.y}%;--c:${l.color}" aria-label="${l.name}">
         <span class="mi-land">${locationIcon(l.icon)}</span>
         ${open ? '' : '<span class="mi-cloud" aria-hidden="true">z z</span>'}
+        ${!open && stickersToWake(l.id) ? `<span class="mi-wake" aria-hidden="true">${stickerIcon('heart')}<b>${stickersToWake(l.id)}</b></span>` : ''}
         ${here ? `<span class="mi-here" aria-hidden="true">${crownIcon()}</span>` : ''}
         <span class="mi-name">${l.name}</span>
       </button>`;

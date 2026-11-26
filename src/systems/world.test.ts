@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { LOCATIONS, START_LOCATION, canTravelTo, getLocation, loadLocationLayout } from './world';
+import { LOCATIONS, START_LOCATION, canTravelTo, getLocation, hasLayout, loadLocationLayout, setStickerCount, stickersToWake } from './world';
 import { buildNavGrid } from '../scenes/castle/courtyard-layout';
 import { allCharacters, allDialogues } from './dialogue';
 import { allQuestDefs } from './quests';
@@ -11,10 +11,17 @@ describe('왕국 지도 (world.json)', () => {
     expect(canTravelTo(START_LOCATION)).toBe(true);
   });
 
-  it('MVP: 성과 꽃 왕국만 열려 있고, 나머지는 잠자는 왕국', () => {
+  it('성과 꽃 왕국은 처음부터, 바다 왕국은 스티커를 모으면 깨어난다', () => {
     const open = LOCATIONS.filter((l) => l.open).map((l) => l.id);
     expect(open).toEqual(['castle', 'flower-kingdom']);
+    const need = getLocation('sea-kingdom')!.wakeStickers!;
+    setStickerCount(() => need - 3);
     expect(canTravelTo('sea-kingdom')).toBe(false);
+    expect(stickersToWake('sea-kingdom')).toBe(3);
+    setStickerCount(() => need);
+    expect(canTravelTo('sea-kingdom')).toBe(true);
+    setStickerCount(() => 0);
+    expect(canTravelTo('snow-kingdom')).toBe(false); // 아직 만들지 않은 왕국
   });
 
   it('지도 위 위치는 화면 안(%)이고 id가 겹치지 않는다', () => {
@@ -35,7 +42,7 @@ describe('왕국 지도 (world.json)', () => {
 });
 
 describe('열린 장소의 배치 데이터', () => {
-  const openIds = LOCATIONS.filter((l) => canTravelTo(l.id)).map((l) => l.id);
+  const openIds = LOCATIONS.filter((l) => hasLayout(l.id)).map((l) => l.id);
 
   it.each(openIds)('%s: id가 맞고, 시작 위치에서 모든 빈 칸에 갈 수 있다', async (id) => {
     const layout = await loadLocationLayout(id);

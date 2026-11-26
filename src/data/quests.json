@@ -263,5 +263,76 @@
         "balloons"
       ]
     }
+  },
+  "pado-shells": {
+    "giver": "pado",
+    "location": "sea-kingdom",
+    "title": "조개 찾기",
+    "goal": {
+      "type": "collect",
+      "item": "shell-pink",
+      "count": 4
+    },
+    "vary": {
+      "items": [
+        "shell-pink",
+        "shell-blue",
+        "shell-yellow",
+        "shell-purple"
+      ],
+      "count": [
+        3,
+        5
+      ],
+      "hint": "story-hint"
+    },
+    "spawns": [
+      {
+        "item": "shell-pink",
+        "x": -5,
+        "z": 0.5
+      },
+      {
+        "item": "shell-pink",
+        "x": 6,
+        "z": -1.5
+      },
+      {
+        "item": "shell-pink",
+        "x": -1,
+        "z": 5
+      },
+      {
+        "item": "shell-pink",
+        "x": 9,
+        "z": 8
+      },
+      {
+        "item": "shell-blue",
+        "x": -9,
+        "z": 3
+      },
+      {
+        "item": "shell-blue",
+        "x": 1,
+        "z": -3
+      }
+    ],
+    "hints": {
+      "shell-blue": "story-hint"
+    },
+    "dialogue": {
+      "offer": "pado-shells-offer",
+      "progress": "pado-shells-progress",
+      "ready": "pado-shells-ready",
+      "complete": "pado-shells-complete",
+      "done": "pado-shells-done"
+    },
+    "rewards": {
+      "candy": 6,
+      "items": [
+        "fishbowl"
+      ]
+    }
   }
 }

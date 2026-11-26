@@ -195,3 +195,23 @@
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-14px); }
 }
+
+/* 잠자는 왕국: 스티커 n개 더 모으면 깨어나요 */
+.mi-wake {
+  position: absolute;
+  right: -10px;
+  bottom: 28px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px 10px 2px 4px;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: 0 3px 0 rgba(90, 70, 130, 0.18);
+  font-size: 22px;
+  color: #ff6fae;
+}
+.mi-wake svg {
+  width: 30px;
+  height: 30px;
+}

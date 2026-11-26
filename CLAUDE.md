@@ -84,7 +84,8 @@ docs/GDD.md        # 기획서
   - [x] 미니게임 1차: 놀이 부탁 `goal.type: play`(game cake·garden, 대사 뒤 미니게임 → 끝까지 하면 해결, 닫았다 다시 말 걸면 이어 하기, `QuestBook.finishPlay`). 도치 케이크 꾸미기(과일을 끌거나 톡해서 올리며 세기)·고고 꽃밭 물 주기(물뿌리개를 새싹 위로 끌거나 새싹 톡 → 꽃이 활짝). 이야기 부탁 `dochi-cake`·`gogo-garden` + 무작위 템플릿 cake·garden. 카드 짝 맞추기(마당 HUD 카드 버튼, 부탁과 따로): 짝 4→6, 판마다 친구 얼굴·그림 번갈아, 맞히면 이름 한글·영어, 다 맞히면 별사탕 1. 화면 `src/ui/minigame-panel.ts`, 로직 `src/systems/minigames.ts`, 글 `src/data/minigames.json`
   - [x] 숨바꼭질: 부탁 `goal.type: seek` — 대사 뒤 공주가 눈 가리고 열까지 세는 화면(`src/ui/seek-countdown.ts`), 그동안 친구가 장소의 `hideSpots`(courtyard.json·flower-kingdom.json, 나무·집·분수 뒤) 중 공주에게서 먼 곳에 숨음. 숨은 친구는 가끔 빼꼼(끄덕·빙글 + 웃음소리), 35초 지나면 머리 위 ♥, 2m 안에 오거나 톡하면 "찾았다!" → 폴짝 + 선물. 플로라 이야기 부탁 `flora-seek` + 무작위 템플릿 seek(모든 친구), 펫 힌트도 숨은 친구에게 안내
   - [x] 스티커 앨범(모으는 큰 목표): 스티커 23개 `src/data/stickers.json`(셈 이름 counter가 at 번이 되면 붙음), 로직 `src/systems/stickers.ts`(StickerBook, 저장 `stickers`, 스티커 전 저장이면 해결한 부탁·별사탕·가구·여행만큼 채워 줌). 셈은 부탁·말 걸기·꽃·딸기·화분·배달·기분·케이크·꽃밭·카드·숨바꼭질·밥·목욕·옷·가구·초대·쇼핑·꽃 왕국 여행·별사탕에서 `state.stickers.record()`. HUD 앨범 버튼(새 스티커 점) → 앨범 화면 `src/ui/sticker-album.ts`(붙은 스티커 톡 = 이름 한글·영어, 빈 칸 톡 = 얻는 방법 + 얼마나 남았는지 띠), 새 스티커 알림. 그림 `sticker-icons.ts`
-  - [ ] 다음 후보: 나비 잡기·바다 왕국(스티커를 모으면 깨어나게)
+  - [x] 바다 왕국 1차: 스티커 8개를 모으면 깨어남(world.json `wakeStickers`, `isAwake`·`stickersToWake`, 지도 섬에 남은 개수, 깨어나면 공주가 알리고 지도 버튼 점). 배치 `src/data/sea-kingdom.json`(모래사장·바다·부두·바위·야자수·모래성·파라솔, hideSpots), 배경 `scripts/blender/build_sea_env.py` → `env-sea-kingdom.glb`(Kenney 야자수·바위, 물 판·거품·젖은 모래, 화면 약 5.7만 삼각형), 바다 음악. 새 친구 파도(민트 거북이, 복숭아 등껍질·선원 모자, `build_friends.py` build_pado → friend-pado.glb). 조개 줍기 아이템 shell-pink·blue·yellow·purple(모양 shell), 이야기 부탁 `pado-shells`(선물 어항) + 무작위 템플릿 shells, 숨바꼭질에도 파도. 스티커 '조개 모으기'
+  - [ ] 다음 후보: 인어 친구·바다 놀이(물고기 세기 등)·나비 잡기
 
 ## 나중에 할 일
 - **사람 같은 음성 (보류, 기기 TTS가 로봇 같다는 피드백)**: 대사를 미리 음성 파일로 만들어 넣는다.

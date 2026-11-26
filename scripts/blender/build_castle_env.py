@@ -160,7 +160,7 @@ def kenney_dir():
     return os.path.normpath(os.path.join(here, "..", "..", "art-source", "kenney"))
 
 
-def kenney(P, name, x, gz, z=0.0, rot=0.0, scale=1.0, remap=None, round_=True, detail=2):
+def kenney(P, name, x, gz, z=0.0, rot=0.0, scale=1.0, remap=None, round_=True, detail=2, height=None):
     """detail: 잎 서브디비전 최대 단계 (멀리 있는 나무는 1)"""
     """Kenney 모델 하나를 (x, gz) 에 놓는다. 재질마다 따로 나눠 P 에 넣는다 (밑면 = z)"""
     before = set(bpy.data.objects)
@@ -194,6 +194,8 @@ def kenney(P, name, x, gz, z=0.0, rot=0.0, scale=1.0, remap=None, round_=True, d
     if not pts:
         return
     min_z = min(p.z for p in pts)
+    if height:  # 높이(m)로 크기 맞추기
+        scale = height / max(1e-4, max(p.z for p in pts) - min_z)
     cx = (min(p.x for p in pts) + max(p.x for p in pts)) / 2
     cy = (min(p.y for p in pts) + max(p.y for p in pts)) / 2
     xf = Matrix.Rotation(rot, 4, "Z") @ Matrix.Scale(scale, 4) @ Matrix.Translation((-cx, -cy, -min_z))

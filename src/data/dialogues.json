@@ -843,5 +843,50 @@
   ],
   "seek-hint": [
     { "speaker": "princess", "mood": "curious", "text": "어디 숨었지? 나무 뒤? 집 뒤?" }
+  ],
+  "pado-hello": [
+    { "speaker": "pado", "mood": "happy", "text": "안녕~ 나는 바다 거북이 파도야." },
+    { "speaker": "pado", "mood": "happy", "text": "철썩철썩~ 바다 소리 좋지?" }
+  ],
+  "pado-shells-offer": [
+    { "speaker": "pado", "mood": "excited", "text": "와아~ 바다 왕국에 손님이 왔다!" },
+    { "speaker": "pado", "mood": "curious", "text": "있잖아, 파도가 조개를 모래사장에 잔뜩 놓고 갔어." },
+    { "speaker": "pado", "mood": "happy", "text": "{item} {count|을} 찾아 줄래? 모래 위에 반짝반짝 있을 거야." },
+    { "speaker": "pado", "mood": "excited", "text": "{en}!", "lang": "en-US" }
+  ],
+  "pado-shells-progress": [
+    { "speaker": "pado", "mood": "happy", "text": "천천히~ 천천히~ {item} {count}!" }
+  ],
+  "pado-shells-ready": [
+    { "speaker": "pado", "mood": "excited", "text": "와~ 다 찾았구나! 나한테 가져와 줘~" }
+  ],
+  "pado-shells-complete": [
+    { "speaker": "pado", "mood": "excited", "text": "{counting}! 예쁜 조개가 {count}!" },
+    { "speaker": "pado", "mood": "shy", "text": "고마워~ 내 보물 어항을 선물할게. 물고기가 헤엄쳐~" }
+  ],
+  "pado-shells-done": [
+    { "speaker": "pado", "mood": "happy", "text": "또 놀러 와~ 바다는 언제나 여기 있어~" }
+  ],
+  "rq-shells-offer": [
+    { "speaker": "giver", "mood": "happy", "text": "공주님~ 조개 찾기 할래?" },
+    { "speaker": "giver", "mood": "happy", "text": "{reason}" },
+    { "speaker": "giver", "mood": "curious", "text": "{item} {count|을} 찾아 줘~" },
+    { "speaker": "giver", "mood": "excited", "text": "{en}!", "lang": "en-US" }
+  ],
+  "rq-shells-progress": [
+    { "speaker": "giver", "mood": "happy", "text": "{item} {count}, 모래 위를 잘 봐~" }
+  ],
+  "rq-shells-ready": [
+    { "speaker": "giver", "mood": "excited", "text": "다 찾았다~ 가져와 줘!" }
+  ],
+  "rq-shells-complete": [
+    { "speaker": "giver", "mood": "excited", "text": "{counting}! 반짝반짝 예쁘다~" },
+    { "speaker": "giver", "mood": "happy", "text": "고마워~ 이건 선물이야." }
+  ],
+  "rq-shells-done": [
+    { "speaker": "giver", "mood": "happy", "text": "바닷가는 정말 신나~" }
+  ],
+  "rq-shells-hint": [
+    { "speaker": "giver", "mood": "curious", "text": "음~ 그건 {decoy}야. 나는 {item|이} 필요해~" }
   ]
 }

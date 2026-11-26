@@ -42,9 +42,9 @@ describe('Blender 친구 모델 (friend-<id>.glb)', () => {
 
   it('마당·꽃 왕국에 서 있는 친구마다 뼈대·동작이 든 모델이 있다 (뼈대 이름 = characters.json id)', async () => {
     const { courtyardLayout } = await import('./courtyard-layout');
-    const { loadLocationLayout, LOCATIONS, canTravelTo } = await import('../../systems/world');
+    const { loadLocationLayout, LOCATIONS, hasLayout } = await import('../../systems/world');
     const ids = new Set(courtyardLayout.npcs.map((n) => n.character));
-    for (const l of LOCATIONS.filter((x) => canTravelTo(x.id))) {
+    for (const l of LOCATIONS.filter((x) => hasLayout(x.id))) {
       for (const n of (await loadLocationLayout(l.id)).npcs) ids.add(n.character);
     }
     for (const id of ids) {

@@ -1,5 +1,5 @@
 """배경 다시 만들기 (Blender 를 켜지 않고 명령줄로):
-    blender -b --factory-startup --python scripts/blender/run_env.py -- castle   (또는 flower)
+    blender -b --factory-startup --python scripts/blender/run_env.py -- castle   (또는 flower · sea)
 → src/assets/models/env-castle.glb / env-flower-kingdom.glb (AO 굽기 포함)
 """
 import bpy, sys
@@ -12,6 +12,12 @@ if which == "castle":
     exec(open(f, encoding="utf-8").read(), ns)
     ns["build_all"]()
     out = REPO + "/src/assets/models/env-castle.glb"
+elif which == "sea":
+    f = REPO + "/scripts/blender/build_sea_env.py"
+    ns = {"__file__": f, "__name__": "env"}
+    exec(open(f, encoding="utf-8").read(), ns)
+    ns["build_sea"]()
+    out = REPO + "/src/assets/models/env-sea-kingdom.glb"
 else:
     f = REPO + "/scripts/blender/build_flower_env.py"
     ns = {"__file__": f, "__name__": "env"}

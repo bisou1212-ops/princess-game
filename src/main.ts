@@ -25,7 +25,7 @@ import { PlayTimer, SLEEP_HOLD_MS } from './systems/playtime';
 import { preloadPet } from './scenes/castle/pet-glb';
 import { GameState } from './systems/game-state';
 import { allItems } from './systems/items';
-import { START_LOCATION, getLocation, loadLocationLayout } from './systems/world';
+import { AWAKE_LINE, LOCATIONS, START_LOCATION, getLocation, isAwake, loadLocationLayout, setStickerCount } from './systems/world';
 import { DecorUi } from './ui/decor-ui';
 import { DialogueBox } from './ui/dialogue-box';
 import { renderFurnitureThumbs } from './ui/furniture-thumbs';
@@ -310,6 +310,7 @@ async function start() {
   });
   function openMap() {
     if (dialogue.isOpen || mode !== 'town' || switching) return;
+    hud.setMapNew(false);
     map.open(town.id);
     hud.setButtonsVisible(false);
   }
@@ -436,10 +437,23 @@ async function start() {
     hud.setButtonsVisible(true);
     hud.setAlbumNew(state.stickers.unseen.size > 0);
   });
+  // 잠자는 왕국은 스티커를 모으면 깨어난다 (지도에서 갈 수 있게)
+  setStickerCount(() => state.stickers.earned.size);
+  const awake = new Set(LOCATIONS.filter((l) => isAwake(l.id)).map((l) => l.id));
   state.stickers.onEarn = (s) => {
     album.notify(s);
     hud.setAlbumNew(true);
     state.change();
+    for (const l of LOCATIONS) {
+      if (awake.has(l.id) || !isAwake(l.id)) continue;
+      awake.add(l.id);
+      // "바다 왕국이 깨어났어요!" — 하던 대화가 끝나면
+      hud.setMapNew(true);
+      whenIdle(() => {
+        sfx('reward');
+        dialogue.open([{ speaker: 'princess', mood: 'excited', text: AWAKE_LINE.replace('{name}', l.name) }]);
+      });
+    }
   };
   hud.setAlbumNew(state.stickers.unseen.size > 0);
   function openAlbum() {

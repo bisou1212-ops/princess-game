@@ -6,6 +6,7 @@ import toriUrl from '../../assets/models/friend-tori.glb?url';
 import gogoUrl from '../../assets/models/friend-gogo.glb?url';
 import dochiUrl from '../../assets/models/friend-dochi.glb?url';
 import pippiUrl from '../../assets/models/friend-pippi.glb?url';
+import padoUrl from '../../assets/models/friend-pado.glb?url';
 import { STYLE, addOutline, toonMaterial } from '../../core/toon';
 import { getCharacter } from '../../systems/dialogue';
 import { decorateEyes } from './anime-eyes';
@@ -18,7 +19,7 @@ import { createFace } from './face';
  * 움직임 코드(PrincessAnimator)를 쓴다. 동물은 귀·꼬리 뼈가 스프링으로 출렁인다. 색은 고정.
  * 모델에 없는 친구(새로 추가된 친구 등)는 도형 모델로 대신한다.
  */
-const URLS: Record<string, string> = { flora: floraUrl, tori: toriUrl, gogo: gogoUrl, dochi: dochiUrl, pippi: pippiUrl };
+const URLS: Record<string, string> = { flora: floraUrl, tori: toriUrl, gogo: gogoUrl, dochi: dochiUrl, pippi: pippiUrl, pado: padoUrl };
 const templates = new Map<string, { scene: THREE.Object3D; clips: THREE.AnimationClip[] }>();
 
 export async function preloadFriendsGlb(): Promise<boolean> {

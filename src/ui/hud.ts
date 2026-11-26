@@ -93,6 +93,13 @@ export class Hud {
     this.viewEl.hidden = !this.buttonsOn || this.mode !== 'yard';
   }
 
+  /** 새로 깨어난 왕국이 있으면 지도 버튼에 반짝 점 */
+  setMapNew(on: boolean): void {
+    const dot = this.mapBtn.querySelector('.wr-new-dot');
+    if (on && !dot) this.mapBtn.insertAdjacentHTML('beforeend', '<span class="wr-new-dot"></span>');
+    if (!on) dot?.remove();
+  }
+
   /** 앨범에 아직 안 본 새 스티커가 있으면 반짝 점 */
   setAlbumNew(on: boolean): void {
     const dot = this.albumBtn.querySelector('.wr-new-dot');

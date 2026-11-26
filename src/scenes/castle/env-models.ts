@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import castleEnvUrl from '../../assets/models/env-castle.glb?url';
 import flowerEnvUrl from '../../assets/models/env-flower-kingdom.glb?url';
+import seaEnvUrl from '../../assets/models/env-sea-kingdom.glb?url';
 import { toonMaterial, type SurfaceRole } from '../../core/toon';
 import { PATTERN_BY_MATERIAL, addSurfacePattern } from '../../core/surface-patterns';
 import { createGrassTufts } from './grass-tufts';
@@ -14,7 +15,7 @@ import { createGrassTufts } from './grass-tufts';
  * - "water" 는 일렁이는 물 셰이더로 바꾼다.
  * 불러오지 못하면 null — 장면은 예전 도형 배경을 쓴다.
  */
-const URLS: Record<string, string> = { castle: castleEnvUrl, 'flower-kingdom': flowerEnvUrl };
+const URLS: Record<string, string> = { castle: castleEnvUrl, 'flower-kingdom': flowerEnvUrl, 'sea-kingdom': seaEnvUrl };
 const templates = new Map<string, THREE.Object3D>();
 
 export async function preloadEnv(id: string | undefined): Promise<boolean> {
@@ -44,7 +45,7 @@ const ROLE: Record<string, SurfaceRole> = { glass: 'gem', gold: 'gem', basin: 'g
 const SWAY: Record<string, number> = { leaf: 0.05, leaf2: 0.05, hedge: 0.025, cabbage: 0.015 };
 
 /** 그림자를 드리우지 않는 넓은 바닥 (그림자 맵을 아끼고 땅이 얼룩지지 않게) */
-const FLAT = new Set(['grass', 'yard', 'path', 'soil', 'meadow']);
+const FLAT = new Set(['grass', 'yard', 'path', 'soil', 'meadow', 'sand', 'wetsand', 'foam']);
 /**
  * AO를 얼마나 진하게 (1 = 구운 그대로). 파스텔 화풍이라 은은하게.
  * 꼭짓점이 적은 큰 면(고깔 지붕·벽)은 모서리 그늘이 면 전체로 번지므로 약하게, 반짝이는 것은 없이.

@@ -38,6 +38,9 @@ export const PATTERN_BY_MATERIAL: Record<string, Pattern> = {
   soil: 'speckle',
   rock: 'speckle',
   path: 'speckle',
+  sand: 'speckle',
+  wetsand: 'speckle',
+  sandcastle: 'speckle',
 };
 
 const NOISE = /* glsl */ `

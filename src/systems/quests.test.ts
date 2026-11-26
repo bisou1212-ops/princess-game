@@ -153,9 +153,9 @@ describe('친구마다 여러 부탁 + 배달 부탁', () => {
 
 describe('부탁 데이터: 친구·배달 대상', () => {
   it('부탁하는 친구와 배달받는 친구가 어딘가에 서 있다', async () => {
-    const { LOCATIONS, canTravelTo, loadLocationLayout } = await import('./world');
+    const { LOCATIONS, hasLayout, loadLocationLayout } = await import('./world');
     const present = new Set<string>();
-    for (const l of LOCATIONS.filter((x) => canTravelTo(x.id))) for (const n of (await loadLocationLayout(l.id)).npcs) present.add(n.character);
+    for (const l of LOCATIONS.filter((x) => hasLayout(x.id))) for (const n of (await loadLocationLayout(l.id)).npcs) present.add(n.character);
     for (const [id, q] of Object.entries(allQuestDefs())) {
       expect(present.has(q.giver), `${id}: giver ${q.giver}`).toBe(true);
       if (q.goal.type === 'deliver') {

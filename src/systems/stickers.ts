@@ -86,5 +86,6 @@ export function pickupCounter(itemId: string): string | null {
   if (itemId.startsWith('flower-')) return 'flower';
   if (itemId === 'strawberry' || itemId === 'blueberry') return 'berry';
   if (itemId === 'flowerpot') return 'pot';
+  if (itemId.startsWith('shell-')) return 'shell';
   return null;
 }

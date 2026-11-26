@@ -1,12 +1,14 @@
 {
-  "_comment": "왕국 지도 (GDD 2·10). locations 순서대로 지도에 그린다. x·y는 지도 위 위치(%). open=false면 '아직 잠자는 왕국'(다음 버전). icon: castle·flower·shell·snow·star. sleepLine=잠긴 왕국을 톡했을 때 읽어 줄 말.",
+  "_comment": "왕국 지도 (GDD 2·10). locations 순서대로 지도에 그린다. x·y는 지도 위 위치(%). open=false면 '아직 잠자는 왕국'(다음 버전). icon: castle·flower·shell·snow·star. sleepLine=잠긴 왕국을 톡했을 때 읽어 줄 말. wakeStickers=스티커를 이만큼 모으면 깨어남(갈 수 있게 됨), wakeLine=아직일 때({n}개 더), awakeLine=깨어났을 때.",
   "start": "castle",
   "locations": [
     { "id": "castle", "name": "내 성", "en": "My castle", "icon": "castle", "color": "#ff9ccf", "x": 30, "y": 58, "open": true },
     { "id": "flower-kingdom", "name": "꽃 왕국", "en": "Flower Kingdom", "icon": "flower", "color": "#ffb3d9", "x": 70, "y": 36, "open": true },
-    { "id": "sea-kingdom", "name": "바다 왕국", "en": "Sea Kingdom", "icon": "shell", "color": "#74c0ff", "x": 74, "y": 78, "open": false },
+    { "id": "sea-kingdom", "name": "바다 왕국", "en": "Sea Kingdom", "icon": "shell", "color": "#74c0ff", "x": 74, "y": 78, "open": false, "wakeStickers": 8 },
     { "id": "snow-kingdom", "name": "눈 왕국", "en": "Snow Kingdom", "icon": "snow", "color": "#cfe8ff", "x": 18, "y": 22, "open": false },
     { "id": "sky-kingdom", "name": "하늘 왕국", "en": "Sky Kingdom", "icon": "star", "color": "#ffe38a", "x": 46, "y": 14, "open": false }
   ],
-  "sleepLine": "쉿, 아직 잠자고 있는 왕국이에요. 곧 갈 수 있어요!"
+  "sleepLine": "쉿, 아직 잠자고 있는 왕국이에요. 곧 갈 수 있어요!",
+  "wakeLine": "스티커를 {n}개 더 모으면 {name}이 깨어나요!",
+  "awakeLine": "{name}이 깨어났어요! 지도를 열어 가 봐요!"
 }
