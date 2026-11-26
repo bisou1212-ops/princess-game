@@ -12,7 +12,7 @@ import type { QuestDef } from './quests';
  */
 export interface RandomTemplate {
   id: string;
-  type: 'collect' | 'deliver' | 'talk' | 'play';
+  type: 'collect' | 'deliver' | 'talk' | 'play' | 'seek';
   /** play: 미니게임 종류 */
   game?: 'cake' | 'garden';
   givers: string[];
@@ -55,7 +55,7 @@ export function countingOut(n: number): string {
 export function questVars(def: QuestDef): QuestVars {
   const vars: QuestVars = { from: def.giver };
   const g = def.goal;
-  if (g.type === 'talk') return vars;
+  if (g.type === 'talk' || g.type === 'seek') return vars;
   const item = getItem(g.item);
   Object.assign(vars, { itemId: g.item, item: item.name, en: item.en });
   if (g.type === 'collect' || g.type === 'play') {
@@ -131,6 +131,25 @@ export function makeRandomQuest(o: MakeOptions): RandomQuest | null {
     candy: between(rng, config.candy),
     items: rng() < config.giftChance ? [pick(rng, config.gifts)] : [],
   };
+
+  if (t.type === 'seek') {
+    // 숨바꼭질: 물건 없이, 숨을 자리는 장면이 고른다
+    const dialogue = (stage: string) => `${t.dialogue}-${stage}`;
+    return {
+      id,
+      vars: { template: t.id, from: o.giver },
+      def: {
+        giver: o.giver,
+        location: o.location,
+        title: '숨바꼭질',
+        goal: { type: 'seek' },
+        spawns: [],
+        hints: {},
+        dialogue: { offer: dialogue('offer'), progress: dialogue('progress'), complete: dialogue('complete'), done: dialogue('done') },
+        rewards,
+      },
+    };
+  }
 
   if (t.type === 'talk') {
     // 기분 알아맞히기: 바로 전과 다른 상황

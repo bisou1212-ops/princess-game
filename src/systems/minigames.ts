@@ -28,6 +28,8 @@ export interface MiniGameData {
   cake: MiniGameText & { extra: number };
   garden: MiniGameText & { grow: string };
   cards: CardsConfig;
+  /** 숨바꼭질: count까지 세기, hintAfter초 뒤 숨은 친구 머리 위 ♥ */
+  seek: { title: string; en: string; close: string; count: number; hintAfter: number };
 }
 
 const { _comment: _c, ...rest } = data as unknown as MiniGameData & { _comment?: string };

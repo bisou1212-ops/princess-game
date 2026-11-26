@@ -88,6 +88,8 @@ export interface CourtyardLayout {
   obstacles: Obstacle[];
   npcs: NpcPlacement[];
   doors: DoorPlacement[];
+  /** 숨바꼭질 때 친구가 숨는 자리 (나무·집·분수 뒤) */
+  hideSpots?: Point[];
 }
 
 export const courtyardLayout = layoutJson as CourtyardLayout;

@@ -1,5 +1,5 @@
 {
-  "_comment": "미니게임 화면 글자·말 (src/ui/minigame-panel.ts). 모든 글은 글자 + 음성으로. {item}·{count}는 부탁에서 바뀐다. cards=카드 짝 맞추기(부탁과 따로, 마당 버튼): levels=판마다 짝 수, things=그림 카드(items.json id), friends=친구 얼굴 카드(characters.json id), candy=다 맞히면 별사탕.",
+  "_comment": "미니게임 화면 글자·말 (src/ui/minigame-panel.ts). 모든 글은 글자 + 음성으로. {item}·{count}는 부탁에서 바뀐다. cards=카드 짝 맞추기(부탁과 따로, 마당 버튼): levels=판마다 짝 수, things=그림 카드(items.json id), friends=친구 얼굴 카드(characters.json id), candy=다 맞히면 별사탕. seek=숨바꼭질: count까지 세는 동안 친구가 숨고, hintAfter초가 지나면 숨은 친구 머리 위에 ♥.",
   "cake": {
     "title": "케이크 꾸미기",
     "en": "Cake",
@@ -44,5 +44,12 @@
       "dochi",
       "pippi"
     ]
+  },
+  "seek": {
+    "title": "숨바꼭질",
+    "en": "Hide and seek",
+    "close": "눈 감고 열까지 세어요",
+    "count": 10,
+    "hintAfter": 35
   }
 }

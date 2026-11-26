@@ -12,6 +12,7 @@ import { petVars, snackCount, type PetNeed } from '../../systems/pet';
 import { buildNavGrid, type CourtyardLayout } from './courtyard-layout';
 import type { CourtyardScene, Interaction } from './courtyard-scene';
 import { sfx } from '../../core/sound';
+import { MINIGAMES } from '../../systems/minigames';
 
 interface Deps {
   layout: CourtyardLayout;
@@ -26,6 +27,8 @@ interface Deps {
   onPetCare(mode: 'feed' | 'bath', count: number): void;
   /** 놀이 부탁: 미니게임 화면 열기 (끝까지 하면 finishPlay) */
   onPlay(p: { questId: string; game: MiniGame; item: string; count: number; giver: string; vars: QuestVars }): void;
+  /** 숨바꼭질: 공주가 눈 가리고 열까지 세는 화면 (다 세면 onDone) */
+  onSeekCount(onDone: () => void): void;
 }
 
 /** 펫이 할 일이 없을 때 하는 말 (번갈아) */
@@ -128,6 +131,8 @@ export class CourtyardController {
     const vars = result.vars;
     this.refreshMarkers();
     const gotReward = result.event === 'completed' || result.event === 'delivered';
+    // 숨바꼭질: 찾았다! 숨은 친구가 폴짝 나온다
+    if (result.event === 'completed' && this.quests.def(questId).goal.type === 'seek') this.scene?.revealNpc(npc.character);
     // 선물은 바로 지갑에 넣고 저장 (대화 도중 앱을 꺼도 선물을 잃지 않게). 보여 주는 건 대화 뒤에
     if (gotReward) this.deps.state.wallet.grant(result.rewards);
     if (result.event === 'offered' || gotReward) this.deps.state.change();
@@ -154,6 +159,14 @@ export class CourtyardController {
           this.scene?.gesture(npc.character, 'hop');
           // 빙글 도는 모습을 잠깐 보여 주고 선물 화면
           window.setTimeout(() => this.deps.reward.open(result.rewards), 700);
+        });
+        break;
+      case 'seek':
+        // 숨바꼭질: 대사 → 공주가 열까지 세는 동안 친구가 숨는다 → "찾으러 간다!"
+        this.deps.dialogue.open(this.lines(result.dialogue, vars), () => {
+          this.scene?.hideNpc(npc.character, this.deps.layout.hideSpots ?? [], MINIGAMES.seek.hintAfter);
+          this.refreshHud();
+          this.deps.onSeekCount(() => this.deps.dialogue.open(getDialogue('seek-go')));
         });
         break;
       case 'play': {

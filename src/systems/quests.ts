@@ -9,6 +9,7 @@ import { hasRandomQuests, questVars, type QuestVars, type RandomQuest } from './
  * - collect: 물건 n개 모아서 부탁한 친구에게 가져가기 (꽃·딸기·화분 세우기 …)
  * - deliver: 받은 물건을 다른 친구(to)에게 전하기 — 받는 친구가 고마워하며 선물을 준다
  * - talk: 대화 안의 고르기(기분 알아차리기·위로하기)를 끝내면 바로 해결 — 선물
+ * - seek: 숨바꼭질 — 친구가 숨으면(장소의 hideSpots) 찾아가 말을 걸면(가까이 가면) 해결
  * - play: 친구와 놀이(미니게임)를 끝까지 하면 해결 — 케이크 꾸미기(cake)·꽃밭 물 주기(garden). 중간에 닫으면 다시 말 걸어 이어 하기
  * 친구마다 부탁이 여러 개면 quests.json 순서대로 하나씩 (requires 로 앞 부탁을 지정할 수도 있음)
  */
@@ -30,7 +31,9 @@ export type QuestGoal =
   | { type: 'deliver'; item: string; to: string }
   | { type: 'talk' }
   /** 미니게임: game = cake(과일 count개 올리기)·garden(꽃 count송이 물 주기), item = 과일·꽃 */
-  | { type: 'play'; game: MiniGame; item: string; count: number };
+  | { type: 'play'; game: MiniGame; item: string; count: number }
+  /** 숨바꼭질: 친구가 숨고, 찾으면(말 걸면) 해결 */
+  | { type: 'seek' };
 
 export type MiniGame = 'cake' | 'garden';
 
@@ -77,6 +80,8 @@ export type TalkResult =
   | { event: 'progress'; dialogue: string }
   | { event: 'completed'; dialogue: string; rewards: Reward }
   | { event: 'delivered'; dialogue: string; rewards: Reward }
+  /** 숨바꼭질: 대사 뒤 친구가 숨는다 (공주는 열까지 셈) */
+  | { event: 'seek'; dialogue: string }
   /** 놀이 부탁: 대사 뒤에 미니게임을 연다 */
   | { event: 'play'; dialogue: string; game: MiniGame; item: string; count: number }
   | { event: 'done'; dialogue: string };
@@ -325,9 +330,16 @@ export class QuestBook {
           return { event: 'completed', dialogue: d.dialogue.offer, rewards: d.rewards };
         }
         p.status = 'active';
+        if (d.goal.type === 'seek') return { event: 'seek', dialogue: d.dialogue.offer };
         if (d.goal.type === 'play') return { event: 'play', dialogue: d.dialogue.offer, game: d.goal.game, item: d.goal.item, count: d.goal.count };
         return { event: 'offered', dialogue: d.dialogue.offer, spawns: d.spawns };
       case 'active':
+        // 숨바꼭질: 숨은 친구에게 말을 걸면(찾으면) 해결
+        if (d.goal.type === 'seek') {
+          p.status = 'completed';
+          p.count = 1;
+          return { event: 'completed', dialogue: d.dialogue.complete, rewards: d.rewards };
+        }
         // 놀이를 하다 닫았으면: 다시 말 걸면 이어 하기
         if (d.goal.type === 'play') return { event: 'play', dialogue: d.dialogue.progress, game: d.goal.game, item: d.goal.item, count: d.goal.count };
         return { event: 'progress', dialogue: d.dialogue.progress };

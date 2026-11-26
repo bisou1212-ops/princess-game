@@ -79,6 +79,10 @@ export interface CourtyardScene {
   orbit(dYaw: number, dPitch: number): void;
   /** 처음 보던 각도·거리로 */
   resetView(): void;
+  /** 숨바꼭질: 친구가 숨는 자리 중 공주에게서 먼 곳으로 순간이동해 숨는다. hintAfter 초 뒤엔 머리 위 ♥ */
+  hideNpc(character: string, spots: Point[], hintAfter: number): void;
+  /** 숨바꼭질: 찾았다! 숨은 친구가 폴짝 나와 공주를 본다 */
+  revealNpc(character: string): void;
   /** 몸짓 (G2): 박수·끄덕·빙글·폴짝·손 흔들기 */
   gesture(character: string, g: Gesture | 'hop' | 'wave'): void;
   /** 펫 데려오기·바꾸기 (null = 없음). 모델은 미리 preloadPet 으로 불러 둔다 */
@@ -124,8 +128,12 @@ interface Npc {
   /** 뼈대 모델이면 동작 담당 */
   animator: PrincessAnimator | null;
   prevHeading: number;
+  /** 숨바꼭질로 숨어 있는 중 (since: 숨은 뒤 지난 초, peek: 다음 빼꼼까지, found: 찾음 처리됨) */
+  hiding: { since: number; peek: number; hintAfter: number; found: boolean } | null;
 }
 
+/** 숨바꼭질: 숨은 친구에게 이만큼 다가가면 찾은 것 */
+const SEEK_FIND = 2.0;
 /** 공주가 이만큼 가까이 오면 친구가 멈춰서 공주를 본다 */
 const NPC_NOTICE = 2.2;
 /** 돌아다니는 친구에게 다가갈 때 이만큼 가까워지면 말을 건다 */
@@ -249,7 +257,7 @@ export function createCourtyardScene(aspect: number, opts: CourtyardOptions = {}
     scene.add(object);
     tappables.push(object);
     const animator = (object.userData.animator as PrincessAnimator | null | undefined) ?? null;
-    return { data, object, heart, walker: npcWalker, idle: 1 + Math.random() * 3, hold: 0, walkTime: 0, tears: null, animator, prevHeading: npcWalker.heading };
+    return { data, object, heart, walker: npcWalker, idle: 1 + Math.random() * 3, hold: 0, walkTime: 0, tears: null, animator, prevHeading: npcWalker.heading, hiding: null };
   });
 
   /** 매 프레임 깜빡이게 할 반짝이들 */
@@ -431,8 +439,26 @@ export function createCourtyardScene(aspect: number, opts: CourtyardOptions = {}
   const npcLook = new THREE.Vector3();
   const updateNpcs = (dt: number) => {
     for (const n of npcs) {
-      const radius = n.data.wander ?? 0;
-      const near = Math.hypot(walker.x - n.walker.x, walker.z - n.walker.z) < NPC_NOTICE;
+      if (n.hiding) {
+        const h = n.hiding;
+        h.since += dt;
+        h.peek -= dt;
+        const dist = Math.hypot(walker.x - n.walker.x, walker.z - n.walker.z);
+        if (h.peek <= 0) {
+          // 빼꼼: 몸을 살짝 기울여 내다보거나 폴짝 (어디 있는지 힌트)
+          h.peek = 5 + Math.random() * 4;
+          n.animator?.playGesture(Math.random() < 0.5 ? 'nod' : 'spin');
+          if (dist < 9) sfx('happy');
+        }
+        if (h.since > h.hintAfter) n.heart.visible = true;
+        // 가까이 오면 찾았다! (말 걸기와 같음)
+        if (!h.found && !mirror && dist < SEEK_FIND) {
+          h.found = true;
+          arrive({ kind: 'npc', npc: n });
+        }
+      }
+      const radius = n.hiding ? 0 : (n.data.wander ?? 0);
+      const near = !n.hiding && Math.hypot(walker.x - n.walker.x, walker.z - n.walker.z) < NPC_NOTICE;
       const targeted = pending?.kind === 'npc' && pending.npc === n;
       n.hold = Math.max(0, n.hold - dt);
       if (near || targeted || n.hold > 0 || mirror) {
@@ -748,6 +774,34 @@ export function createCourtyardScene(aspect: number, opts: CourtyardOptions = {}
       a.face.setTalking(isTalking);
       // 다른 캐릭터는 입을 다문다
       for (const o of all) if (o && o !== a) o.face?.setTalking(false);
+    },
+
+    hideNpc(character, spots, hintAfter) {
+      const n = npcs.find((m) => m.data.character === character);
+      if (!n || spots.length === 0) return;
+      // 공주에게서 먼 자리 중 하나 (너무 가까우면 숨바꼭질이 안 됨)
+      const far = spots.filter((p) => Math.hypot(p.x - walker.x, p.z - walker.z) > 6);
+      const list = far.length > 0 ? far : spots;
+      const p = list[Math.floor(Math.random() * list.length)];
+      n.walker.stop();
+      n.walker.x = p.x;
+      n.walker.z = p.z;
+      n.walker.faceTowards(0, 0);
+      n.object.position.set(p.x, 0, p.z);
+      n.heart.visible = false;
+      n.hiding = { since: 0, peek: 4, hintAfter, found: false };
+      if (lookAtNpc === n) lookAtNpc = null;
+    },
+
+    revealNpc(character) {
+      const n = npcs.find((m) => m.data.character === character);
+      if (!n) return;
+      n.hiding = null;
+      n.heart.visible = false;
+      n.hold = 4;
+      n.walker.faceTowards(walker.x, walker.z);
+      n.animator?.play('hop');
+      sfx('sparkle');
     },
 
     zoomBy(f) {

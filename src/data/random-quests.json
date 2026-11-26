@@ -1,5 +1,5 @@
 {
-  "_comment": "할 때마다 달라지는 부탁 (친구의 이야기 부탁 quests.json을 다 끝낸 뒤부터). 친구에게 말을 걸면 템플릿 하나를 골라 물건 색·개수·자리·이유를 무작위로 정한다. givers=이 부탁을 하는 친구, items=고를 물건(나머지 중 decoys개는 오답으로 섞임 — 톡하면 힌트), count=[최소, 최대], to=배달이면 같은 장소의 다른 친구에게. reasons=부탁하는 이유(대사의 {reason}). dialogue=대사 묶음 앞 이름: -offer·-progress·-ready·-complete·-done·-hint (dialogues.json). 대사에서 speaker 'giver'=부탁한 친구, 'receiver'=받는 친구. 글 속 {item}·{en}·{count}·{to}·{from}·{reason}, 조사는 {item|을}처럼. type talk(기분 알아맞히기)=situations 중 하나를 골라 대사 dialogue-<mood>를 쓴다({situation}). type play(놀이)=game(cake: 과일 올리기, garden: 꽃 피우기) 미니게임을 끝까지 하면 해결, 대사 -offer·-progress·-complete·-done.",
+  "_comment": "할 때마다 달라지는 부탁 (친구의 이야기 부탁 quests.json을 다 끝낸 뒤부터). 친구에게 말을 걸면 템플릿 하나를 골라 물건 색·개수·자리·이유를 무작위로 정한다. givers=이 부탁을 하는 친구, items=고를 물건(나머지 중 decoys개는 오답으로 섞임 — 톡하면 힌트), count=[최소, 최대], to=배달이면 같은 장소의 다른 친구에게. reasons=부탁하는 이유(대사의 {reason}). dialogue=대사 묶음 앞 이름: -offer·-progress·-ready·-complete·-done·-hint (dialogues.json). 대사에서 speaker 'giver'=부탁한 친구, 'receiver'=받는 친구. 글 속 {item}·{en}·{count}·{to}·{from}·{reason}, 조사는 {item|을}처럼. type talk(기분 알아맞히기)=situations 중 하나를 골라 대사 dialogue-<mood>를 쓴다({situation}). type play(놀이)=game(cake: 과일 올리기, garden: 꽃 피우기) 미니게임을 끝까지 하면 해결, 대사 -offer·-progress·-complete·-done. type seek(숨바꼭질)=친구가 장소의 hideSpots 중 한 곳에 숨고, 찾으면 해결(-offer·-progress·-complete·-done).",
   "templates": [
     {
       "id": "flowers",
@@ -203,6 +203,20 @@
         "꽃밭을 더 예쁘게 만들고 싶어.",
         "해님이 쨍쨍해서 물이 필요해."
       ]
+    },
+    {
+      "id": "seek",
+      "type": "seek",
+      "givers": [
+        "flora",
+        "tori",
+        "pippi",
+        "gogo",
+        "dochi"
+      ],
+      "items": [],
+      "dialogue": "rq-seek",
+      "reasons": []
     }
   ],
   "candy": [

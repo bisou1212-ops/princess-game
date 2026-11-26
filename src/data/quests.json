@@ -240,5 +240,28 @@
         "vase"
       ]
     }
+  },
+  "flora-seek": {
+    "giver": "flora",
+    "location": "castle",
+    "title": "숨바꼭질",
+    "requires": "flora-party-invite",
+    "goal": {
+      "type": "seek"
+    },
+    "spawns": [],
+    "hints": {},
+    "dialogue": {
+      "offer": "rq-seek-offer",
+      "progress": "rq-seek-progress",
+      "complete": "rq-seek-complete",
+      "done": "rq-seek-done"
+    },
+    "rewards": {
+      "candy": 5,
+      "items": [
+        "balloons"
+      ]
+    }
   }
 }

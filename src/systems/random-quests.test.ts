@@ -40,7 +40,7 @@ describe('할 때마다 달라지는 부탁', () => {
         for (const sit of t.situations ?? []) expect(d[`${t.dialogue}-${sit.mood}`], sit.mood).toBeDefined();
         continue;
       }
-      const stages = t.type === 'deliver' || t.type === 'play' ? ['offer', 'progress', 'complete', 'done'] : ['offer', 'progress', 'ready', 'complete', 'done', 'hint'];
+      const stages = t.type === 'deliver' || t.type === 'play' || t.type === 'seek' ? ['offer', 'progress', 'complete', 'done'] : ['offer', 'progress', 'ready', 'complete', 'done', 'hint'];
       for (const s of stages) expect(d[`${t.dialogue}-${s}`], `${t.dialogue}-${s}`).toBeDefined();
     }
   });
@@ -135,6 +135,12 @@ describe('부탁 책: 이야기 부탁 다음엔 무작위 부탁', () => {
       ids.push(offer.questId);
       // 기분 부탁은 대화로 바로 끝나고 선물
       if (offer.event === 'completed') continue;
+      // 숨바꼭질: 숨은 친구에게 말을 걸면(찾으면) 바로 선물
+      if (offer.event === 'seek') {
+        const found = book.talkToCharacter('tori', make(99))!;
+        expect(found.event).toBe('completed');
+        continue;
+      }
       // 놀이 부탁: 미니게임을 끝까지 하면 선물
       if (offer.event === 'play') {
         expect(book.talkToCharacter('tori', make(99))!.event).toBe('play'); // 닫았다 다시 말 걸면 이어 하기
@@ -230,7 +236,7 @@ describe('게임마다 달라지는 이야기 부탁·기분 부탁', () => {
         expect(leftovers(fillLines(getDialogue(dlg), q.vars, names)), dlg).toEqual([]);
       }
     }
-    expect(kinds).toEqual(new Set(['flowers', 'delivery', 'feelings']));
+    expect(kinds).toEqual(new Set(['flowers', 'delivery', 'feelings', 'seek']));
   });
 
   it('기분 부탁: 상황에 맞는 기분 카드만 정답', () => {

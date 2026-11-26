@@ -361,3 +361,50 @@
 @media (prefers-reduced-motion: reduce) {
   .mg-panel *, .mg-panel { animation: none !important; }
 }
+
+/* ── 숨바꼭질 세기 화면 ── */
+.seek-layer {
+  position: fixed;
+  z-index: 18;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(70, 50, 100, 0.55);
+  font-family: 'Jua', 'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans KR', sans-serif;
+  color: #5a4a6b;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  animation: mg-in 0.3s ease-out;
+}
+.seek-layer[hidden] {
+  display: none;
+}
+.seek-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 26px 40px 30px;
+  border-radius: 40px;
+  background: #fffaf3;
+  border: 6px solid #c9a8ff;
+  box-shadow: 0 10px 0 rgba(60, 40, 90, 0.25);
+}
+.seek-eyes svg {
+  width: min(220px, 40vmin);
+}
+.seek-title {
+  font-size: clamp(26px, 4.6vmin, 38px);
+  color: #b07fd8;
+}
+.seek-num {
+  min-height: 1.1em;
+  font-size: clamp(80px, 18vmin, 140px);
+  line-height: 1;
+  color: #ff6fae;
+  text-shadow: 0 5px 0 #ffd1e6;
+}
+.seek-num.is-pop {
+  animation: mg-pop 0.35s cubic-bezier(0.2, 1.6, 0.4, 1);
+}

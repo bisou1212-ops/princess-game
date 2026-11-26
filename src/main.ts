@@ -17,6 +17,7 @@ import { PetPanel } from './ui/pet-panel';
 import { petThumb, sleepingPrincess } from './ui/pet-thumbs';
 import { createPortraits } from './ui/portraits';
 import { MiniGamePanel } from './ui/minigame-panel';
+import { SeekCountdown } from './ui/seek-countdown';
 import type { MiniGame } from './systems/quests';
 import { BedtimeScreen } from './ui/bedtime';
 import { PlayTimer, SLEEP_HOLD_MS } from './systems/playtime';
@@ -126,6 +127,13 @@ async function start() {
       onEnterRoom: (target) => (target === 'shop' ? openShop() : void goTo('room', target)),
       onPetCare: (mode, count) => openPetCare(mode, count),
       onPlay: (p) => openPlay(p),
+      onSeekCount: (done) => {
+        hud.setButtonsVisible(false);
+        seekCount.open(() => {
+          hud.setButtonsVisible(true);
+          done();
+        });
+      },
     });
     const scene = createCourtyardScene(aspect(), {
       layout,
@@ -414,6 +422,9 @@ async function start() {
     town.controller.refreshHud();
   }
 
+  // ── 숨바꼭질 세기 화면 ──
+  const seekCount = new SeekCountdown(document.body, speaker);
+
   // ── 미니게임: 놀이 부탁(케이크·꽃밭) + 카드 짝 맞추기(마당 버튼) ──
   const miniGames = new MiniGamePanel(document.body, {
     speaker,
@@ -522,7 +533,7 @@ async function start() {
   const whenIdle = (fn: () => void, maxWait = 45_000) => {
     const start = performance.now();
     const check = () => {
-      const busy = dialogue.isOpen || switching || mode === 'travel' || miniGames.isOpen;
+      const busy = dialogue.isOpen || switching || mode === 'travel' || miniGames.isOpen || seekCount.isOpen;
       if (!busy || performance.now() - start > maxWait) fn();
       else window.setTimeout(check, 1000);
     };

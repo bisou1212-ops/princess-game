@@ -821,5 +821,27 @@
   ],
   "rq-garden-done": [
     { "speaker": "giver", "mood": "happy", "text": "꽃밭이 정말 예뻐졌어!" }
+  ],
+  "rq-seek-offer": [
+    { "speaker": "giver", "mood": "excited", "text": "공주님, 우리 숨바꼭질 하자!" },
+    { "speaker": "giver", "mood": "happy", "text": "내가 꼭꼭 숨을게. 눈 감고 열까지 세고 찾아 줘!" },
+    { "speaker": "princess", "mood": "excited", "text": "좋아! 눈 감는다~" }
+  ],
+  "rq-seek-progress": [
+    { "speaker": "giver", "mood": "happy", "text": "히히, 여기 있지롱!" }
+  ],
+  "rq-seek-complete": [
+    { "speaker": "princess", "mood": "excited", "text": "찾았다!" },
+    { "speaker": "giver", "mood": "excited", "text": "히히, 들켰다! 공주님 정말 잘 찾는다!" },
+    { "speaker": "giver", "mood": "happy", "text": "재미있었어. 이건 선물이야!" }
+  ],
+  "rq-seek-done": [
+    { "speaker": "giver", "mood": "happy", "text": "숨바꼭질 또 하자!" }
+  ],
+  "seek-go": [
+    { "speaker": "princess", "mood": "excited", "text": "다 숨었니? 찾으러 간다!" }
+  ],
+  "seek-hint": [
+    { "speaker": "princess", "mood": "curious", "text": "어디 숨었지? 나무 뒤? 집 뒤?" }
   ]
 }
