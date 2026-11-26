@@ -80,6 +80,10 @@ docs/GDD.md        # 기획서
   - [x] 대화창 얼굴 사진: 말하는 캐릭터를 기분 표정으로 찍어 말풍선 앞에 (`src/ui/portraits.ts`)
   - [x] G4 캐릭터 다듬기: 머리카락 가닥 `lock()`(앞머리·옆머리·뒷머리 가닥·정수리 한 가닥), 주름 치마 `skirt()`·밑단 프릴 `ruffle()`·퍼프 소매, 펫 매끈하게·유니콘 무지개 갈기 가닥·고양이 볼 털. 명령줄 다시 만들기 `scripts/blender/run_chars.py`·`run_env.py` (`blender -b --factory-startup --python ... -- princess src/assets/models`)
 
+- [ ] M10 놀이 늘리기 (아이 반응: 부탁이 단순해서 금방 질림 → 하는 동작을 다양하게)
+  - [x] 미니게임 1차: 놀이 부탁 `goal.type: play`(game cake·garden, 대사 뒤 미니게임 → 끝까지 하면 해결, 닫았다 다시 말 걸면 이어 하기, `QuestBook.finishPlay`). 도치 케이크 꾸미기(과일을 끌거나 톡해서 올리며 세기)·고고 꽃밭 물 주기(물뿌리개를 새싹 위로 끌거나 새싹 톡 → 꽃이 활짝). 이야기 부탁 `dochi-cake`·`gogo-garden` + 무작위 템플릿 cake·garden. 카드 짝 맞추기(마당 HUD 카드 버튼, 부탁과 따로): 짝 4→6, 판마다 친구 얼굴·그림 번갈아, 맞히면 이름 한글·영어, 다 맞히면 별사탕 1. 화면 `src/ui/minigame-panel.ts`, 로직 `src/systems/minigames.ts`, 글 `src/data/minigames.json`
+  - [ ] 다음 후보: 숨바꼭질(숨은 친구 찾기)·나비 잡기·스티커 앨범(큰 목표)·바다 왕국
+
 ## 나중에 할 일
 - **사람 같은 음성 (보류, 기기 TTS가 로봇 같다는 피드백)**: 대사를 미리 음성 파일로 만들어 넣는다.
   `npm run voices` 스크립트가 `dialogues.json`을 읽어 `public/assets/voice/`에 mp3 + 단어 타이밍을 생성(바뀐 줄만).

@@ -188,4 +188,25 @@ describe('talk 부탁 (삐삐 위로하기)', () => {
     expect(b.talkToCharacter('pippi')).toMatchObject({ event: 'done', dialogue: 'd' });
     expect(b.current()).toBeNull();
   });
+
+  it('놀이 부탁: 대사 뒤 미니게임, 닫으면 이어 하기, 끝까지 하면 선물', () => {
+    const book = new QuestBook({
+      play: {
+        giver: 'dochi',
+        location: 'flower-kingdom',
+        title: '케이크 꾸미기',
+        goal: { type: 'play', game: 'cake', item: 'strawberry', count: 4 },
+        spawns: [],
+        hints: {},
+        dialogue: { offer: 'o', progress: 'p', complete: 'c', done: 'd' },
+        rewards: { candy: 3, items: [] },
+      },
+    });
+    const first = book.talk('play');
+    expect(first).toMatchObject({ event: 'play', dialogue: 'o', game: 'cake', count: 4 });
+    expect(book.talk('play')).toMatchObject({ event: 'play', dialogue: 'p' });
+    expect(book.finishPlay('play')).toEqual({ dialogue: 'c', rewards: { candy: 3, items: [] } });
+    expect(book.finishPlay('play')).toBeNull();
+    expect(book.talk('play').event).toBe('done');
+  });
 });

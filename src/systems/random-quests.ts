@@ -12,7 +12,9 @@ import type { QuestDef } from './quests';
  */
 export interface RandomTemplate {
   id: string;
-  type: 'collect' | 'deliver' | 'talk';
+  type: 'collect' | 'deliver' | 'talk' | 'play';
+  /** play: 미니게임 종류 */
+  game?: 'cake' | 'garden';
   givers: string[];
   items: string[];
   count?: [number, number];
@@ -56,7 +58,7 @@ export function questVars(def: QuestDef): QuestVars {
   if (g.type === 'talk') return vars;
   const item = getItem(g.item);
   Object.assign(vars, { itemId: g.item, item: item.name, en: item.en });
-  if (g.type === 'collect') {
+  if (g.type === 'collect' || g.type === 'play') {
     vars.count = countWithUnit(g.count, item.unit ?? '개');
     vars.counting = countingOut(g.count);
   } else {
@@ -71,6 +73,11 @@ export function questVars(def: QuestDef): QuestVars {
  */
 export function rollStoryQuest(def: QuestDef, spots: (n: number) => Point[], rng: Rng = Math.random): { def: QuestDef; vars: QuestVars } | null {
   const v = def.vary;
+  if (v && def.goal.type === 'play') {
+    // 놀이 부탁: 과일·꽃 종류와 개수만 (자리는 없음)
+    const rolled: QuestDef = { ...def, goal: { ...def.goal, item: pick(rng, v.items), count: between(rng, v.count) } };
+    return { def: rolled, vars: questVars(rolled) };
+  }
   if (!v || def.goal.type !== 'collect') return null;
   const itemId = pick(rng, v.items);
   const count = between(rng, v.count);
@@ -158,6 +165,27 @@ export function makeRandomQuest(o: MakeOptions): RandomQuest | null {
     from: o.giver,
   };
   const dlg = (stage: string) => `${t.dialogue}-${stage}`;
+
+  if (t.type === 'play') {
+    // 놀이: 케이크에 과일 n개 올리기 · 꽃 n송이 물 주기
+    const count = between(rng, t.count ?? [3, 5]);
+    vars.count = countWithUnit(count, item.unit ?? '개');
+    vars.counting = countingOut(count);
+    return {
+      id,
+      vars,
+      def: {
+        giver: o.giver,
+        location: o.location,
+        title: t.game === 'garden' ? '꽃밭 물 주기' : '케이크 꾸미기',
+        goal: { type: 'play', game: t.game ?? 'cake', item: itemId, count },
+        spawns: [],
+        hints: {},
+        dialogue: { offer: dlg('offer'), progress: dlg('progress'), complete: dlg('complete'), done: dlg('done') },
+        rewards,
+      },
+    };
+  }
 
   if (t.type === 'deliver') {
     const to = pick(rng, friends);

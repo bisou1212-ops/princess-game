@@ -163,5 +163,82 @@
         "rug"
       ]
     }
+  },
+  "dochi-cake": {
+    "giver": "dochi",
+    "location": "flower-kingdom",
+    "title": "케이크 꾸미기",
+    "requires": "dochi-strawberries",
+    "goal": {
+      "type": "play",
+      "game": "cake",
+      "item": "strawberry",
+      "count": 4
+    },
+    "vary": {
+      "items": [
+        "strawberry",
+        "blueberry"
+      ],
+      "count": [
+        3,
+        5
+      ],
+      "hint": "story-hint"
+    },
+    "spawns": [],
+    "hints": {},
+    "dialogue": {
+      "offer": "dochi-cake-offer",
+      "progress": "dochi-cake-progress",
+      "complete": "dochi-cake-complete",
+      "done": "dochi-cake-done"
+    },
+    "rewards": {
+      "candy": 6,
+      "items": [
+        "cake"
+      ]
+    }
+  },
+  "gogo-garden": {
+    "giver": "gogo",
+    "location": "flower-kingdom",
+    "title": "꽃밭 물 주기",
+    "requires": "gogo-flowerpots",
+    "goal": {
+      "type": "play",
+      "game": "garden",
+      "item": "flower-pink",
+      "count": 4
+    },
+    "vary": {
+      "items": [
+        "flower-red",
+        "flower-yellow",
+        "flower-blue",
+        "flower-pink",
+        "flower-purple"
+      ],
+      "count": [
+        3,
+        5
+      ],
+      "hint": "story-hint"
+    },
+    "spawns": [],
+    "hints": {},
+    "dialogue": {
+      "offer": "gogo-garden-offer",
+      "progress": "gogo-garden-progress",
+      "complete": "gogo-garden-complete",
+      "done": "gogo-garden-done"
+    },
+    "rewards": {
+      "candy": 6,
+      "items": [
+        "vase"
+      ]
+    }
   }
 }

@@ -12,10 +12,12 @@ import { openStore } from './core/storage';
 import { Speaker } from './core/tts';
 import { getCharacter, getDialogue, registerCharacter } from './systems/dialogue';
 import { PET_IDS, Pet, petCharacter, petVars } from './systems/pet';
-import { fillLines } from './systems/random-quests';
+import { fillLines, type QuestVars } from './systems/random-quests';
 import { PetPanel } from './ui/pet-panel';
 import { petThumb, sleepingPrincess } from './ui/pet-thumbs';
 import { createPortraits } from './ui/portraits';
+import { MiniGamePanel } from './ui/minigame-panel';
+import type { MiniGame } from './systems/quests';
 import { BedtimeScreen } from './ui/bedtime';
 import { PlayTimer, SLEEP_HOLD_MS } from './systems/playtime';
 import { preloadPet } from './scenes/castle/pet-glb';
@@ -84,6 +86,7 @@ async function start() {
     onExit: () => void goTo('town'),
     onMap: () => openMap(),
     onParent: () => openParent(),
+    onCards: () => openCards(),
     onZoom: (f) => mode === 'town' && town.scene.zoomBy(f),
     onResetView: () => mode === 'town' && town.scene.resetView(),
   });
@@ -122,6 +125,7 @@ async function start() {
       // 문: 성 안 방 또는 별사탕 가게
       onEnterRoom: (target) => (target === 'shop' ? openShop() : void goTo('room', target)),
       onPetCare: (mode, count) => openPetCare(mode, count),
+      onPlay: (p) => openPlay(p),
     });
     const scene = createCourtyardScene(aspect(), {
       layout,
@@ -410,6 +414,36 @@ async function start() {
     town.controller.refreshHud();
   }
 
+  // ── 미니게임: 놀이 부탁(케이크·꽃밭) + 카드 짝 맞추기(마당 버튼) ──
+  const miniGames = new MiniGamePanel(document.body, {
+    speaker,
+    portrait: (id) => dialogue.portraitFor?.(id, 'happy') ?? null,
+    onClose: () => {
+      miniGames.close();
+      hud.setButtonsVisible(true);
+      town.controller.refreshHud();
+    },
+  });
+  function openPlay(p: { questId: string; game: MiniGame; item: string; count: number; giver: string; vars: QuestVars }) {
+    hud.setButtonsVisible(false);
+    const done = () => {
+      hud.setButtonsVisible(true);
+      town.controller.finishPlay(p.questId, p.giver);
+    };
+    if (p.game === 'cake') miniGames.openCake(p.item, p.count, p.giver, p.vars, done);
+    else miniGames.openGarden(p.item, p.count, p.giver, p.vars, done);
+  }
+  function openCards() {
+    if (dialogue.isOpen || mode !== 'town' || switching || miniGames.isOpen) return;
+    sfx('page');
+    hud.setButtonsVisible(false);
+    miniGames.openCards((candy) => {
+      state.wallet.grant({ candy, items: [] });
+      state.change();
+      hud.setCandy(state.wallet.candy, true);
+    });
+  }
+
   // ── 펫 (M8-5): 처음엔 고르기, 그다음엔 밥·목욕 ──
   const petPanel = new PetPanel(document.body, {
     speaker,
@@ -488,7 +522,7 @@ async function start() {
   const whenIdle = (fn: () => void, maxWait = 45_000) => {
     const start = performance.now();
     const check = () => {
-      const busy = dialogue.isOpen || switching || mode === 'travel';
+      const busy = dialogue.isOpen || switching || mode === 'travel' || miniGames.isOpen;
       if (!busy || performance.now() - start > maxWait) fn();
       else window.setTimeout(check, 1000);
     };
@@ -547,7 +581,7 @@ async function start() {
   // 개발 중 브라우저 콘솔에서 상태 확인용 (배포 빌드에는 없음)
   if (import.meta.env.DEV) {
     Object.assign(window, {
-      __game: { state, goTo, travelTo, town: () => town, room: () => room, mode: () => mode, towns, petPanel, playTimer, startBedtime, warnBedtime, sound, renderer, dialogue },
+      __game: { state, goTo, travelTo, town: () => town, room: () => room, mode: () => mode, towns, petPanel, playTimer, startBedtime, warnBedtime, sound, renderer, dialogue, miniGames, openCards },
     });
   }
 

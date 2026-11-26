@@ -3,7 +3,7 @@ import { getCharacter, getDialogue, type DialogueLine } from '../../systems/dial
 import { fillLines, makeRandomQuest, randomSpots, rollStoryQuest, type QuestVars, type RandomQuest } from '../../systems/random-quests';
 import type { NavGrid } from '../../systems/navigation/nav-grid';
 import type { GameState } from '../../systems/game-state';
-import { goalCount } from '../../systems/quests';
+import { goalCount, type MiniGame } from '../../systems/quests';
 import { countingWord, getItem } from '../../systems/items';
 import type { DialogueBox } from '../../ui/dialogue-box';
 import type { Hud } from '../../ui/hud';
@@ -24,6 +24,8 @@ interface Deps {
   onEnterRoom(roomId: string): void;
   /** 펫 돌보기 화면 열기: 밥(간식 count개)·목욕 */
   onPetCare(mode: 'feed' | 'bath', count: number): void;
+  /** 놀이 부탁: 미니게임 화면 열기 (끝까지 하면 finishPlay) */
+  onPlay(p: { questId: string; game: MiniGame; item: string; count: number; giver: string; vars: QuestVars }): void;
 }
 
 /** 펫이 할 일이 없을 때 하는 말 (번갈아) */
@@ -154,9 +156,35 @@ export class CourtyardController {
           window.setTimeout(() => this.deps.reward.open(result.rewards), 700);
         });
         break;
+      case 'play': {
+        // 놀이: 대사가 끝나면 미니게임 (닫았다가 다시 말 걸면 이어 하기)
+        const r = result;
+        this.deps.dialogue.open(this.lines(r.dialogue, vars), () => {
+          this.refreshHud();
+          this.deps.onPlay({ questId, game: r.game, item: r.item, count: r.count, giver: npc.character, vars: vars ?? {} });
+        });
+        break;
+      }
       default:
         this.deps.dialogue.open(this.lines(result.dialogue, vars));
     }
+  }
+
+  /** 미니게임을 끝까지 했다: 고마워하는 대사 → 공주 빙글·친구 폴짝 → 선물 */
+  finishPlay(questId: string, giver: string): void {
+    const vars = this.quests.varsOf(questId);
+    const r = this.quests.finishPlay(questId);
+    if (!r) return;
+    this.deps.state.wallet.grant(r.rewards);
+    this.deps.state.change();
+    this.refreshMarkers();
+    this.deps.dialogue.open(this.lines(r.dialogue, vars), () => {
+      this.refreshHud();
+      this.deps.hud.setCandy(this.deps.state.wallet.candy, true);
+      this.scene?.gesture('princess', 'spin');
+      this.scene?.gesture(giver, 'hop');
+      window.setTimeout(() => this.deps.reward.open(r.rewards), 700);
+    });
   }
 
   // ── 펫 ──

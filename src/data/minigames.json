@@ -1,0 +1,48 @@
+{
+  "_comment": "미니게임 화면 글자·말 (src/ui/minigame-panel.ts). 모든 글은 글자 + 음성으로. {item}·{count}는 부탁에서 바뀐다. cards=카드 짝 맞추기(부탁과 따로, 마당 버튼): levels=판마다 짝 수, things=그림 카드(items.json id), friends=친구 얼굴 카드(characters.json id), candy=다 맞히면 별사탕.",
+  "cake": {
+    "title": "케이크 꾸미기",
+    "en": "Cake",
+    "start": "{item|을} 끌어서 케이크 위에 올려요!",
+    "done": "다 됐다! 예쁜 케이크 완성!",
+    "extra": 2
+  },
+  "garden": {
+    "title": "꽃밭 물 주기",
+    "en": "Watering",
+    "start": "물뿌리개를 새싹 위로 끌어 봐요!",
+    "grow": "쑥쑥!",
+    "done": "꽃이 활짝 피었어요!"
+  },
+  "cards": {
+    "title": "카드 짝 맞추기",
+    "en": "Memory",
+    "start": "카드를 두 장 톡! 똑같은 그림을 찾아요.",
+    "miss": "어, 달라요. 다시 찾아볼까요?",
+    "done": "다 찾았어요! 정말 잘했어요!",
+    "again": "한 번 더",
+    "candy": 1,
+    "levels": [
+      4,
+      6
+    ],
+    "things": [
+      "flower-red",
+      "flower-yellow",
+      "flower-blue",
+      "strawberry",
+      "blueberry",
+      "cookie",
+      "present",
+      "letter"
+    ],
+    "friends": [
+      "princess",
+      "flora",
+      "tori",
+      "gogo",
+      "dochi",
+      "pippi"
+    ]
+  }
+}

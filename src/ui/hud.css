@@ -86,6 +86,12 @@
 }
 
 /* ── 선물 받기 ─────────────────────────────────── */
+/* 카드 짝 맞추기 버튼 (지도 옆) */
+.hud-cards {
+  left: calc(max(16px, env(safe-area-inset-left)) + 184px) !important;
+  border-color: #c9a8ff !important;
+}
+
 /* 보기 버튼: 오른쪽 가운데 세로로 (최소 64px) */
 .hud-view {
   position: absolute;

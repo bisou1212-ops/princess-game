@@ -1,0 +1,363 @@
+/* ── 미니게임 화면: 케이크 꾸미기·꽃밭 물 주기·카드 짝 맞추기 (화면 가득) ── */
+.mg-panel {
+  position: fixed;
+  z-index: 16;
+  inset: 0;
+  box-sizing: border-box;
+  padding: max(14px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(14px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  background:
+    radial-gradient(circle at 15% 10%, rgba(255, 255, 255, 0.9), transparent 35%),
+    radial-gradient(circle at 90% 85%, rgba(255, 220, 240, 0.8), transparent 40%),
+    linear-gradient(#fff8ec, #ffeaf5);
+  font-family: 'Jua', 'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans KR', sans-serif;
+  color: #5a4a6b;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+  overflow: hidden;
+  animation: mg-in 0.25s ease-out;
+}
+.mg-panel[hidden] {
+  display: none;
+}
+.mg-panel button {
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  background: none;
+  cursor: pointer;
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.mg-panel svg,
+.mg-panel img {
+  pointer-events: none;
+  display: block;
+}
+@keyframes mg-in {
+  from { opacity: 0; transform: scale(0.97); }
+  to { opacity: 1; transform: none; }
+}
+
+.mg-head {
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.mg-title {
+  flex: 1;
+  text-align: center;
+  font-size: clamp(26px, 4.6vmin, 38px);
+  color: #ff6fae;
+  text-shadow: 0 3px 0 #fff;
+}
+.mg-title small {
+  font-size: 0.65em;
+  color: #b07fd8;
+}
+.mg-round {
+  flex: none;
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+}
+.mg-close {
+  background: #86d98f !important;
+  box-shadow: 0 4px 0 rgba(120, 100, 160, 0.18);
+}
+.mg-close svg {
+  width: 60%;
+  height: 60%;
+}
+
+/* 몇 개 했는지: 빈 칸이 하나씩 채워짐 (수 세기) */
+.mg-slots {
+  display: flex;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.8);
+}
+.mg-slot {
+  width: clamp(34px, 6vmin, 48px);
+  height: clamp(34px, 6vmin, 48px);
+  opacity: 0.22;
+  filter: grayscale(1);
+  transition: opacity 0.2s, filter 0.2s, transform 0.2s;
+}
+.mg-slot.is-full {
+  opacity: 1;
+  filter: none;
+  animation: mg-pop 0.35s cubic-bezier(0.2, 1.6, 0.4, 1);
+}
+
+.mg-stage {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.mg-say {
+  min-height: 1.4em;
+  padding: 8px 22px;
+  border-radius: 22px;
+  background: #fffaf3;
+  box-shadow: 0 4px 0 rgba(120, 100, 160, 0.12);
+  font-size: clamp(22px, 3.8vmin, 32px);
+  text-align: center;
+}
+.mg-say:empty {
+  visibility: hidden;
+}
+.mg-tray {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  min-height: 84px;
+}
+
+/* ── 케이크 ── */
+.mg-cake {
+  position: relative;
+  height: min(100%, 52vmin);
+  aspect-ratio: 320 / 260;
+}
+.mg-cake > svg {
+  width: 100%;
+  height: 100%;
+}
+.mg-spot {
+  position: absolute;
+  width: 15%;
+  aspect-ratio: 1;
+  transform: translate(-50%, -60%) scale(0);
+  transition: transform 0.35s cubic-bezier(0.2, 1.6, 0.4, 1);
+}
+.mg-spot.is-on {
+  transform: translate(-50%, -60%) scale(1);
+}
+.mg-fruit {
+  width: clamp(72px, 11vmin, 96px);
+  height: clamp(72px, 11vmin, 96px);
+  padding: 8px !important;
+  border-radius: 24px;
+  background: #fff !important;
+  box-shadow: 0 4px 0 rgba(120, 100, 160, 0.15);
+  transition: opacity 0.2s, transform 0.2s;
+}
+.mg-fruit.is-lifted {
+  opacity: 0.3;
+}
+.mg-fruit.is-used {
+  opacity: 0;
+  transform: scale(0.4);
+  pointer-events: none;
+}
+.mg-fruit.is-rest {
+  opacity: 0.35;
+  pointer-events: none;
+}
+
+/* 끌고 다니는 그림 */
+.mg-ghost {
+  position: fixed;
+  z-index: 30;
+  pointer-events: none;
+  transform: translate(-50%, -50%) scale(1.15) rotate(-6deg);
+  filter: drop-shadow(0 8px 6px rgba(90, 60, 120, 0.25));
+  border-radius: 24px;
+}
+.mg-ghost.mg-can.is-pouring {
+  transform: translate(-50%, -50%) scale(1.1) rotate(-22deg);
+}
+
+/* ── 꽃밭 ── */
+.mg-bed {
+  gap: clamp(8px, 2vmin, 22px);
+  flex-wrap: wrap;
+  align-content: center;
+  padding: 0 4px;
+}
+.mg-sprout {
+  position: relative;
+  width: clamp(96px, 16vmin, 150px);
+  aspect-ratio: 1;
+}
+.mg-sprout-art {
+  width: 100%;
+  height: 100%;
+  transition: transform 0.3s;
+}
+.mg-sprout.is-wet .mg-sprout-art {
+  animation: mg-wiggle 0.5s ease-in-out;
+}
+.mg-bloom {
+  position: absolute;
+  left: 18%;
+  top: -6%;
+  width: 64%;
+  aspect-ratio: 1;
+  transform: scale(0);
+  transition: transform 0.45s cubic-bezier(0.2, 1.6, 0.4, 1);
+}
+.mg-sprout.is-bloom .mg-bloom {
+  transform: scale(1);
+}
+.mg-sprout.is-bloom .mg-sprout-art {
+  transform: translateY(6%);
+}
+.mg-drops {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.mg-drops i {
+  position: absolute;
+  top: 0;
+  width: 10px;
+  height: 14px;
+  border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+  background: #74c0ff;
+  animation: mg-drop 0.7s ease-in forwards;
+}
+.mg-can {
+  width: clamp(120px, 18vmin, 160px);
+  height: clamp(94px, 14vmin, 126px);
+}
+.mg-can.is-lifted {
+  opacity: 0.25;
+}
+
+/* ── 카드 ── */
+.mg-cards {
+  display: grid;
+  grid-template-columns: repeat(var(--cols), 1fr);
+  gap: clamp(8px, 1.6vmin, 16px);
+  height: 100%;
+  max-height: 100%;
+  aspect-ratio: calc(var(--cols) * 0.78) / 2;
+  max-width: 100%;
+}
+.mg-cards[style*='--cols:6'] {
+  aspect-ratio: calc(6 * 0.78) / 2;
+}
+.mg-card {
+  perspective: 600px;
+  min-width: 0;
+  min-height: 0;
+}
+.mg-card-in {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: transform 0.35s ease;
+}
+.mg-card.is-up .mg-card-in {
+  transform: rotateY(180deg);
+}
+.mg-back,
+.mg-front {
+  position: absolute;
+  inset: 0;
+  border-radius: 18px;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 4px 0 rgba(120, 100, 160, 0.18);
+}
+.mg-back {
+  background: linear-gradient(135deg, #ff9ccf, #c9a8ff);
+  border: 4px solid #fff;
+}
+.mg-back svg {
+  width: 46%;
+}
+.mg-front {
+  transform: rotateY(180deg);
+  background: #fffaf3;
+  border: 4px solid #ffd1e6;
+  grid-template-rows: 1fr auto;
+  overflow: hidden;
+}
+.mg-front > svg,
+.mg-front > img,
+.mg-initial {
+  width: 82%;
+  height: 82%;
+  object-fit: contain;
+  align-self: center;
+  justify-self: center;
+}
+.mg-initial {
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  font-size: 2em;
+}
+.mg-name {
+  font-size: clamp(14px, 2.4vmin, 20px);
+  padding-bottom: 4px;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.mg-card.is-match .mg-front {
+  border-color: #ffd36e;
+  animation: mg-glow 1.2s ease-in-out infinite alternate;
+}
+.mg-card.is-match .mg-name {
+  opacity: 1;
+}
+.mg-cards.is-done .mg-card {
+  animation: mg-pop 0.5s cubic-bezier(0.2, 1.6, 0.4, 1);
+}
+.mg-again {
+  min-width: 200px;
+  min-height: 72px;
+  padding: 0 28px !important;
+  border-radius: 999px;
+  background: #ff9ccf !important;
+  color: #fff !important;
+  font-size: 28px !important;
+  box-shadow: 0 5px 0 #e977b2;
+  animation: mg-pop 0.4s cubic-bezier(0.2, 1.6, 0.4, 1);
+}
+
+.mg-stage.is-done {
+  animation: mg-pop 0.6s cubic-bezier(0.2, 1.6, 0.4, 1);
+}
+
+@keyframes mg-pop {
+  0% { transform: scale(0.7); }
+  100% { transform: scale(1); }
+}
+@keyframes mg-wiggle {
+  0%, 100% { transform: rotate(0); }
+  30% { transform: rotate(-5deg); }
+  70% { transform: rotate(5deg); }
+}
+@keyframes mg-drop {
+  from { transform: translateY(-10px); opacity: 1; }
+  to { transform: translateY(70px); opacity: 0; }
+}
+@keyframes mg-glow {
+  from { box-shadow: 0 0 0 0 rgba(255, 211, 110, 0.6); }
+  to { box-shadow: 0 0 0 8px rgba(255, 211, 110, 0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mg-panel *, .mg-panel { animation: none !important; }
+}

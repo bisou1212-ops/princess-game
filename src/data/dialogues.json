@@ -757,5 +757,69 @@
   ],
   "bedtime-still": [
     { "speaker": "princess", "mood": "shy", "text": "쉿, 지금은 코 자는 시간이에요. 내일 또 만나요!" }
+  ],
+  "dochi-cake-offer": [
+    { "speaker": "dochi", "mood": "excited", "text": "공주님! 오늘은 케이크 꾸미는 날이에요!" },
+    { "speaker": "dochi", "mood": "curious", "text": "케이크 위에 {item|을} {count} 올려 줄래요?" },
+    { "speaker": "dochi", "mood": "happy", "text": "{item|을} 끌어서 케이크 위에 톡 놓으면 돼요." },
+    { "speaker": "princess", "mood": "excited", "text": "좋아! 같이 하자!" }
+  ],
+  "dochi-cake-progress": [
+    { "speaker": "dochi", "mood": "happy", "text": "케이크가 기다리고 있어요! {item} {count}, 같이 올려요." }
+  ],
+  "dochi-cake-complete": [
+    { "speaker": "dochi", "mood": "excited", "text": "{counting}! 우와, 세상에서 제일 예쁜 케이크예요!" },
+    { "speaker": "dochi", "mood": "shy", "text": "도와줘서 고마워요. 케이크 장식을 선물할게요!" }
+  ],
+  "dochi-cake-done": [
+    { "speaker": "dochi", "mood": "happy", "text": "공주님이 꾸민 케이크, 정말 맛있었어요!" }
+  ],
+  "gogo-garden-offer": [
+    { "speaker": "gogo", "mood": "normal", "text": "음… 꽃밭 새싹들이 목이 마르대." },
+    { "speaker": "gogo", "mood": "curious", "text": "물뿌리개로 물을 줘서 {item|을} {count} 피워 줄래?" },
+    { "speaker": "gogo", "mood": "happy", "text": "물뿌리개를 새싹 위로 끌어 주면 돼." },
+    { "speaker": "princess", "mood": "excited", "text": "좋아! 내가 해 볼게!" }
+  ],
+  "gogo-garden-progress": [
+    { "speaker": "gogo", "mood": "happy", "text": "새싹들이 물을 기다려. {item} {count}!" }
+  ],
+  "gogo-garden-complete": [
+    { "speaker": "gogo", "mood": "excited", "text": "{counting}! 꽃이 활짝 피었어!" },
+    { "speaker": "gogo", "mood": "shy", "text": "고마워… 이 꽃병, 너 줄게." }
+  ],
+  "gogo-garden-done": [
+    { "speaker": "gogo", "mood": "happy", "text": "꽃밭이 반짝반짝해. 고마워." }
+  ],
+  "rq-cake-offer": [
+    { "speaker": "giver", "mood": "excited", "text": "공주님, 케이크 꾸미기 놀이 할래?" },
+    { "speaker": "giver", "mood": "happy", "text": "{reason}" },
+    { "speaker": "giver", "mood": "curious", "text": "{item|을} {count} 올려 줘!" },
+    { "speaker": "giver", "mood": "excited", "text": "{en}!", "lang": "en-US" }
+  ],
+  "rq-cake-progress": [
+    { "speaker": "giver", "mood": "happy", "text": "케이크에 {item} {count}, 기다리고 있어!" }
+  ],
+  "rq-cake-complete": [
+    { "speaker": "giver", "mood": "excited", "text": "{counting}! 와, 정말 예쁘다!" },
+    { "speaker": "giver", "mood": "happy", "text": "같이 꾸며 줘서 고마워. 이건 선물이야!" }
+  ],
+  "rq-cake-done": [
+    { "speaker": "giver", "mood": "happy", "text": "케이크 꾸미기 또 하자!" }
+  ],
+  "rq-garden-offer": [
+    { "speaker": "giver", "mood": "happy", "text": "공주님, 새싹에 물 주기 놀이 할래?" },
+    { "speaker": "giver", "mood": "happy", "text": "{reason}" },
+    { "speaker": "giver", "mood": "curious", "text": "물을 줘서 {item|을} {count} 피워 줘!" },
+    { "speaker": "giver", "mood": "excited", "text": "{en}!", "lang": "en-US" }
+  ],
+  "rq-garden-progress": [
+    { "speaker": "giver", "mood": "happy", "text": "새싹들이 물을 기다려. {item} {count}!" }
+  ],
+  "rq-garden-complete": [
+    { "speaker": "giver", "mood": "excited", "text": "{counting}! 꽃이 활짝 피었어!" },
+    { "speaker": "giver", "mood": "happy", "text": "고마워! 이건 선물이야." }
+  ],
+  "rq-garden-done": [
+    { "speaker": "giver", "mood": "happy", "text": "꽃밭이 정말 예뻐졌어!" }
   ]
 }

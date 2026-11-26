@@ -21,13 +21,14 @@ export class Hud {
   private readonly exitBtn: HTMLButtonElement;
   private readonly mapBtn: HTMLButtonElement;
   private readonly parentBtn: HTMLButtonElement;
+  private readonly cardsBtn: HTMLButtonElement;
   private readonly viewEl: HTMLDivElement;
   private mode: 'yard' | 'room' = 'yard';
   private buttonsOn = true;
 
   constructor(
     parent: HTMLElement,
-    handlers: { onWardrobe(): void; onExit(): void; onMap(): void; onParent(): void; onZoom(factor: number): void; onResetView(): void },
+    handlers: { onWardrobe(): void; onExit(): void; onMap(): void; onParent(): void; onCards(): void; onZoom(factor: number): void; onResetView(): void },
   ) {
     this.root = document.createElement('div');
     this.root.className = 'hud';
@@ -37,6 +38,7 @@ export class Hud {
       <button class="hud-wardrobe" type="button" aria-label="드레스룸">${wardrobeIcon()}</button>
       <button class="hud-wardrobe hud-exit" type="button" aria-label="마당으로 나가기" hidden>${doorIcon()}</button>
       <button class="hud-wardrobe hud-map" type="button" aria-label="지도">${mapIcon()}</button>
+      <button class="hud-wardrobe hud-cards" type="button" aria-label="카드 짝 맞추기">${cardsIcon()}</button>
       <button class="hud-parent" type="button" aria-label="부모 설정">${gearIcon()}</button>
       <div class="hud-view">
         <button class="hud-view-btn" type="button" data-zoom="in" aria-label="가까이">${zoomIcon(true)}</button>
@@ -55,6 +57,8 @@ export class Hud {
     this.mapBtn.addEventListener('click', () => handlers.onMap());
     this.parentBtn = this.root.querySelector('.hud-parent')!;
     this.parentBtn.addEventListener('click', () => handlers.onParent());
+    this.cardsBtn = this.root.querySelector('.hud-cards')!;
+    this.cardsBtn.addEventListener('click', () => handlers.onCards());
     // 보기: 돋보기 +·− (한 번 톡에 조금씩), 처음 보던 대로
     this.viewEl = this.root.querySelector('.hud-view')!;
     this.viewEl.addEventListener('click', (e) => {
@@ -77,6 +81,7 @@ export class Hud {
     this.wardrobeBtn.hidden = !this.buttonsOn || this.mode !== 'yard';
     this.exitBtn.hidden = !this.buttonsOn || this.mode !== 'room';
     this.mapBtn.hidden = !this.buttonsOn || this.mode !== 'yard';
+    this.cardsBtn.hidden = !this.buttonsOn || this.mode !== 'yard';
     // 부모 설정: 마당에서만 (방에서는 아래 가구 서랍과 겹침)
     this.parentBtn.hidden = !this.buttonsOn || this.mode !== 'yard';
     this.viewEl.hidden = !this.buttonsOn || this.mode !== 'yard';
@@ -141,4 +146,14 @@ function zoomIcon(plus: boolean): string {
 /** 처음 보던 대로: 빙글 화살표 + 눈 */
 function resetViewIcon(): string {
   return '<svg viewBox="0 0 48 48" aria-hidden="true"><path d="M38 24a14 14 0 1 1-4.1-9.9" fill="none" stroke="#7a6a9b" stroke-width="4.5" stroke-linecap="round"/><path d="M36 6v10H26" fill="none" stroke="#7a6a9b" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="24" cy="24" r="5" fill="#ff7fb8"/></svg>';
+}
+
+/** 카드 짝 맞추기 버튼: 겹친 카드 두 장 (하트·별) */
+function cardsIcon(): string {
+  return `<svg viewBox="0 0 64 64" aria-hidden="true">
+    <rect x="8" y="12" width="28" height="40" rx="6" fill="#c9a8ff" stroke="#fff" stroke-width="3" transform="rotate(-12 22 32)"/>
+    <path d="M22 27l2.4 4.9 5.4.8-3.9 3.8.9 5.4-4.8-2.6-4.8 2.6.9-5.4-3.9-3.8 5.4-.8z" fill="#fff" transform="rotate(-12 22 32)"/>
+    <rect x="28" y="12" width="28" height="40" rx="6" fill="#ff9ccf" stroke="#fff" stroke-width="3" transform="rotate(10 42 32)"/>
+    <path d="M42 41c-6-4-8-7-8-9.5a3.8 3.8 0 0 1 8-1.6 3.8 3.8 0 0 1 8 1.6c0 2.5-2 5.5-8 9.5z" fill="#fff" transform="rotate(10 42 32)"/>
+  </svg>`;
 }

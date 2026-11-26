@@ -1,5 +1,5 @@
 {
-  "_comment": "할 때마다 달라지는 부탁 (친구의 이야기 부탁 quests.json을 다 끝낸 뒤부터). 친구에게 말을 걸면 템플릿 하나를 골라 물건 색·개수·자리·이유를 무작위로 정한다. givers=이 부탁을 하는 친구, items=고를 물건(나머지 중 decoys개는 오답으로 섞임 — 톡하면 힌트), count=[최소, 최대], to=배달이면 같은 장소의 다른 친구에게. reasons=부탁하는 이유(대사의 {reason}). dialogue=대사 묶음 앞 이름: -offer·-progress·-ready·-complete·-done·-hint (dialogues.json). 대사에서 speaker 'giver'=부탁한 친구, 'receiver'=받는 친구. 글 속 {item}·{en}·{count}·{to}·{from}·{reason}, 조사는 {item|을}처럼. type talk(기분 알아맞히기)=situations 중 하나를 골라 대사 dialogue-<mood>를 쓴다({situation}).",
+  "_comment": "할 때마다 달라지는 부탁 (친구의 이야기 부탁 quests.json을 다 끝낸 뒤부터). 친구에게 말을 걸면 템플릿 하나를 골라 물건 색·개수·자리·이유를 무작위로 정한다. givers=이 부탁을 하는 친구, items=고를 물건(나머지 중 decoys개는 오답으로 섞임 — 톡하면 힌트), count=[최소, 최대], to=배달이면 같은 장소의 다른 친구에게. reasons=부탁하는 이유(대사의 {reason}). dialogue=대사 묶음 앞 이름: -offer·-progress·-ready·-complete·-done·-hint (dialogues.json). 대사에서 speaker 'giver'=부탁한 친구, 'receiver'=받는 친구. 글 속 {item}·{en}·{count}·{to}·{from}·{reason}, 조사는 {item|을}처럼. type talk(기분 알아맞히기)=situations 중 하나를 골라 대사 dialogue-<mood>를 쓴다({situation}). type play(놀이)=game(cake: 과일 올리기, garden: 꽃 피우기) 미니게임을 끝까지 하면 해결, 대사 -offer·-progress·-complete·-done.",
   "templates": [
     {
       "id": "flowers",
@@ -113,16 +113,95 @@
         ""
       ],
       "situations": [
-        { "mood": "sad", "text": "아끼던 풍선이 하늘로 날아가 버렸어…" },
-        { "mood": "sad", "text": "열심히 만든 모래성이 파도에 무너졌어…" },
-        { "mood": "sad", "text": "제일 좋아하는 컵을 떨어뜨려서 깨졌어…" },
-        { "mood": "happy", "text": "오늘 내 생일이라 친구들이 케이크를 만들어 줬어!" },
-        { "mood": "happy", "text": "잃어버린 인형을 드디어 찾았어!" },
-        { "mood": "happy", "text": "내가 심은 씨앗에서 꽃이 피었어!" },
-        { "mood": "angry", "text": "누가 내 그림에 마구 낙서를 했어!" },
-        { "mood": "angry", "text": "줄 서서 기다렸는데 누가 새치기를 했어!" },
-        { "mood": "scared", "text": "어젯밤에 천둥이 쾅쾅 쳐서 잠을 못 잤어…" },
-        { "mood": "scared", "text": "어두운 숲에서 이상한 소리가 났어…" }
+        {
+          "mood": "sad",
+          "text": "아끼던 풍선이 하늘로 날아가 버렸어…"
+        },
+        {
+          "mood": "sad",
+          "text": "열심히 만든 모래성이 파도에 무너졌어…"
+        },
+        {
+          "mood": "sad",
+          "text": "제일 좋아하는 컵을 떨어뜨려서 깨졌어…"
+        },
+        {
+          "mood": "happy",
+          "text": "오늘 내 생일이라 친구들이 케이크를 만들어 줬어!"
+        },
+        {
+          "mood": "happy",
+          "text": "잃어버린 인형을 드디어 찾았어!"
+        },
+        {
+          "mood": "happy",
+          "text": "내가 심은 씨앗에서 꽃이 피었어!"
+        },
+        {
+          "mood": "angry",
+          "text": "누가 내 그림에 마구 낙서를 했어!"
+        },
+        {
+          "mood": "angry",
+          "text": "줄 서서 기다렸는데 누가 새치기를 했어!"
+        },
+        {
+          "mood": "scared",
+          "text": "어젯밤에 천둥이 쾅쾅 쳐서 잠을 못 잤어…"
+        },
+        {
+          "mood": "scared",
+          "text": "어두운 숲에서 이상한 소리가 났어…"
+        }
+      ]
+    },
+    {
+      "id": "cake",
+      "type": "play",
+      "game": "cake",
+      "givers": [
+        "dochi"
+      ],
+      "items": [
+        "strawberry",
+        "blueberry"
+      ],
+      "count": [
+        3,
+        6
+      ],
+      "dialogue": "rq-cake",
+      "reasons": [
+        "오늘은 친구 생일이야.",
+        "간식 파티를 할 거야.",
+        "새 케이크를 구웠거든."
+      ]
+    },
+    {
+      "id": "garden",
+      "type": "play",
+      "game": "garden",
+      "givers": [
+        "gogo",
+        "tori"
+      ],
+      "items": [
+        "flower-red",
+        "flower-yellow",
+        "flower-blue",
+        "flower-pink",
+        "flower-purple",
+        "flower-white"
+      ],
+      "count": [
+        3,
+        5
+      ],
+      "dialogue": "rq-garden",
+      "reasons": [
+        "새싹들이 목이 마르대.",
+        "꽃밭을 더 예쁘게 만들고 싶어.",
+        "해님이 쨍쨍해서 물이 필요해."
       ]
     }
   ],
