@@ -3,6 +3,7 @@ import { mapIcon } from '../scenes/map/map-screen';
 import { candyIcon, itemIcon, wardrobeIcon } from './icons';
 import { getItem } from '../systems/items';
 import { gearIcon } from './parent-panel';
+import { albumIcon } from './sticker-icons';
 import './hud.css';
 import { sfx } from '../core/sound';
 
@@ -22,13 +23,14 @@ export class Hud {
   private readonly mapBtn: HTMLButtonElement;
   private readonly parentBtn: HTMLButtonElement;
   private readonly cardsBtn: HTMLButtonElement;
+  private readonly albumBtn: HTMLButtonElement;
   private readonly viewEl: HTMLDivElement;
   private mode: 'yard' | 'room' = 'yard';
   private buttonsOn = true;
 
   constructor(
     parent: HTMLElement,
-    handlers: { onWardrobe(): void; onExit(): void; onMap(): void; onParent(): void; onCards(): void; onZoom(factor: number): void; onResetView(): void },
+    handlers: { onWardrobe(): void; onExit(): void; onMap(): void; onParent(): void; onCards(): void; onAlbum(): void; onZoom(factor: number): void; onResetView(): void },
   ) {
     this.root = document.createElement('div');
     this.root.className = 'hud';
@@ -39,6 +41,7 @@ export class Hud {
       <button class="hud-wardrobe hud-exit" type="button" aria-label="마당으로 나가기" hidden>${doorIcon()}</button>
       <button class="hud-wardrobe hud-map" type="button" aria-label="지도">${mapIcon()}</button>
       <button class="hud-wardrobe hud-cards" type="button" aria-label="카드 짝 맞추기">${cardsIcon()}</button>
+      <button class="hud-wardrobe hud-album" type="button" aria-label="스티커 앨범">${albumIcon()}</button>
       <button class="hud-parent" type="button" aria-label="부모 설정">${gearIcon()}</button>
       <div class="hud-view">
         <button class="hud-view-btn" type="button" data-zoom="in" aria-label="가까이">${zoomIcon(true)}</button>
@@ -59,6 +62,8 @@ export class Hud {
     this.parentBtn.addEventListener('click', () => handlers.onParent());
     this.cardsBtn = this.root.querySelector('.hud-cards')!;
     this.cardsBtn.addEventListener('click', () => handlers.onCards());
+    this.albumBtn = this.root.querySelector('.hud-album')!;
+    this.albumBtn.addEventListener('click', () => handlers.onAlbum());
     // 보기: 돋보기 +·− (한 번 톡에 조금씩), 처음 보던 대로
     this.viewEl = this.root.querySelector('.hud-view')!;
     this.viewEl.addEventListener('click', (e) => {
@@ -82,9 +87,17 @@ export class Hud {
     this.exitBtn.hidden = !this.buttonsOn || this.mode !== 'room';
     this.mapBtn.hidden = !this.buttonsOn || this.mode !== 'yard';
     this.cardsBtn.hidden = !this.buttonsOn || this.mode !== 'yard';
+    this.albumBtn.hidden = !this.buttonsOn || this.mode !== 'yard';
     // 부모 설정: 마당에서만 (방에서는 아래 가구 서랍과 겹침)
     this.parentBtn.hidden = !this.buttonsOn || this.mode !== 'yard';
     this.viewEl.hidden = !this.buttonsOn || this.mode !== 'yard';
+  }
+
+  /** 앨범에 아직 안 본 새 스티커가 있으면 반짝 점 */
+  setAlbumNew(on: boolean): void {
+    const dot = this.albumBtn.querySelector('.wr-new-dot');
+    if (on && !dot) this.albumBtn.insertAdjacentHTML('beforeend', '<span class="wr-new-dot"></span>');
+    if (!on) dot?.remove();
   }
 
   /** 드레스룸에 아직 안 본 새 옷이 있으면 반짝 점 */

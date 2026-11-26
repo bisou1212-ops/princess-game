@@ -13,6 +13,7 @@ import { buildNavGrid, type CourtyardLayout } from './courtyard-layout';
 import type { CourtyardScene, Interaction } from './courtyard-scene';
 import { sfx } from '../../core/sound';
 import { MINIGAMES } from '../../systems/minigames';
+import { pickupCounter } from '../../systems/stickers';
 
 interface Deps {
   layout: CourtyardLayout;
@@ -115,6 +116,8 @@ export class CourtyardController {
   private talkTo(npcId: string): void {
     const npc = this.deps.layout.npcs.find((n) => n.id === npcId);
     if (!npc) return;
+    const stickers = this.deps.state.stickers;
+    stickers.record('talk');
 
     // 이 친구의 부탁(또는 이 친구에게 전할 물건)이 있으면 그것, 없으면 그냥 인사
     const result = this.quests.talkToCharacter(
@@ -134,7 +137,16 @@ export class CourtyardController {
     // 숨바꼭질: 찾았다! 숨은 친구가 폴짝 나온다
     if (result.event === 'completed' && this.quests.def(questId).goal.type === 'seek') this.scene?.revealNpc(npc.character);
     // 선물은 바로 지갑에 넣고 저장 (대화 도중 앱을 꺼도 선물을 잃지 않게). 보여 주는 건 대화 뒤에
-    if (gotReward) this.deps.state.wallet.grant(result.rewards);
+    if (gotReward) {
+      this.deps.state.wallet.grant(result.rewards);
+      // 스티커 셈: 부탁 해결 + 종류별 + 받은 별사탕
+      const kind = this.quests.def(questId).goal.type;
+      stickers.record('quest');
+      if (result.event === 'delivered') stickers.record('deliver');
+      else if (kind === 'talk') stickers.record('feelings');
+      else if (kind === 'seek') stickers.record('seek');
+      stickers.record('candy', result.rewards.candy);
+    }
     if (result.event === 'offered' || gotReward) this.deps.state.change();
 
     switch (result.event) {
@@ -186,9 +198,14 @@ export class CourtyardController {
   /** 미니게임을 끝까지 했다: 고마워하는 대사 → 공주 빙글·친구 폴짝 → 선물 */
   finishPlay(questId: string, giver: string): void {
     const vars = this.quests.varsOf(questId);
+    const game = this.quests.def(questId).goal;
     const r = this.quests.finishPlay(questId);
     if (!r) return;
     this.deps.state.wallet.grant(r.rewards);
+    const stickers = this.deps.state.stickers;
+    stickers.record('quest');
+    if (game.type === 'play') stickers.record(game.game);
+    stickers.record('candy', r.rewards.candy);
     this.deps.state.change();
     this.refreshMarkers();
     this.deps.dialogue.open(this.lines(r.dialogue, vars), () => {
@@ -257,6 +274,8 @@ export class CourtyardController {
     if (!pet) return 0;
     const candy = mode === 'feed' ? pet.feed() : pet.bathe();
     state.wallet.candy += candy;
+    state.stickers.record(mode);
+    state.stickers.record('candy', candy);
     state.change();
     this.scene?.petCelebrate();
     this.refreshPet();
@@ -284,6 +303,8 @@ export class CourtyardController {
     const where = parsePickupId(id);
     const collected = this.quests.collect(itemId, where?.index);
     if (collected) {
+      const counter = pickupCounter(itemId);
+      if (counter) this.deps.state.stickers.record(counter);
       sfx('sparkle');
       sfx('count', collected.count);
       // 넘어진 화분은 그 자리에 세우고, 나머지는 쏙 줍기

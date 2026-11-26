@@ -207,6 +207,7 @@ export class BedroomController {
       if (drag.spot && drag.valid) {
         const p = layout.place(drag.item, drag.spot.c, drag.spot.r, drag.rot, drag.color);
         if (p) {
+          this.d.state.stickers.record('furniture');
           scene.sync();
           scene.pop(p.uid);
           this.select(p.uid);

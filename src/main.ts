@@ -18,6 +18,7 @@ import { petThumb, sleepingPrincess } from './ui/pet-thumbs';
 import { createPortraits } from './ui/portraits';
 import { MiniGamePanel } from './ui/minigame-panel';
 import { SeekCountdown } from './ui/seek-countdown';
+import { StickerAlbum } from './ui/sticker-album';
 import type { MiniGame } from './systems/quests';
 import { BedtimeScreen } from './ui/bedtime';
 import { PlayTimer, SLEEP_HOLD_MS } from './systems/playtime';
@@ -88,6 +89,7 @@ async function start() {
     onMap: () => openMap(),
     onParent: () => openParent(),
     onCards: () => openCards(),
+    onAlbum: () => openAlbum(),
     onZoom: (f) => mode === 'town' && town.scene.zoomBy(f),
     onResetView: () => mode === 'town' && town.scene.resetView(),
   });
@@ -172,7 +174,10 @@ async function start() {
     onPaintPart: (part) => room?.controller.choosePaintPart(part),
     onPaintColor: (c) => room?.controller.paint(c),
     onInviteOpen: () => room?.controller.openInvite(),
-    onInvite: (id) => room?.controller.invite(id),
+    onInvite: (id) => {
+      state.stickers.record('invite');
+      room?.controller.invite(id);
+    },
     onPanelClose: () => room?.controller.closePanel(),
   });
   let room: { id: string; scene: BedroomScene; controller: BedroomController } | null = null;
@@ -256,6 +261,7 @@ async function start() {
     const from = town;
     const dest = getLocation(id)!;
     sfx('whoosh');
+    if (id === 'flower-kingdom') state.stickers.record('travel');
     await withFade(() => {
       map.close();
       mode = 'travel';
@@ -318,6 +324,7 @@ async function start() {
     voice: princessVoice,
     onChange: (outfit) => {
       sfx('dress');
+      state.stickers.record('dress');
       state.outfit = outfit;
       for (const t of towns.values()) t.scene.setOutfit(outfit, t === town);
       state.change();
@@ -406,6 +413,7 @@ async function start() {
     thumb: (id) => getThumbs().get(id) ?? itemIcon(getItem(id)),
     onBuy: (id) => {
       const ok = buy(state.wallet, id);
+      if (ok) state.stickers.record('shop');
       if (ok) state.change();
       return ok;
     },
@@ -420,6 +428,26 @@ async function start() {
     shop.close();
     hud.setButtonsVisible(true);
     town.controller.refreshHud();
+  }
+
+  // ── 스티커 앨범 (모으는 큰 목표) ──
+  const album = new StickerAlbum(document.body, speaker, state.stickers, () => {
+    album.close();
+    hud.setButtonsVisible(true);
+    hud.setAlbumNew(state.stickers.unseen.size > 0);
+  });
+  state.stickers.onEarn = (s) => {
+    album.notify(s);
+    hud.setAlbumNew(true);
+    state.change();
+  };
+  hud.setAlbumNew(state.stickers.unseen.size > 0);
+  function openAlbum() {
+    if (dialogue.isOpen || mode !== 'town' || switching || miniGames.isOpen || album.isOpen) return;
+    hud.setButtonsVisible(false);
+    album.open();
+    hud.setAlbumNew(false);
+    state.change();
   }
 
   // ── 숨바꼭질 세기 화면 ──
@@ -449,6 +477,8 @@ async function start() {
     sfx('page');
     hud.setButtonsVisible(false);
     miniGames.openCards((candy) => {
+      state.stickers.record('cards');
+      state.stickers.record('candy', candy);
       state.wallet.grant({ candy, items: [] });
       state.change();
       hud.setCandy(state.wallet.candy, true);

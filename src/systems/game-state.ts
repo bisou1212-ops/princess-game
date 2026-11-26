@@ -4,6 +4,7 @@ import { hasItem } from './items';
 import { Pet, type PetSave } from './pet';
 import { QuestBook } from './quests';
 import { Wallet } from './rewards';
+import { StickerBook, type StickerSave } from './stickers';
 import { STARTER_ITEMS, defaultOutfit, ownedOutfitItems, sanitizeOutfit, type Outfit } from './wardrobe';
 
 /** 저장 파일 모양. 구조를 바꾸면 version을 올리고 parse에서 옮겨 준다 */
@@ -23,6 +24,8 @@ export interface SaveData {
   roomStyles?: Record<string, RoomStyle>;
   /** 함께 사는 펫 (M8-5에서 추가, 없으면 처음에 고른다) */
   pet?: PetSave | null;
+  /** 스티커 앨범 (M10, 없으면 빈 앨범) */
+  stickers?: StickerSave;
 }
 
 export const SAVE_KEY = 'save';
@@ -34,6 +37,8 @@ export const SAVE_KEY = 'save';
 export class GameState {
   readonly quests = new QuestBook();
   readonly wallet = new Wallet();
+  /** 스티커 앨범 (모으는 큰 목표) */
+  readonly stickers = new StickerBook();
   outfit: Outfit = defaultOutfit();
   /** 함께 사는 펫 (아직 안 골랐으면 null) */
   pet: Pet | null = null;
@@ -125,6 +130,7 @@ export class GameState {
       rooms: Object.fromEntries(Object.entries(this.rooms).map(([id, room]) => [id, room.toJSON()])),
       roomStyles: Object.fromEntries(Object.entries(this.rooms).map(([id, room]) => [id, { ...room.style }])),
       pet: this.pet?.toJSON() ?? null,
+      stickers: this.stickers.toJSON(),
     };
   }
 
@@ -148,6 +154,17 @@ export class GameState {
     for (const [id, room] of Object.entries(this.rooms)) room.loadStyle(styles[id]);
     this.outfit = sanitizeOutfit(s.outfit, this.ownedOutfits);
     this.pet = Pet.load(s.pet);
+    this.stickers.load(s.stickers);
+    // 스티커가 생기기 전 저장: 이미 한 일만큼 셈을 채워 준다 (다시 와도 처음부터가 아니게)
+    if (!s.stickers) {
+      const done = Object.values(this.quests.toJSON()).filter((p) => p.status === 'completed').length;
+      this.stickers.record('quest', done);
+      this.stickers.record('candy', this.wallet.candy);
+      const placed = Object.values(this.rooms).reduce((n, r) => n + r.toJSON().length, 0);
+      this.stickers.record('furniture', placed);
+      const flowerTrip = Object.entries(this.quests.toJSON()).some(([id, p]) => p.status !== 'available' && this.quests.def(id).location === 'flower-kingdom');
+      if (flowerTrip) this.stickers.record('travel');
+    }
     this.seenOutfits = Array.isArray(s.seenOutfits) ? s.seenOutfits.filter((x): x is string => typeof x === 'string') : [...STARTER_ITEMS];
     return true;
   }

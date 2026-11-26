@@ -1,0 +1,28 @@
+{
+  "_comment": "스티커 앨범 (모으는 큰 목표). 놀다 보면 counter(셈 이름)가 at 번이 될 때 스티커가 붙는다. icon=그림 이름(src/ui/sticker-icons.ts), hint=아직 없을 때 톡하면 읽어 주는 말(어떻게 얻는지). 셈 이름: quest(부탁 해결)·talk(친구에게 말 걸기)·flower(꽃 줍기)·berry(딸기·블루베리 줍기)·pot(화분 세우기)·deliver(배달)·feelings(기분 알아맞히기)·cake·garden(놀이)·cards(카드 짝 맞추기 한 판)·seek(숨바꼭질 찾기)·feed·bath(펫 돌보기)·dress(옷 갈아입기)·furniture(가구 놓기)·invite(방에 친구 초대)·shop(가게에서 사기)·travel(꽃 왕국 가기)·candy(받은 별사탕 개수)",
+  "stickers": [
+    { "id": "first-quest", "name": "첫 부탁", "en": "First wish", "icon": "heart", "counter": "quest", "at": 1, "hint": "친구의 부탁을 들어주면 받아요." },
+    { "id": "chatty", "name": "수다쟁이", "en": "Chatterbox", "icon": "chat", "counter": "talk", "at": 10, "hint": "친구들에게 말을 많이 걸어 봐요." },
+    { "id": "flowers", "name": "꽃 모으기", "en": "Flower picker", "icon": "flower", "counter": "flower", "at": 10, "hint": "꽃을 열 송이 모으면 받아요." },
+    { "id": "berries", "name": "딸기 따기", "en": "Berry picker", "icon": "strawberry", "counter": "berry", "at": 8, "hint": "딸기와 블루베리를 모아 봐요." },
+    { "id": "pots", "name": "화분 세우기", "en": "Pot helper", "icon": "pot", "counter": "pot", "at": 5, "hint": "넘어진 화분을 세워 줘요." },
+    { "id": "mail", "name": "배달 왕", "en": "Mail carrier", "icon": "letter", "counter": "deliver", "at": 3, "hint": "친구에게 물건을 전해 줘요." },
+    { "id": "kind-heart", "name": "마음 친구", "en": "Kind heart", "icon": "smile", "counter": "feelings", "at": 2, "hint": "친구의 기분을 알아맞혀 봐요." },
+    { "id": "baker", "name": "케이크 장인", "en": "Cake maker", "icon": "cake", "counter": "cake", "at": 1, "hint": "도치와 케이크를 꾸며 봐요." },
+    { "id": "gardener", "name": "꽃밭 요정", "en": "Garden fairy", "icon": "can", "counter": "garden", "at": 1, "hint": "새싹에 물을 줘서 꽃을 피워요." },
+    { "id": "memory", "name": "짝꿍 찾기", "en": "Card matcher", "icon": "cards", "counter": "cards", "at": 1, "hint": "카드 짝 맞추기를 해 봐요." },
+    { "id": "memory-star", "name": "기억력 왕", "en": "Memory star", "icon": "cards-gold", "counter": "cards", "at": 5, "hint": "카드 짝 맞추기를 다섯 번 해요." },
+    { "id": "seeker", "name": "숨바꼭질", "en": "Hide and seek", "icon": "eyes", "counter": "seek", "at": 1, "hint": "숨은 친구를 찾아봐요." },
+    { "id": "seeker-star", "name": "술래 대장", "en": "Seek champion", "icon": "eyes-gold", "counter": "seek", "at": 5, "hint": "숨바꼭질에서 다섯 번 찾아요." },
+    { "id": "pet-food", "name": "냠냠 밥 주기", "en": "Pet chef", "icon": "bowl", "counter": "feed", "at": 3, "hint": "펫에게 밥을 줘요." },
+    { "id": "pet-bath", "name": "보글보글 목욕", "en": "Bath time", "icon": "bubbles", "counter": "bath", "at": 3, "hint": "펫을 깨끗하게 씻겨 줘요." },
+    { "id": "fashion", "name": "패션 공주", "en": "Fashion princess", "icon": "dress", "counter": "dress", "at": 5, "hint": "드레스룸에서 옷을 갈아입어 봐요." },
+    { "id": "decorator", "name": "꾸미기 대장", "en": "Room decorator", "icon": "sofa", "counter": "furniture", "at": 5, "hint": "방에 가구를 놓아 봐요." },
+    { "id": "party", "name": "파티 초대", "en": "Party host", "icon": "balloon", "counter": "invite", "at": 1, "hint": "방에 친구를 초대해요." },
+    { "id": "shopper", "name": "첫 쇼핑", "en": "First shopping", "icon": "bag", "counter": "shop", "at": 1, "hint": "별사탕 가게에서 물건을 사 봐요." },
+    { "id": "traveler", "name": "꽃 왕국 여행", "en": "Traveler", "icon": "map", "counter": "travel", "at": 1, "hint": "지도를 열어 꽃 왕국에 가 봐요." },
+    { "id": "candy-rich", "name": "별사탕 부자", "en": "Candy collector", "icon": "candy", "counter": "candy", "at": 30, "hint": "별사탕을 서른 개 모아요." },
+    { "id": "helper", "name": "도움 천사", "en": "Little helper", "icon": "star", "counter": "quest", "at": 5, "hint": "부탁을 다섯 번 들어줘요." },
+    { "id": "princess-star", "name": "최고의 공주", "en": "Best princess", "icon": "crown", "counter": "quest", "at": 15, "hint": "부탁을 열다섯 번 들어줘요." }
+  ]
+}
