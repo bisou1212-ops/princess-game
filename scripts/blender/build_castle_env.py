@@ -424,7 +424,7 @@ def path_stones(P):
 
 def build_ground(P):
     """마당 바닥(평평) + 성 밖 완만한 언덕. 마당 안은 높이 0 (길찾기와 같음)"""
-    size, n = 90, 48
+    size, n = 90, 36  # (G4) 48→36: 캐릭터 디테일에 삼각형을 양보
     bm = bmesh.new()
     bmesh.ops.create_grid(bm, x_segments=n, y_segments=n, size=size / 2)
     for v in bm.verts:
@@ -438,7 +438,7 @@ def build_ground(P):
     P.append(obj_from_bm(bm, "ground", "grass"))
     # 마당 바닥: 촘촘한 격자 (AO 가 구석·물건 밑에만 생기게 — 큰 면 하나면 모퉁이 그늘이 마당 전체로 번짐)
     bm = bmesh.new()
-    bmesh.ops.create_grid(bm, x_segments=40, y_segments=40, size=11.5)
+    bmesh.ops.create_grid(bm, x_segments=28, y_segments=28, size=11.5)
     P.append(obj_from_bm(bm, "yard", "yard", loc=(0, 0, 0.005)))
     # 바깥 길 (남쪽 문에서 아래로)
     P.append(box("path", (2.8, 20, 0.1), G(0, 22, -0.03), bevel=0.05))

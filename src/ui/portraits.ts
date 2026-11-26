@@ -28,7 +28,7 @@ export function createPortraits(d: PortraitDeps): (speaker: string, mood: Mood |
       const key = `pet:${kind}`;
       let url = cache.get(key);
       if (!url) {
-        url = snapshot(d.renderer, createPetModel(kind).group, { size: 256, yaw: 0.4, head: [0.06, 0.34] });
+        url = snapshot(d.renderer, createPetModel(kind).group, { size: 256, yaw: 0.4, head: [0.16, 0.42] });
         cache.set(key, url);
       }
       return url;

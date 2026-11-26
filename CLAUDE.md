@@ -72,13 +72,13 @@ docs/GDD.md        # 기획서
   - [x] M9-3 사운드: 음원 파일 없이 Web Audio 로 직접 만듦(`src/core/sound.ts`, 용량 0). 효과음 `sfx('tap'|'pop'|'sparkle'|'count'|'reward'|'coin'|'whoosh'|'happy'|'nom'|'bubble'|'page'|'dress')` — 밝은 소리만, 셀 때 한 음씩 올라감. 배경 음악: 오르골 소리로 장소마다(성·꽃 왕국·방·가게·자장가) 화음 진행 위 멜로디를 계속 지어 연주(`musicStep`), 대사 읽는 동안 작게. 첫 터치에 켜짐, 화면 내리면 멈춤. 부모 설정에서 효과음·음악 끄기. 나중에 CC0 음원으로 바꿔도 됨
   - [x] M9-4 실기기 테스트 마감: 태블릿 크기 화면 점검(문제 없음), 그림 길게 누르기 메뉴·당겨서 새로고침 막음, 체크리스트 `docs/TABLET-TEST.md`. 실기기 결과 반영: 사람 같은 자연스러운 음성(Natural·Online·Google)을 먼저 고름(`pickVoiceFrom` 점수), 고고는 남자 목소리(`characters.json` voice.gender), 온라인 음성이 실패하면 기기 음성으로, 자연스러운 음성은 높낮이 변화를 절반만. 아이 반응: 부탁 해결을 즐거워함, 그래픽이 아쉬움
 
-- [ ] 그래픽 2차 (`docs/GRAPHICS-V2.md`, 무료 방법)
+- [x] 그래픽 2차 (`docs/GRAPHICS-V2.md`, 무료 방법)
   - [x] G1 색감·빛: 셰이더 표면 무늬(`surface-patterns.ts`, 배경 재질 이름으로), 따뜻한 햇빛·약한 하늘빛, 색 보정(CustomToneMapping), 땅·잎 색 진하게(TINT), 발밑 그림자(`createContactShadow`), 풀 덤불(`grass-tufts.ts`), 화면 가장자리 어둡게, 불러오기 별
   - [x] G2 표정·연출: 그림 눈·입 표정 `face.ts`(대사 mood → 얼굴, 말할 때 입 뻐끔, 볼 발그레, 고개 갸웃·숙임), 몸짓 박수·끄덕·빙글(`playGesture`, 뼈를 코드로), 부탁 완료 때 공주 빙글·친구 폴짝 + 선물 화면 색종이(CSS). 대사 → 얼굴은 `DialogueBox.onSpeak` → `scene.setFace`
   - [x] G3 배경 에셋: Kenney Nature Kit(CC0) 나무·꽃·버섯·그루터기·바위·울타리 → `kenney()`(build_castle_env.py)가 파스텔로 다시 칠하고 잎을 동글게 다듬어 배경 glb 에 합침. 원본 `art-source/kenney/`, 출처 `public/assets/CREDITS.md`. Blender 명령줄(`-b`)로도 다시 만들 수 있음
   - [x] 보기 조절: 돋보기 +/−·두 손가락·휠로 가까이·멀리, 마당 끌기로 둘러보기, 처음 보던 대로 버튼 (`follow-camera.ts`, 마당·꽃 왕국)
   - [x] 대화창 얼굴 사진: 말하는 캐릭터를 기분 표정으로 찍어 말풍선 앞에 (`src/ui/portraits.ts`)
-  - [ ] G4 캐릭터 다듬기
+  - [x] G4 캐릭터 다듬기: 머리카락 가닥 `lock()`(앞머리·옆머리·뒷머리 가닥·정수리 한 가닥), 주름 치마 `skirt()`·밑단 프릴 `ruffle()`·퍼프 소매, 펫 매끈하게·유니콘 무지개 갈기 가닥·고양이 볼 털. 명령줄 다시 만들기 `scripts/blender/run_chars.py`·`run_env.py` (`blender -b --factory-startup --python ... -- princess src/assets/models`)
 
 ## 나중에 할 일
 - **사람 같은 음성 (보류, 기기 TTS가 로봇 같다는 피드백)**: 대사를 미리 음성 파일로 만들어 넣는다.

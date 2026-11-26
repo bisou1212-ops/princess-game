@@ -96,14 +96,14 @@ def _assign(p, c):
 
 def _body(pieces, fur, belly, hoof=None):
     """몸통 + 네 다리 + 머리 + 얼굴. 얼굴 위 자리를 돌려주는 on() 을 돌려준다"""
-    pieces.append(tag(sphere(fur, 0.22, (0, 0.05, 0.34), scale=(0.95, 1.3, 0.9), seg=18, rings=10), "body"))
-    pieces.append(tag(sphere(belly, 0.15, (0, -0.1, 0.3), scale=(0.9, 0.8, 0.9), seg=12, rings=6), "body"))
+    pieces.append(tag(sphere(fur, 0.22, (0, 0.05, 0.34), scale=(0.95, 1.3, 0.9), seg=26, rings=14), "body"))
+    pieces.append(tag(sphere(belly, 0.15, (0, -0.1, 0.3), scale=(0.9, 0.8, 0.9), seg=16, rings=8), "body"))
     for s, n in ((1, "L"), (-1, "R")):
         for y, fb in zip(LEG_Y, ("F", "B")):
             bone = f"leg.{fb}{n}"
-            pieces.append(tag(capsule(fur, 0.062, 0.14, (s * LEG_X, y, 0.15), seg=8, rings=4), bone))
-            pieces.append(tag(sphere(hoof or fur, 0.072, (s * LEG_X, y - 0.02, 0.045), scale=(1, 1.2, 0.62), seg=10, rings=5), bone))
-    pieces.append(tag(sphere(fur, HEAD_R, HEAD, seg=20, rings=12), "head"))
+            pieces.append(tag(capsule(fur, 0.062, 0.14, (s * LEG_X, y, 0.15), seg=12, rings=6), bone))
+            pieces.append(tag(sphere(hoof or fur, 0.072, (s * LEG_X, y - 0.02, 0.045), scale=(1, 1.2, 0.62), seg=12, rings=7), bone))
+    pieces.append(tag(sphere(fur, HEAD_R, HEAD, seg=30, rings=18), "head"))
     on = F["_face"](pieces, HEAD, HEAD_R, eye_x=0.11, eye_dz=0.0, cheek_x=0.18)
     for p in pieces[-6:]:
         tag(p, "head")
@@ -151,21 +151,26 @@ def build_unicorn():
     for s in (-1, 1):
         pieces.append(tag(cone("p_uni_body", 0.06, 0.0, 0.14, (s * 0.15, -0.14, 0.93), rot=(0, s * 0.3, 0), seg=10), f"ear.{'L' if s > 0 else 'R'}"))
         pieces.append(tag(cone("p_pink", 0.035, 0.0, 0.09, (s * 0.15, -0.165, 0.92), rot=(0, s * 0.3, 0), seg=8), f"ear.{'L' if s > 0 else 'R'}"))
-    # 무지개 갈기: 머리 위 앞에서 목 뒤까지 동글동글
+    # 무지개 갈기 (G4): 머리 꼭대기 앞에서 목 뒤까지 흘러내리는 가닥
     mane = ("p_mane_pink", "p_mane_lilac", "p_mane_mint", "p_mane_yellow")
-    for i in range(7):
-        a = -0.25 + i * 0.38  # 머리 꼭대기(앞) → 뒤로
+    lock = P["lock"]
+    for i in range(6):
+        a = -0.3 + i * 0.4  # 머리 꼭대기(앞) → 뒤로
         d = Vector((0, math.sin(a), math.cos(a)))
-        pos = HEAD + d * (HEAD_R * 0.98)
-        bone = "head" if i < 5 else "body"
-        if i >= 5:
-            pos = Vector((0, 0.02 + (i - 5) * 0.1, 0.52 - (i - 5) * 0.04))
-        pieces.append(tag(sphere(mane[i % 4], 0.095, pos, scale=(0.8, 1, 1), seg=10, rings=6), bone))
-    # 앞머리 한 가닥
-    pieces.append(tag(sphere("p_mane_pink", 0.07, HEAD + Vector((0.07, -0.2, 0.17)), scale=(1, 0.7, 1.2), seg=10, rings=6), "head"))
-    # 무지개 꼬리
+        root = HEAD + d * (HEAD_R * 1.0)
+        side = 0.03 if i % 2 else -0.03
+        tip = root + Vector((side, 0.13 + 0.03 * i, -0.06 - 0.05 * i))
+        bone = "head" if i < 4 else "body"
+        if i >= 4:
+            root = Vector((0, 0.0 + (i - 4) * 0.09, 0.56 - (i - 4) * 0.05))
+            tip = root + Vector((side, 0.12, -0.14))
+        pieces.append(tag(lock(mane[i % 4], root, tip + d * 0.05, 0.16, 0.1, bend=d * 0.09, curl=0.04, rings=8, seg=8, flat_dir=d), bone))
+    # 앞머리 한 가닥 (이마로 살짝 내려옴)
+    pieces.append(tag(lock("p_mane_pink", HEAD + Vector((0.0, -0.12, 0.2)), HEAD + Vector((0.07, -0.21, 0.08)), 0.1, 0.05, bend=(0, -0.04, 0.03), rings=7, seg=8, flat_dir=(0, -1, 0.4)), "head"))
+    # 무지개 꼬리: 아래로 흘러 끝이 말림
     for i, col in enumerate(mane):
-        pieces.append(tag(sphere(col, 0.08, (0, 0.32 + i * 0.05, 0.46 + i * 0.05 - (0.03 * i * i)), scale=(0.8, 1, 1.3), seg=8, rings=5), "tail"))
+        x = (i - 1.5) * 0.03
+        pieces.append(tag(lock(col, (x, 0.3, 0.46), (x * 2.2, 0.5, 0.2 + 0.03 * i), 0.09, 0.06, bend=(0, 0.08, 0.06), curl=0.04, rings=8, seg=8, flat_dir=(0, 1, 0)), "tail"))
     _collar(pieces)
     rig = _rig("unicorn", pet_bones())
     return _join("unicorn", pieces, rig)
@@ -184,6 +189,12 @@ def build_cat():
         side = "L" if s > 0 else "R"
         pieces.append(tag(cone("p_cat_fur", 0.09, 0.0, 0.17, (s * 0.15, -0.15, 0.93), rot=(0, s * 0.32, 0), seg=10), f"ear.{side}"))
         pieces.append(tag(cone("p_pink", 0.055, 0.0, 0.11, (s * 0.148, -0.19, 0.92), rot=(0, s * 0.32, 0), seg=8), f"ear.{side}"))
+    # 볼 털: 양옆으로 톡 삐져나온 털 두 가닥씩 (G4)
+    for s in (-1, 1):
+        for k in range(2):
+            root = HEAD + Vector((s * 0.2, -0.06, -0.06 - k * 0.05))
+            tip = root + Vector((s * 0.1, 0.02, -0.03 - k * 0.02))
+            pieces.append(tag(P["lock"]("p_cat_fur", root, tip, 0.06, 0.035, rings=6, seg=6, flat_dir=(0, -1, 0)), "head"))
     # 이마 줄무늬
     for x in (-0.06, 0.0, 0.06):
         pieces.append(tag(sphere("p_cat_stripe", 1.0, HEAD + Vector((x, -0.12, 0.2)), scale=(0.018, 0.02, 0.06), seg=8, rings=4), "head"))

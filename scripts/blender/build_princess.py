@@ -172,6 +172,107 @@ def hair_cap(mat, r, center, front_cut=0.1, back_cut=-0.44, seg=32, rings=20):
     return _new_obj(bm, "haircap", mat, center)
 
 
+def _bezier(p0, p1, p2, t):
+    return p0 * (1 - t) ** 2 + p1 * (2 * (1 - t) * t) + p2 * (t * t)
+
+
+def lock(mat, root, tip, width, thick, bend=(0, 0, 0), curl=0.0, seg=8, rings=9, flat_dir=None, bone=None):
+    """머리카락 한 가닥 (그래픽 2차 G4): 뿌리 → 끝으로 가늘어지는 납작한 가닥, 곡선(bend)·끝 말림(curl).
+    root·tip: 위치, bend: 가운데를 이만큼 밀어 휘게, curl: 끝을 바깥으로 말아 올리는 정도(m).
+    flat_dir: 가닥이 납작한 방향(두께 방향). 없으면 머리 가운데에서 밖으로."""
+    root, tip = Vector(root), Vector(tip)
+    mid = (root + tip) / 2 + Vector(bend)
+    pts = [_bezier(root, mid, tip, i / (rings - 1)) for i in range(rings)]
+    if curl:
+        # 끝 1/3 을 바깥(머리 가운데 반대)으로 말아 올림
+        out = Vector((tip.x, tip.y, 0))
+        out = out.normalized() if out.length > 1e-4 else Vector((0, -1, 0))
+        for i in range(rings):
+            t = i / (rings - 1)
+            k = max(0.0, (t - 0.6) / 0.4)
+            pts[i] = pts[i] + out * curl * k * k + Vector((0, 0, curl * 0.8 * k * k * k))
+    bm = bmesh.new()
+    rows = []
+    for i, p in enumerate(pts):
+        t = i / (rings - 1)
+        fwd = (pts[min(i + 1, rings - 1)] - pts[max(i - 1, 0)]).normalized()
+        n = Vector(flat_dir) if flat_dir else Vector((p.x, p.y, (p.z - 1.43) * 0.3))
+        n = (n - fwd * n.dot(fwd))
+        n = n.normalized() if n.length > 1e-5 else fwd.orthogonal().normalized()
+        side = fwd.cross(n).normalized()
+        # 뿌리는 넓고 끝은 뾰족 (가운데가 살짝 통통)
+        # 끝까지 통통하다가 동글게 모이는 꽃잎 모양 (고드름처럼 뾰족하지 않게)
+        k = max(0.0, 1 - t ** 1.8) ** 0.55 * (1 + 0.2 * math.sin(math.pi * t))
+        if i == rings - 1:
+            rows.append([bm.verts.new(p)])
+            continue
+        row = []
+        for j in range(seg):
+            a = math.tau * j / seg
+            row.append(bm.verts.new(p + side * math.cos(a) * width * 0.5 * k + n * math.sin(a) * thick * 0.5 * k))
+        rows.append(row)
+    for i in range(rings - 2):
+        r0, r1 = rows[i], rows[i + 1]
+        for j in range(seg):
+            bm.faces.new((r0[j], r0[(j + 1) % seg], r1[(j + 1) % seg], r1[j]))
+    last, tipv = rows[-2], rows[-1][0]
+    for j in range(seg):
+        bm.faces.new((last[j], last[(j + 1) % seg], tipv))
+    bm.faces.new(list(reversed(rows[0])))
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+    ob = _new_obj(bm, "lock", mat)
+    if bone:
+        ob["bone"] = bone
+    return ob
+
+
+def skirt(mat, r_top, r_hem, z_top, z_hem, pleats=12, amp=0.03, seg=60, rings=8, belly=0.06):
+    """주름 치마 (그래픽 2차 G4): 허리에서 밑단으로 종 모양으로 퍼지고, 아래로 갈수록 주름이 깊어진다"""
+    bm = bmesh.new()
+    rows = []
+    for i in range(rings):
+        t = i / (rings - 1)  # 0 = 허리, 1 = 밑단
+        z = z_top + (z_hem - z_top) * t
+        r = r_top + (r_hem - r_top) * (1 - (1 - t) ** 1.6) + belly * math.sin(t * math.pi)
+        row = []
+        for j in range(seg):
+            a = math.tau * j / seg
+            rr = r * (1 + amp / max(r, 0.1) * (t ** 1.3) * math.cos(pleats * a))
+            row.append(bm.verts.new((math.cos(a) * rr, math.sin(a) * rr, z + (0.012 * t * t * math.cos(pleats * a)))))
+        rows.append(row)
+    for i in range(rings - 1):
+        for j in range(seg):
+            bm.faces.new((rows[i][j], rows[i][(j + 1) % seg], rows[i + 1][(j + 1) % seg], rows[i + 1][j]))
+    bm.faces.new(rows[0])  # 허리 막기
+    bm.faces.new(list(reversed(rows[-1])))  # 밑단 막기
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+    return _new_obj(bm, "skirt", mat)
+
+
+def ruffle(mat, r, z, width=0.07, waves=24, depth=0.025, seg=96, flare=0.04):
+    """밑단 물결 프릴 (그래픽 2차 G4): 위아래로 물결치는 얇은 띠"""
+    bm = bmesh.new()
+    rows = []
+    for i in range(3):
+        t = i / 2
+        row = []
+        for j in range(seg):
+            a = math.tau * j / seg
+            w = math.sin(waves * a)
+            rr = r + flare * t + 0.012 * w * t
+            row.append(bm.verts.new((math.cos(a) * rr, math.sin(a) * rr, z - width * t + depth * w * t)))
+        rows.append(row)
+    for i in range(2):
+        for j in range(seg):
+            bm.faces.new((rows[i][j], rows[i][(j + 1) % seg], rows[i + 1][(j + 1) % seg], rows[i + 1][j]))
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+    ob = _new_obj(bm, "ruffle", mat)
+    mod = ob.modifiers.new("solid", "SOLIDIFY")
+    mod.thickness = 0.012
+    mod.offset = 0
+    return ob
+
+
 def crown_band(mat, r_bottom, r_top, height, spike, loc, points=5, seg=40):
     bm = bmesh.new()
     lo, hi = [], []
@@ -423,24 +524,67 @@ def build_base():
 
 
 # ── 머리 ─────────────────────────────────────────────
+def _on_cap(x, z, r=0.44, cy=0.01, cz=1.435, lift=0.0):
+    """머리(모자 모양 머리카락) 앞면 위의 점"""
+    y = -math.sqrt(max(r * r - x * x - (z - cz) ** 2, 0.0)) + cy - lift
+    return Vector((x, y, z))
+
+
 def bangs(P):
-    for x, z in ((-0.15, 1.6), (0.0, 1.635), (0.15, 1.6)):
-        P.append(sphere("tint", 0.12, (x, -0.33, z), scale=(1.05, 0.45, 0.7), seg=16, rings=10))
+    """앞머리 (G4): 이마를 덮는 뾰족한 가닥 7개 — 가운데가 조금 길고 양옆은 바깥으로 휨"""
+    xs = (-0.27, -0.18, -0.09, 0.0, 0.09, 0.18, 0.27)
+    lens = (0.12, 0.16, 0.19, 0.16, 0.2, 0.15, 0.12)
+    for i, (x, ln) in enumerate(zip(xs, lens)):
+        root = _on_cap(x * 0.8, 1.76)
+        tz = 1.74 - ln - 0.03
+        tip = _on_cap(x * 1.05 + (0.015 if i % 2 else -0.015), tz, r=0.418, lift=0.004)
+        out = Vector((x, -0.4, 0)).normalized()
+        P.append(lock("tint", root, tip, 0.16, 0.045, bend=out * 0.03, flat_dir=(x, -0.42, 0.1)))
+
+
+def side_locks(P, length=0.42):
+    """얼굴 옆 머리 (G4): 관자놀이에서 볼 아래까지, 끝이 안쪽으로 살짝"""
+    for s in (-1, 1):
+        root = Vector((s * 0.36, -0.17, 1.64))
+        tip = Vector((s * 0.35, -0.21, 1.64 - length))
+        P.append(lock("tint", root, tip, 0.12, 0.05, bend=(s * 0.06, -0.03, 0), flat_dir=(s, -0.3, 0)))
+        P.append(lock("tint", root + Vector((s * 0.02, 0.07, 0.02)), tip + Vector((s * 0.03, 0.07, 0.06)), 0.09, 0.04, bend=(s * 0.07, 0, 0), flat_dir=(s, 0, 0)))
+
+
+def ahoge(P):
+    """정수리에 톡 솟은 한 가닥 (G4)"""
+    P.append(lock("tint", (0.02, -0.06, 1.85), (0.1, -0.2, 1.99), 0.05, 0.022, bend=(0.0, 0.06, 0.07), rings=7, seg=6))
+
+
+def back_locks(P, n=7, z_root=1.5, z_tip=0.98, spread=1.25, width=0.17, curl=0.06):
+    """긴 뒷머리 (G4): 뒤통수에서 부채꼴로 내려오는 굵은 가닥, 끝이 바깥으로 말림"""
+    for i in range(n):
+        a = -spread + 2 * spread * i / (n - 1)
+        x, y = 0.37 * math.sin(a), 0.37 * math.cos(a) + 0.02
+        root = Vector((x, y, z_root))
+        tip = Vector((x * 1.25, y * 0.85 + 0.1, z_tip + 0.04 * ((i * 7) % 3)))
+        P.append(lock("tint", root, tip, width, 0.085, bend=(x * 0.3, y * 0.35 + 0.03, 0), curl=curl, rings=10, flat_dir=(x, y, 0), bone="hair_back"))
 
 
 def build_hair(kind):
-    P = [hair_cap("tint", 0.435, (0, 0.01, 1.435))]
+    P = [hair_cap("tint", 0.435, (0, 0.01, 1.435), seg=40)]
     bangs(P)
+    ahoge(P)
     if kind == "long":
-        P.append(sphere("tint", 1.0, (0, 0.15, 1.18), scale=(0.42, 0.25, 0.5), seg=24, rings=16))
-        for s in (-1, 1):
-            P.append(capsule("tint", 0.085, 0.3, (s * 0.37, -0.04, 1.2)))
+        # 가닥 사이 빈틈을 채우는 뒷머리 덩어리 + 부채꼴 가닥
+        P.append(sphere("tint", 1.0, (0, 0.17, 1.28), scale=(0.36, 0.2, 0.34), seg=20, rings=12))
+        back_locks(P)
+        side_locks(P)
     elif kind == "pigtails":
+        side_locks(P, length=0.3)
         for s in (-1, 1):
             P.append(sphere("tint", 0.13, (s * 0.44, 0.06, 1.56), seg=16, rings=10))
-            P.append(sphere("tint", 1.0, (s * 0.5, 0.1, 1.26), scale=(0.11, 0.11, 0.25), seg=16, rings=12))
+            for k in range(3):
+                dx = (k - 1) * 0.045
+                P.append(lock("tint", (s * 0.47 + dx, 0.08 + abs(dx), 1.5), (s * (0.58 + dx * 1.5), 0.14, 1.06 + 0.04 * k), 0.15, 0.1, bend=(s * 0.08, 0.03, 0), curl=0.05, rings=9, flat_dir=(s, 0, 0)))
             P.append(torus("tint_light", 0.07, 0.025, (s * 0.47, 0.08, 1.46), rot=(0, 0, 0), seg=14, ring=6))
     elif kind == "bun":
+        side_locks(P, length=0.3)
         P.append(sphere("tint", 0.16, (0, 0.1, 1.89), seg=20, rings=12))
         P.append(torus("tint_light", 0.12, 0.03, (0, 0.08, 1.8), rot=(0.25, 0, 0), seg=16, ring=6))
     elif kind == "short":
@@ -449,12 +593,15 @@ def build_hair(kind):
         for s in (-1, 1):
             P.append(sphere("tint", 1.0, (s * 0.37, -0.12, 1.3), scale=(0.12, 0.15, 0.22), seg=16, rings=10))
             P.append(sphere("tint", 0.085, (s * 0.33, -0.17, 1.12), seg=14, rings=8))
+        back_locks(P, n=5, z_root=1.42, z_tip=1.12, spread=1.1, width=0.16, curl=0.0)
     elif kind == "ponytail":
+        side_locks(P, length=0.3)
         # 높이 묶은 포니테일 + 리본 끈
         P.append(sphere("tint", 0.11, (0, 0.42, 1.66), seg=16, rings=10))
         P.append(torus("tint_light", 0.08, 0.03, (0, 0.47, 1.63), rot=(math.pi / 2 - 0.5, 0, 0), seg=16, ring=6))
-        P.append(sphere("tint", 1.0, (0, 0.6, 1.42), scale=(0.13, 0.14, 0.28), rot=(0.45, 0, 0), seg=18, rings=12))
-        P.append(sphere("tint", 0.095, (0, 0.7, 1.18), seg=14, rings=8))
+        for k in range(3):
+            dx = (k - 1) * 0.06
+            P.append(lock("tint", (dx, 0.5, 1.63), (dx * 1.6, 0.72 + abs(dx), 1.12 + 0.03 * k), 0.15, 0.09, bend=(dx, 0.14, 0.02), curl=0.05, rings=10, flat_dir=(0, 1, 0.3), bone="hair_back"))
     return build_item(f"hair-{kind}", P)
 
 
@@ -505,7 +652,7 @@ def build_flower_crown():
             off = Vector((math.cos(b) * big * 0.8, 0, math.sin(b) * big * 0.8))
             # 꽃잎은 바깥(머리 밖)을 보게 고리 방향으로 돌림
             rot = Matrix.Rotation(math.atan2(out.x, -out.y), 4, "Z")
-            P.append(sphere("tint", big * 0.62, p + rot @ off + out * 0.02, scale=(1, 0.5, 1), rot=(0, 0, math.atan2(out.x, -out.y)), seg=10, rings=6))
+            P.append(sphere("tint", big * 0.62, p + rot @ off + out * 0.02, scale=(1, 0.5, 1), rot=(0, 0, math.atan2(out.x, -out.y)), seg=8, rings=5))
         P.append(sphere("yellow", big * 0.45, p + out * 0.035, seg=10, rings=6))
         if i % 2 == 1:
             P.append(sphere("leaf", 0.035, p + out * 0.01 + Vector((0, 0, -0.03)), scale=(1.4, 0.5, 0.7), seg=8, rings=5))
@@ -513,28 +660,38 @@ def build_flower_crown():
 
 
 # ── 드레스 ───────────────────────────────────────────
+def puff_sleeves(P, mat="tint"):
+    for s in (-1, 1):  # 퍼프 소매
+        P.append(sphere(mat, 0.09, (s * 0.22, 0, 0.92), scale=(1, 1, 0.9), seg=14, rings=8))
+
+
 def build_dress(kind):
+    """드레스 (G4): 주름 치마(아래로 갈수록 깊은 주름) + 밑단 물결 프릴 + 퍼프 소매"""
     P = []
     if kind in ("basic", "flower"):
-        P.append(cone("tint", 0.5, 0.19, 0.86, (0, 0, 0.55), seg=36))
-        P.append(torus("tint_light", 0.27, 0.035, (0, 0, 0.74), seg=28, ring=8))  # 허리 리본 띠
+        P.append(cone("tint", 0.21, 0.19, 0.2, (0, 0, 0.88), seg=28))  # 윗옷
+        P.append(skirt("tint", 0.22, 0.5, 0.8, 0.12, pleats=12, amp=0.03))
+        P.append(ruffle("tint_light", 0.49, 0.14))
+        P.append(torus("tint_light", 0.235, 0.035, (0, 0, 0.78), seg=28, ring=8))  # 허리 리본 띠
         P.append(torus("tint_light", 0.17, 0.03, (0, 0, 0.97), seg=20, ring=6))  # 깃
+        puff_sleeves(P)
         if kind == "flower":
-            for i in range(12):
-                a = math.tau * i / 12
-                P.append(sphere("tint_light", 0.1, (math.cos(a) * 0.48, math.sin(a) * 0.48, 0.14), scale=(1, 1, 0.75), seg=12, rings=8))
+            for i in range(10):
+                a = math.tau * i / 10
+                P.append(sphere("tint_light", 0.07, (math.cos(a) * 0.5, math.sin(a) * 0.5, 0.2), scale=(1, 1, 0.75), seg=10, rings=6))
             c = Vector((0, -0.215, 0.86))
             for i in range(5):
                 a = math.tau * i / 5
                 P.append(sphere("tint_light", 0.04, c + Vector((math.cos(a) * 0.045, -0.01, math.sin(a) * 0.045)), scale=(1, 0.5, 1), seg=10, rings=6))
             P.append(sphere("yellow", 0.03, c + Vector((0, -0.02, 0)), seg=10, rings=6))
     elif kind == "ribbon":
-        # 치마에 프릴 두 줄 + 뒤에 커다란 리본 + 가슴에 작은 리본
-        P.append(cone("tint", 0.52, 0.19, 0.86, (0, 0, 0.55), seg=36))
-        for z in (0.16, 0.38):
-            r = 0.52 - (z - 0.12) / 0.86 * 0.33
-            P.append(torus("tint_light", r + 0.01, 0.04, (0, 0, z), seg=36, ring=8))
-        P.append(torus("tint_light", 0.27, 0.035, (0, 0, 0.74), seg=28, ring=8))
+        # 주름 치마에 프릴 두 줄 + 뒤에 커다란 리본 + 가슴에 작은 리본
+        P.append(cone("tint", 0.21, 0.19, 0.2, (0, 0, 0.88), seg=28))
+        P.append(skirt("tint", 0.22, 0.52, 0.8, 0.12, pleats=14, amp=0.028))
+        P.append(ruffle("tint_light", 0.51, 0.14, width=0.08))
+        P.append(ruffle("tint_light", 0.44, 0.38, width=0.06, flare=0.03))
+        P.append(torus("tint_light", 0.235, 0.035, (0, 0, 0.78), seg=28, ring=8))
+        puff_sleeves(P)
         bow = Vector((0, 0.3, 0.78))
         for s in (-1, 1):
             P.append(sphere("tint_light", 1.0, (bow.x + s * 0.15, bow.y + 0.02, bow.z + 0.04), scale=(0.15, 0.06, 0.1), rot=(0, s * -0.35, 0), seg=16, rings=10))
@@ -546,11 +703,18 @@ def build_dress(kind):
         P.append(sphere("tint", 0.025, front + Vector((0, -0.01, 0)), seg=8, rings=6))
     elif kind == "puffy":
         P.append(cone("tint", 0.22, 0.18, 0.34, (0, 0, 0.82), seg=28))
-        P.append(sphere("tint", 0.56, (0, 0, 0.42), scale=(1, 1, 0.72), seg=36, rings=20))
-        P.append(torus("tint_light", 0.5, 0.05, (0, 0, 0.25), seg=36, ring=8))  # 치마 둘레 프릴 (치마 폭이 0.5인 높이)
+        # 둥근 공 치마 + 세로 주름 (아래쪽이 깊게)
+        sk = sphere("tint", 0.56, (0, 0, 0.42), scale=(1, 1, 0.72), seg=48, rings=20)
+        for v in sk.data.vertices:
+            a = math.atan2(v.co.y, v.co.x)
+            t = max(0.0, min(1.0, 0.3 - v.co.z / 0.56))
+            k = 1 + 0.055 * t * math.cos(14 * a)
+            v.co.x *= k
+            v.co.y *= k
+        P.append(sk)
+        P.append(ruffle("tint_light", 0.5, 0.27, width=0.08, waves=28))  # 치마 둘레 물결 프릴
         P.append(torus("tint_light", 0.21, 0.035, (0, 0, 0.66), seg=24, ring=6))
-        for s in (-1, 1):  # 퍼프 소매
-            P.append(sphere("tint", 0.09, (s * 0.22, 0, 0.93), seg=14, rings=8))
+        puff_sleeves(P)
     return build_item(f"dress-{kind}", P)
 
 
